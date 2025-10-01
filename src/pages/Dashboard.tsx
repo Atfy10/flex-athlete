@@ -81,7 +81,7 @@ export default function Dashboard() {
                 <Plus className="h-5 w-5" />
                 New Session
               </Button>
-              <Button variant="outline" size="lg" className="border-primary-foreground/20 text-primary-foreground hover:bg-primary-foreground/10">
+              <Button variant="hero" size="lg">
                 View Reports
                 <ArrowRight className="h-5 w-5" />
               </Button>
