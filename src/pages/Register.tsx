@@ -5,14 +5,22 @@ import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Trophy, UserPlus } from "lucide-react";
 
 export default function Register() {
   const { register } = useAuth();
   const navigate = useNavigate();
+  const [userName, setUserName] = useState("");
   const [email, setEmail] = useState("");
+  const [phoneNumber, setPhoneNumber] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   const [errors, setErrors] = useState<string[]>([]);
@@ -22,14 +30,33 @@ export default function Register() {
     e.preventDefault();
     setErrors([]);
 
-    if (password !== confirmPassword) {
-      setErrors(["Passwords do not match."]);
+    const trimmedName = userName.trim();
+    const trimmedEmail = email.trim();
+    const trimmedPhone = phoneNumber.trim();
+
+    const validationErrors: string[] = [];
+    if (!trimmedName) validationErrors.push("Full name is required.");
+    if (!trimmedEmail) validationErrors.push("Email is required.");
+    if (password.length < 6)
+      validationErrors.push("Password must be at least 6 characters.");
+    if (password !== confirmPassword)
+      validationErrors.push("Passwords do not match.");
+    if (trimmedPhone && !/^\+?\d{7,15}$/.test(trimmedPhone))
+      validationErrors.push("Phone number is invalid.");
+
+    if (validationErrors.length > 0) {
+      setErrors(validationErrors);
       return;
     }
 
     setLoading(true);
     try {
-      await register({ email, password, confirmPassword });
+      await register({
+        userName: trimmedName,
+        email: trimmedEmail,
+        password,
+        phoneNumber: trimmedPhone,
+      });
       navigate("/login", { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
@@ -50,8 +77,12 @@ export default function Register() {
             <Trophy className="h-7 w-7 text-primary-foreground" />
           </div>
           <div>
-            <CardTitle className="text-2xl text-gradient">Create Account</CardTitle>
-            <CardDescription className="mt-1">Join AURA Sport Academy</CardDescription>
+            <CardTitle className="text-2xl text-gradient">
+              Create Account
+            </CardTitle>
+            <CardDescription className="mt-1">
+              Join AURA Sport Academy
+            </CardDescription>
           </div>
         </CardHeader>
         <CardContent>
@@ -69,6 +100,27 @@ export default function Register() {
             )}
 
             <div className="space-y-2">
+              <Label htmlFor="userName">Full name</Label>
+              <Input
+                id="userName"
+                type="text"
+                placeholder="Your full name"
+                value={userName}
+                onChange={(e) => setUserName(e.target.value)}
+                required
+                autoComplete="name"
+              />
+
+              <Label htmlFor="phoneNumber">Phone</Label>
+              <Input
+                id="phoneNumber"
+                type="tel"
+                placeholder="e.g. +201234567890"
+                value={phoneNumber}
+                onChange={(e) => setPhoneNumber(e.target.value)}
+                autoComplete="tel"
+              />
+
               <Label htmlFor="email">Email</Label>
               <Input
                 id="email"
@@ -107,14 +159,22 @@ export default function Register() {
               />
             </div>
 
-            <Button type="submit" className="w-full" variant="hero" disabled={loading}>
+            <Button
+              type="submit"
+              className="w-full"
+              variant="hero"
+              disabled={loading}
+            >
               <UserPlus className="h-4 w-4" />
               {loading ? "Creating account..." : "Create Account"}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
               Already have an account?{" "}
-              <Link to="/login" className="text-primary font-medium hover:underline">
+              <Link
+                to="/login"
+                className="text-primary font-medium hover:underline"
+              >
                 Sign in
               </Link>
             </p>

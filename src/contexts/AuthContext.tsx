@@ -1,4 +1,10 @@
-import React, { createContext, useContext, useState, useCallback, useEffect } from "react";
+import React, {
+  createContext,
+  useContext,
+  useState,
+  useCallback,
+  useEffect,
+} from "react";
 import { useNavigate } from "react-router-dom";
 import { apiFetch, ApiError } from "@/lib/api";
 
@@ -15,9 +21,11 @@ interface LoginPayload {
 }
 
 interface RegisterPayload {
+  userName: string;
   email: string;
   password: string;
-  confirmPassword: string;
+  phoneNumber?: string;
+  emailConfirmed?: boolean;
 }
 
 interface LoginResponse {
@@ -75,9 +83,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const register = useCallback(async (payload: RegisterPayload) => {
+    const payloadToSend = {
+      userName: payload.userName,
+      email: payload.email,
+      password: payload.password,
+      phoneNumber: payload.phoneNumber ?? "",
+      emailConfirmed: payload.emailConfirmed ?? true,
+    };
     await apiFetch("/auth/register", {
       method: "POST",
-      body: JSON.stringify(payload),
+      body: JSON.stringify(payloadToSend),
       skipAuth: true,
     });
   }, []);
