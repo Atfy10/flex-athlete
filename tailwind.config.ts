@@ -1,8 +1,14 @@
 import type { Config } from "tailwindcss";
+import tailwindAnimate from "tailwindcss-animate";
 
 export default {
   darkMode: ["class"],
-  content: ["./pages/**/*.{ts,tsx}", "./components/**/*.{ts,tsx}", "./app/**/*.{ts,tsx}", "./src/**/*.{ts,tsx}"],
+  content: [
+    "./pages/**/*.{ts,tsx}",
+    "./components/**/*.{ts,tsx}",
+    "./app/**/*.{ts,tsx}",
+    "./src/**/*.{ts,tsx}",
+  ],
   prefix: "",
   theme: {
     container: {
@@ -69,16 +75,16 @@ export default {
         },
       },
       backgroundImage: {
-        'gradient-primary': 'var(--gradient-primary)',
-        'gradient-secondary': 'var(--gradient-secondary)',
-        'gradient-hero': 'var(--gradient-hero)',
-        'gradient-card': 'var(--gradient-card)',
+        "gradient-primary": "var(--gradient-primary)",
+        "gradient-secondary": "var(--gradient-secondary)",
+        "gradient-hero": "var(--gradient-hero)",
+        "gradient-card": "var(--gradient-card)",
       },
       boxShadow: {
-        'athletic-sm': 'var(--shadow-sm)',
-        'athletic-md': 'var(--shadow-md)',
-        'athletic-lg': 'var(--shadow-lg)',
-        'athletic-glow': 'var(--shadow-glow)',
+        "athletic-sm": "var(--shadow-sm)",
+        "athletic-md": "var(--shadow-md)",
+        "athletic-lg": "var(--shadow-lg)",
+        "athletic-glow": "var(--shadow-glow)",
       },
       borderRadius: {
         lg: "var(--radius)",
@@ -102,7 +108,7 @@ export default {
             height: "0",
           },
         },
-        "float": {
+        float: {
           "0%, 100%": { transform: "translateY(0px)" },
           "50%": { transform: "translateY(-10px)" },
         },
@@ -114,10 +120,10 @@ export default {
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
-        "float": "float 3s ease-in-out infinite",
+        float: "float 3s ease-in-out infinite",
         "pulse-soft": "pulse-soft 2s ease-in-out infinite",
       },
     },
   },
-  plugins: [require("tailwindcss-animate")],
+  plugins: [tailwindAnimate],
 } satisfies Config;

@@ -4,9 +4,24 @@ interface ApiOptions extends RequestInit {
   skipAuth?: boolean;
 }
 
+// In-memory token used by apiFetch. AuthContext must call setAccessToken/clearAccessToken.
+let inMemoryAccessToken: string | null = null;
+export function setAccessToken(token: string | null) {
+  inMemoryAccessToken = token ?? null;
+}
+export function clearAccessToken() {
+  inMemoryAccessToken = null;
+}
+
+let logoutHandler: (() => void) | null = null;
+let isLogoutInProgress = false;
+export function registerLogoutHandler(fn: () => void) {
+  logoutHandler = fn;
+}
+
 export async function apiFetch<T = unknown>(
   path: string,
-  options: ApiOptions = {}
+  options: ApiOptions = {},
 ): Promise<T> {
   const { skipAuth, ...fetchOptions } = options;
 
@@ -16,11 +31,9 @@ export async function apiFetch<T = unknown>(
     headers.set("Content-Type", "application/json");
   }
 
-  if (!skipAuth) {
-    const token = localStorage.getItem("accessToken");
-    if (token) {
-      headers.set("Authorization", `Bearer ${token}`);
-    }
+  // Attach Authorization header only when there is an in-memory token and skipAuth !== true
+  if (!skipAuth && inMemoryAccessToken) {
+    headers.set("Authorization", `Bearer ${inMemoryAccessToken}`);
   }
 
   const response = await fetch(`${API_BASE_URL}${path}`, {
@@ -28,10 +41,17 @@ export async function apiFetch<T = unknown>(
     headers,
   });
 
+  // Handle unauthorized globally by invoking registered logout handler once
   if (response.status === 401) {
-    localStorage.removeItem("accessToken");
-    localStorage.removeItem("expiresAt");
-    window.location.href = "/login";
+    if (logoutHandler && !isLogoutInProgress) {
+      try {
+        isLogoutInProgress = true;
+        logoutHandler();
+      } finally {
+        isLogoutInProgress = false;
+      }
+    }
+    // Throw a standard error to callers
     throw new Error("Unauthorized");
   }
 
@@ -49,25 +69,38 @@ export class ApiError extends Error {
   data: Record<string, unknown>;
 
   constructor(status: number, data: Record<string, unknown>) {
-    super(data.message as string || `Request failed with status ${status}`);
+    const d = data as Record<string, unknown>;
+    const msg =
+      typeof d["message"] === "string"
+        ? (d["message"] as string)
+        : `Request failed with status ${status}`;
+    super(msg);
     this.status = status;
     this.data = data;
   }
 
   getValidationErrors(): string[] {
     const errors: string[] = [];
-    if (this.data.errors && typeof this.data.errors === "object") {
-      for (const field of Object.values(this.data.errors)) {
+    const d = this.data as Record<string, unknown>;
+    const maybeErrors = d["errors"];
+    if (maybeErrors && typeof maybeErrors === "object") {
+      for (const field of Object.values(
+        maybeErrors as Record<string, unknown>,
+      )) {
         if (Array.isArray(field)) {
-          errors.push(...field);
+          errors.push(...field.map((v) => String(v)));
+        } else if (typeof field === "string") {
+          errors.push(field);
         }
       }
     }
-    if (this.data.message && typeof this.data.message === "string") {
-      errors.push(this.data.message);
+    const maybeMessage = d["message"];
+    if (typeof maybeMessage === "string") {
+      errors.push(maybeMessage);
     }
-    if (errors.length === 0 && this.data.title && typeof this.data.title === "string") {
-      errors.push(this.data.title);
+    if (errors.length === 0) {
+      const maybeTitle = d["title"];
+      if (typeof maybeTitle === "string") errors.push(maybeTitle);
     }
     return errors.length > 0 ? errors : [this.message];
   }

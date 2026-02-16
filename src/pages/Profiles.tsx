@@ -3,11 +3,11 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  User, 
-  Users, 
-  Plus, 
-  Search, 
+import {
+  User,
+  Users,
+  Plus,
+  Search,
   Filter,
   Mail,
   Phone,
@@ -15,9 +15,40 @@ import {
   MapPin,
   Heart,
   AlertTriangle,
-  FileText
+  FileText,
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+
+type MedicalInfo = {
+  bloodType?: string;
+  allergies: string[];
+  conditions: string[];
+  medications: string[];
+};
+
+type EmergencyContact = {
+  name: string;
+  relationship: string;
+  phone: string;
+};
+
+type Profile = {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  address: string;
+  avatar: string;
+  role: string;
+  joinDate: string;
+  emergencyContact: EmergencyContact;
+  medicalInfo: MedicalInfo;
+  sports: string[];
+  branch: string;
+  status: string;
+  certifications?: string[];
+};
 
 const Profiles = () => {
   const [searchTerm, setSearchTerm] = useState("");
@@ -37,17 +68,17 @@ const Profiles = () => {
       emergencyContact: {
         name: "Jennifer Thompson",
         relationship: "Mother",
-        phone: "+1 234 567 8902"
+        phone: "+1 234 567 8902",
       },
       medicalInfo: {
         bloodType: "O+",
         allergies: ["Peanuts"],
         conditions: ["Asthma"],
-        medications: ["Inhaler"]
+        medications: ["Inhaler"],
       },
       sports: ["Basketball", "Tennis"],
       branch: "Main Campus",
-      status: "Active"
+      status: "Active",
     },
     {
       id: 2,
@@ -62,18 +93,18 @@ const Profiles = () => {
       emergencyContact: {
         name: "Mark Wilson",
         relationship: "Spouse",
-        phone: "+1 234 567 8904"
+        phone: "+1 234 567 8904",
       },
       medicalInfo: {
         bloodType: "A+",
         allergies: [],
         conditions: [],
-        medications: []
+        medications: [],
       },
       sports: ["Swimming", "Water Polo"],
       branch: "Main Campus",
       status: "Active",
-      certifications: ["CPR Certified", "First Aid", "Swimming Instructor"]
+      certifications: ["CPR Certified", "First Aid", "Swimming Instructor"],
     },
     {
       id: 3,
@@ -88,41 +119,54 @@ const Profiles = () => {
       emergencyContact: {
         name: "Lisa Johnson",
         relationship: "Mother",
-        phone: "+1 234 567 8906"
+        phone: "+1 234 567 8906",
       },
       medicalInfo: {
         bloodType: "B+",
         allergies: ["Latex"],
         conditions: [],
-        medications: []
+        medications: [],
       },
       sports: ["Tennis"],
       branch: "Downtown",
-      status: "Active"
-    }
+      status: "Active",
+    },
   ];
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "Active": return "bg-success text-success-foreground";
-      case "Inactive": return "bg-muted text-muted-foreground";
-      case "Suspended": return "bg-destructive text-destructive-foreground";
-      default: return "bg-muted text-muted-foreground";
+      case "Active":
+        return "bg-success text-success-foreground";
+      case "Inactive":
+        return "bg-muted text-muted-foreground";
+      case "Suspended":
+        return "bg-destructive text-destructive-foreground";
+      default:
+        return "bg-muted text-muted-foreground";
     }
   };
 
   const getRoleColor = (role: string) => {
     switch (role) {
-      case "Trainee": return "bg-primary/10 text-primary";
-      case "Coach": return "bg-secondary/10 text-secondary";
-      case "Employee": return "bg-success/10 text-success";
-      case "Admin": return "bg-warning/10 text-warning";
-      default: return "bg-muted text-muted-foreground";
+      case "Trainee":
+        return "bg-primary/10 text-primary";
+      case "Coach":
+        return "bg-secondary/10 text-secondary";
+      case "Employee":
+        return "bg-success/10 text-success";
+      case "Admin":
+        return "bg-warning/10 text-warning";
+      default:
+        return "bg-muted text-muted-foreground";
     }
   };
 
   const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
+    return name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
   };
 
   const calculateAge = (dateOfBirth: string) => {
@@ -130,16 +174,21 @@ const Profiles = () => {
     const birthDate = new Date(dateOfBirth);
     let age = today.getFullYear() - birthDate.getFullYear();
     const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (monthDiff < 0 || (monthDiff === 0 && today.getDate() < birthDate.getDate())) {
+    if (
+      monthDiff < 0 ||
+      (monthDiff === 0 && today.getDate() < birthDate.getDate())
+    ) {
       age--;
     }
     return age;
   };
 
-  const hasMedicalConcerns = (medicalInfo: any) => {
-    return medicalInfo.allergies.length > 0 || 
-           medicalInfo.conditions.length > 0 || 
-           medicalInfo.medications.length > 0;
+  const hasMedicalConcerns = (medicalInfo: MedicalInfo) => {
+    return (
+      (medicalInfo.allergies && medicalInfo.allergies.length > 0) ||
+      (medicalInfo.conditions && medicalInfo.conditions.length > 0) ||
+      (medicalInfo.medications && medicalInfo.medications.length > 0)
+    );
   };
 
   return (
@@ -147,8 +196,12 @@ const Profiles = () => {
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gradient">Profile Management</h1>
-          <p className="text-muted-foreground">Manage user profiles and personal information</p>
+          <h1 className="text-3xl font-bold text-gradient">
+            Profile Management
+          </h1>
+          <p className="text-muted-foreground">
+            Manage user profiles and personal information
+          </p>
         </div>
         <Button className="btn-hero">
           <Plus className="h-4 w-4 mr-2" />
@@ -160,7 +213,9 @@ const Profiles = () => {
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         <Card className="card-athletic">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Profiles</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Profiles
+            </CardTitle>
             <User className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
@@ -182,7 +237,9 @@ const Profiles = () => {
 
         <Card className="card-athletic">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Medical Alerts</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Medical Alerts
+            </CardTitle>
             <Heart className="h-4 w-4 text-destructive" />
           </CardHeader>
           <CardContent>
@@ -193,7 +250,9 @@ const Profiles = () => {
 
         <Card className="card-athletic">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Incomplete Profiles</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Incomplete Profiles
+            </CardTitle>
             <AlertTriangle className="h-4 w-4 text-warning" />
           </CardHeader>
           <CardContent>
@@ -226,7 +285,7 @@ const Profiles = () => {
 
       {/* Profiles Grid */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {profiles.map((profile) => (
+        {profiles.map((profile: Profile) => (
           <Card key={profile.id} className="card-athletic">
             <CardContent className="p-6">
               {/* Header */}
@@ -270,11 +329,15 @@ const Profiles = () => {
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">{profile.address}</span>
+                  <span className="text-muted-foreground">
+                    {profile.address}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2 text-sm">
                   <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">Joined {profile.joinDate}</span>
+                  <span className="text-muted-foreground">
+                    Joined {profile.joinDate}
+                  </span>
                 </div>
               </div>
 
@@ -294,7 +357,10 @@ const Profiles = () => {
               <div className="mb-4">
                 <p className="text-sm font-medium mb-2">Emergency Contact</p>
                 <div className="text-sm text-muted-foreground">
-                  <p>{profile.emergencyContact.name} ({profile.emergencyContact.relationship})</p>
+                  <p>
+                    {profile.emergencyContact.name} (
+                    {profile.emergencyContact.relationship})
+                  </p>
                   <p>{profile.emergencyContact.phone}</p>
                 </div>
               </div>
@@ -304,29 +370,43 @@ const Profiles = () => {
                 <div className="mb-4 p-3 rounded-lg bg-warning/10 border border-warning/20">
                   <div className="flex items-center gap-2 mb-2">
                     <Heart className="h-4 w-4 text-warning" />
-                    <p className="text-sm font-medium text-warning">Medical Information</p>
+                    <p className="text-sm font-medium text-warning">
+                      Medical Information
+                    </p>
                   </div>
                   <div className="text-xs space-y-1">
                     {profile.medicalInfo.allergies.length > 0 && (
-                      <p><strong>Allergies:</strong> {profile.medicalInfo.allergies.join(", ")}</p>
+                      <p>
+                        <strong>Allergies:</strong>{" "}
+                        {profile.medicalInfo.allergies.join(", ")}
+                      </p>
                     )}
                     {profile.medicalInfo.conditions.length > 0 && (
-                      <p><strong>Conditions:</strong> {profile.medicalInfo.conditions.join(", ")}</p>
+                      <p>
+                        <strong>Conditions:</strong>{" "}
+                        {profile.medicalInfo.conditions.join(", ")}
+                      </p>
                     )}
                     {profile.medicalInfo.medications.length > 0 && (
-                      <p><strong>Medications:</strong> {profile.medicalInfo.medications.join(", ")}</p>
+                      <p>
+                        <strong>Medications:</strong>{" "}
+                        {profile.medicalInfo.medications.join(", ")}
+                      </p>
                     )}
                   </div>
                 </div>
               )}
 
               {/* Certifications (for coaches) */}
-              {profile.role === "Coach" && (profile as any).certifications && (
+              {profile.role === "Coach" && profile.certifications && (
                 <div className="mb-4">
                   <p className="text-sm font-medium mb-2">Certifications</p>
                   <div className="flex flex-wrap gap-1">
-                    {(profile as any).certifications.map((cert: string) => (
-                      <Badge key={cert} className="text-xs bg-success/10 text-success">
+                    {profile.certifications.map((cert: string) => (
+                      <Badge
+                        key={cert}
+                        className="text-xs bg-success/10 text-success"
+                      >
                         {cert}
                       </Badge>
                     ))}

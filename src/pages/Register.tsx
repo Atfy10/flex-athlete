@@ -41,7 +41,7 @@ export default function Register() {
       validationErrors.push("Password must be at least 6 characters.");
     if (password !== confirmPassword)
       validationErrors.push("Passwords do not match.");
-    if (trimmedPhone && !/^\+?\d{7,15}$/.test(trimmedPhone))
+    if (!trimmedPhone && !/^\+?\d{8,11}$/.test(trimmedPhone))
       validationErrors.push("Phone number is invalid.");
 
     if (validationErrors.length > 0) {
@@ -115,7 +115,7 @@ export default function Register() {
               <Input
                 id="phoneNumber"
                 type="tel"
-                placeholder="e.g. +201234567890"
+                placeholder="e.g. +965 59827349"
                 value={phoneNumber}
                 onChange={(e) => setPhoneNumber(e.target.value)}
                 autoComplete="tel"

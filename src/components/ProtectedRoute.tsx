@@ -2,9 +2,11 @@ import { Navigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 
 export function ProtectedRoute({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated } = useAuth();
+  const { token, expiresAt } = useAuth();
 
-  if (!isAuthenticated) {
+  const isValid = !!token && !!expiresAt && expiresAt > Date.now();
+
+  if (!isValid) {
     return <Navigate to="/login" replace />;
   }
 
