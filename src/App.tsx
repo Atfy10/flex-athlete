@@ -3,6 +3,8 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { AuthProvider } from "./contexts/AuthContext";
+import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AppLayout } from "./components/layout/AppLayout";
 import { ScrollToTop } from "./components/ScrollToTop";
 import Dashboard from "./pages/Dashboard";
@@ -16,6 +18,8 @@ import Sports from "./pages/Sports";
 import Enrollments from "./pages/Enrollments";
 import Attendance from "./pages/Attendance";
 import Profiles from "./pages/Profiles";
+import Login from "./pages/Login";
+import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,24 +30,39 @@ const App = () => (
       <Toaster />
       <Sonner />
       <BrowserRouter>
-        <ScrollToTop />
-        <AppLayout>
+        <AuthProvider>
+          <ScrollToTop />
           <Routes>
-            <Route path="/" element={<Dashboard />} />
-            <Route path="/trainees" element={<Trainees />} />
-            <Route path="/coaches" element={<Coaches />} />
-            <Route path="/trainee-groups" element={<TraineeGroups />} />
-            <Route path="/session-occurrences" element={<SessionOccurrences />} />
-            <Route path="/employees" element={<Employees />} />
-            <Route path="/branches" element={<Branches />} />
-            <Route path="/sports" element={<Sports />} />
-            <Route path="/enrollments" element={<Enrollments />} />
-            <Route path="/attendance" element={<Attendance />} />
-            <Route path="/profiles" element={<Profiles />} />
-            {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-            <Route path="*" element={<NotFound />} />
+            {/* Public routes */}
+            <Route path="/login" element={<Login />} />
+            <Route path="/register" element={<Register />} />
+
+            {/* Protected routes */}
+            <Route
+              path="/*"
+              element={
+                <ProtectedRoute>
+                  <AppLayout>
+                    <Routes>
+                      <Route path="/" element={<Dashboard />} />
+                      <Route path="/trainees" element={<Trainees />} />
+                      <Route path="/coaches" element={<Coaches />} />
+                      <Route path="/trainee-groups" element={<TraineeGroups />} />
+                      <Route path="/session-occurrences" element={<SessionOccurrences />} />
+                      <Route path="/employees" element={<Employees />} />
+                      <Route path="/branches" element={<Branches />} />
+                      <Route path="/sports" element={<Sports />} />
+                      <Route path="/enrollments" element={<Enrollments />} />
+                      <Route path="/attendance" element={<Attendance />} />
+                      <Route path="/profiles" element={<Profiles />} />
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </AppLayout>
+                </ProtectedRoute>
+              }
+            />
           </Routes>
-        </AppLayout>
+        </AuthProvider>
       </BrowserRouter>
     </TooltipProvider>
   </QueryClientProvider>
