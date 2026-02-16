@@ -10,7 +10,7 @@ import {
   Activity,
   MapPin,
   Trophy,
-  Plus,
+  Play,
   ArrowRight
 } from "lucide-react";
 import heroImage from "@/assets/hero-academy.jpg";
@@ -78,8 +78,8 @@ export default function Dashboard() {
             </p>
             <div className="flex flex-wrap gap-4">
               <Button variant="secondary-athletic" size="lg">
-                <Plus className="h-5 w-5" />
-                New Session
+                <Play className="h-5 w-5" />
+                Operate Group
               </Button>
               <Button variant="hero" size="lg">
                 View Reports
