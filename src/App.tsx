@@ -8,7 +8,8 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import Dashboard from "./pages/Dashboard";
 import Trainees from "./pages/Trainees";
 import Coaches from "./pages/Coaches";
-import Sessions from "./pages/Sessions";
+import TraineeGroups from "./pages/TraineeGroups";
+import SessionOccurrences from "./pages/SessionOccurrences";
 import Employees from "./pages/Employees";
 import Branches from "./pages/Branches";
 import Sports from "./pages/Sports";
@@ -31,7 +32,8 @@ const App = () => (
             <Route path="/" element={<Dashboard />} />
             <Route path="/trainees" element={<Trainees />} />
             <Route path="/coaches" element={<Coaches />} />
-            <Route path="/sessions" element={<Sessions />} />
+            <Route path="/trainee-groups" element={<TraineeGroups />} />
+            <Route path="/session-occurrences" element={<SessionOccurrences />} />
             <Route path="/employees" element={<Employees />} />
             <Route path="/branches" element={<Branches />} />
             <Route path="/sports" element={<Sports />} />

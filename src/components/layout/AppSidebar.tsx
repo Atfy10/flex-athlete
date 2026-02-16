@@ -43,7 +43,8 @@ const managementItems = [
 ];
 
 const operationsItems = [
-  { title: "Sessions", url: "/sessions", icon: Calendar },
+  { title: "Trainee Groups", url: "/trainee-groups", icon: Users },
+  { title: "Session Occurrences", url: "/session-occurrences", icon: Calendar },
   { title: "Enrollments", url: "/enrollments", icon: UserPlus },
   { title: "Attendance", url: "/attendance", icon: ClipboardCheck },
   { title: "Profiles", url: "/profiles", icon: User },
