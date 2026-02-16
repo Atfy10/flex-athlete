@@ -32,9 +32,7 @@ import {
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
 
-const mainItems = [
-  { title: "Dashboard", url: "/", icon: LayoutDashboard },
-];
+const mainItems = [{ title: "Dashboard", url: "/", icon: LayoutDashboard }];
 
 const managementItems = [
   { title: "Employees", url: "/employees", icon: Users },
@@ -56,7 +54,7 @@ export function AppSidebar() {
   const location = useLocation();
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
-  
+
   const [managementOpen, setManagementOpen] = useState(true);
   const [operationsOpen, setOperationsOpen] = useState(true);
 
@@ -74,7 +72,7 @@ export function AppSidebar() {
               <div className="w-8 h-8 rounded-lg bg-gradient-primary flex items-center justify-center">
                 <Trophy className="h-5 w-5 text-primary-foreground" />
               </div>
-              <span className="font-bold text-lg text-gradient">Academy</span>
+              <span className="font-bold text-lg text-gradient">AURA</span>
             </div>
           ) : (
             <div className="flex justify-center">
@@ -91,7 +89,7 @@ export function AppSidebar() {
             <SidebarMenu>
               {mainItems.map((item) => (
                 <SidebarMenuItem key={item.title}>
-                  <SidebarMenuButton 
+                  <SidebarMenuButton
                     asChild
                     isActive={isActive(item.url)}
                     className={navItemCls}
@@ -129,7 +127,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                   {managementItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
+                      <SidebarMenuButton
                         asChild
                         isActive={isActive(item.url)}
                         className={navItemCls}
@@ -169,7 +167,7 @@ export function AppSidebar() {
                 <SidebarMenu>
                   {operationsItems.map((item) => (
                     <SidebarMenuItem key={item.title}>
-                      <SidebarMenuButton 
+                      <SidebarMenuButton
                         asChild
                         isActive={isActive(item.url)}
                         className={navItemCls}
