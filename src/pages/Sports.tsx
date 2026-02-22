@@ -3,20 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Trophy, 
-  Users, 
-  Plus, 
-  Search, 
-  Filter,
-  Clock,
-  DollarSign,
-  Target,
-  Star
-} from "lucide-react";
+import { Trophy, Users, Plus, Search, Filter, Clock, DollarSign, Target, Star } from "lucide-react";
+import { SportsFormModal } from "@/components/modals/SportsFormModal";
 
 const Sports = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Mock sports data
   const sports = [
@@ -96,14 +88,16 @@ const Sports = () => {
   };
 
   const getCategoryColor = (category: string) => {
-    const colors = {
+    const colors: Record<string, string> = {
       "Team Sport": "bg-primary/10 text-primary",
       "Individual Sport": "bg-secondary/10 text-secondary", 
       "Racquet Sport": "bg-success/10 text-success",
       "Combat Sport": "bg-warning/10 text-warning"
     };
-    return colors[category as keyof typeof colors] || "bg-muted text-muted-foreground";
+    return colors[category] || "bg-muted text-muted-foreground";
   };
+
+  const handleRefresh = () => {};
 
   return (
     <div className="space-y-6">
@@ -113,7 +107,7 @@ const Sports = () => {
           <h1 className="text-3xl font-bold text-gradient">Sports Management</h1>
           <p className="text-muted-foreground">Manage sports programs and disciplines</p>
         </div>
-        <Button className="btn-hero">
+        <Button className="btn-hero" onClick={() => setModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Sport
         </Button>
@@ -286,6 +280,8 @@ const Sports = () => {
           </Card>
         ))}
       </div>
+
+      <SportsFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={handleRefresh} />
     </div>
   );
 };

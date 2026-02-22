@@ -18,6 +18,7 @@ import Sports from "./pages/Sports";
 import Enrollments from "./pages/Enrollments";
 import Attendance from "./pages/Attendance";
 import Profiles from "./pages/Profiles";
+import UsersRoles from "./pages/UsersRoles";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
 import NotFound from "./pages/NotFound";
@@ -61,6 +62,7 @@ const App = () => (
                       <Route path="/enrollments" element={<Enrollments />} />
                       <Route path="/attendance" element={<Attendance />} />
                       <Route path="/profiles" element={<Profiles />} />
+                      <Route path="/users-roles" element={<UsersRoles />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                   </AppLayout>
