@@ -3,22 +3,13 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  UserPlus, 
-  Users, 
-  Plus, 
-  Search, 
-  Filter,
-  Calendar,
-  DollarSign,
-  CheckCircle,
-  Clock,
-  AlertCircle
-} from "lucide-react";
+import { UserPlus, Users, Plus, Search, Filter, Calendar, DollarSign, CheckCircle, Clock, AlertCircle } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { EnrollmentFormModal } from "@/components/modals/EnrollmentFormModal";
 
 const Enrollments = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Mock enrollment data
   const enrollments = [
@@ -111,6 +102,8 @@ const Enrollments = () => {
     return Math.round((completed / total) * 100);
   };
 
+  const handleRefresh = () => {};
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -119,7 +112,7 @@ const Enrollments = () => {
           <h1 className="text-3xl font-bold text-gradient">Enrollment Management</h1>
           <p className="text-muted-foreground">Track student registrations and program participation</p>
         </div>
-        <Button className="btn-hero">
+        <Button className="btn-hero" onClick={() => setModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           New Enrollment
         </Button>
@@ -279,6 +272,8 @@ const Enrollments = () => {
           </Card>
         ))}
       </div>
+
+      <EnrollmentFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={handleRefresh} />
     </div>
   );
 };

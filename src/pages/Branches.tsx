@@ -3,20 +3,12 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  MapPin, 
-  Building, 
-  Plus, 
-  Search, 
-  Filter,
-  Phone,
-  Mail,
-  Users,
-  Trophy
-} from "lucide-react";
+import { MapPin, Building, Plus, Search, Filter, Phone, Mail, Users, Trophy } from "lucide-react";
+import { BranchFormModal } from "@/components/modals/BranchFormModal";
 
 const Branches = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Mock branch data
   const branches = [
@@ -77,6 +69,8 @@ const Branches = () => {
     return "bg-success";
   };
 
+  const handleRefresh = () => {};
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -85,7 +79,7 @@ const Branches = () => {
           <h1 className="text-3xl font-bold text-gradient">Branch Management</h1>
           <p className="text-muted-foreground">Manage academy locations and facilities</p>
         </div>
-        <Button className="btn-hero">
+        <Button className="btn-hero" onClick={() => setModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Branch
         </Button>
@@ -244,6 +238,8 @@ const Branches = () => {
           </Card>
         ))}
       </div>
+
+      <BranchFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={handleRefresh} />
     </div>
   );
 };

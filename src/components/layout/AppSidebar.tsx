@@ -14,6 +14,7 @@ import {
   User,
   ChevronDown,
   LogOut,
+  Shield,
 } from "lucide-react";
 
 import {
@@ -50,6 +51,7 @@ const operationsItems = [
   { title: "Enrollments", url: "/enrollments", icon: UserPlus },
   { title: "Attendance", url: "/attendance", icon: ClipboardCheck },
   { title: "Profiles", url: "/profiles", icon: User },
+  { title: "Users & Roles", url: "/users-roles", icon: Shield },
 ];
 
 export function AppSidebar() {

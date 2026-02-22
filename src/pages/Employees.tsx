@@ -15,9 +15,11 @@ import {
   MapPin
 } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { EmployeeFormModal } from "@/components/modals/EmployeeFormModal";
 
 const Employees = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
 
   // Mock employee data
   const employees = [
@@ -71,6 +73,10 @@ const Employees = () => {
     return name.split(' ').map(n => n[0]).join('').toUpperCase();
   };
 
+  const handleRefresh = () => {
+    // Will refetch when backend is connected
+  };
+
   return (
     <div className="space-y-6">
       {/* Header */}
@@ -79,7 +85,7 @@ const Employees = () => {
           <h1 className="text-3xl font-bold text-gradient">Employee Management</h1>
           <p className="text-muted-foreground">Manage academy staff and personnel</p>
         </div>
-        <Button className="btn-hero">
+        <Button className="btn-hero" onClick={() => setModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Add Employee
         </Button>
@@ -194,6 +200,8 @@ const Employees = () => {
           </Card>
         ))}
       </div>
+
+      <EmployeeFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={handleRefresh} />
     </div>
   );
 };

@@ -24,7 +24,7 @@ export default function Login() {
     setErrors([]);
     setLoading(true);
     try {
-      await login({ email, password, rememberMe });
+      await login({ email, password });
       navigate("/", { replace: true });
     } catch (err) {
       if (err instanceof ApiError) {
