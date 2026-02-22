@@ -12,13 +12,7 @@ import {
   clearAccessToken as clearApiAccessToken,
 } from "@/lib/api";
 
-interface ApiResult<T> {
-  data: T;
-  isSuccess: boolean;
-  operationType: string;
-  message: string;
-  statusCode: number;
-}
+import { ApiResult } from "@/types/api";
 
 interface AuthState {
   token: string | null;
