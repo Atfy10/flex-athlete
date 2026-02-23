@@ -33,6 +33,7 @@ export function useEntitySearch<T>({
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
+  const [error, setError] = useState<string | null>(null);
 
   // Debounce
   useEffect(() => {
@@ -65,6 +66,7 @@ export function useEntitySearch<T>({
 
         if (!active || !result?.isSuccess || !result.data) {
           setItems([]);
+          setError("Search failed");
           setTotalPages(1);
           return;
         }
@@ -76,6 +78,11 @@ export function useEntitySearch<T>({
         setTotalPages(
           Math.max(1, Math.ceil(paged.totalCount / paged.pageSize)),
         );
+      } catch (err) {
+        if (!active) return;
+        setItems([]);
+        setError("Network error");
+        setTotalPages(1);
       } finally {
         if (active) setLoading(false);
       }

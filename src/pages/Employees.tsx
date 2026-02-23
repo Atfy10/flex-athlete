@@ -23,13 +23,7 @@ import { useEntitySearch } from "@/hooks/useEntitySearch";
 import { listEmployees, searchEmployees } from "@/services/employees.service";
 
 const Employees = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [debouncedTerm, setDebouncedTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-  const [employees, setEmployees] = useState<EmployeeCardDto[]>([]);
-  const [loading, setLoading] = useState(false);
-  const [pageNumber, setPageNumber] = useState(1);
-  const [totalPages, setTotalPages] = useState(1);
 
   const pageSize = 9;
 
@@ -46,80 +40,23 @@ const Employees = () => {
       .toUpperCase();
 
   const handleRefresh = () => {
-    setPageNumber(1);
+    setPage(1);
   };
 
-  // Debounce (مرة واحدة فقط)
-  useEffect(() => {
-    const id = setTimeout(() => {
-      setDebouncedTerm(searchTerm.trim());
-    }, 400);
-
-    return () => clearTimeout(id);
-  }, [searchTerm]);
-
-  // Reset page when search changes
-  useEffect(() => {
-    setPageNumber(1);
-  }, [debouncedTerm]);
-
-  // Fetch logic
-  useEffect(() => {
-    let cancelled = false;
-
-    const fetchEmployees = async () => {
-      // لو حرف واحد بس → لا نعمل call
-      if (debouncedTerm.length === 1) return;
-
-      setLoading(true);
-
-      try {
-        const isSearch = debouncedTerm.length >= 3;
-
-        const url = isSearch
-          ? `/api/employee/search?term=${encodeURIComponent(
-              debouncedTerm,
-            )}&page=${pageNumber}&pageSize=${pageSize}`
-          : `/api/employee?page=${pageNumber}&pageSize=${pageSize}`;
-
-        const result =
-          await apiFetch<ApiResult<PagedData<EmployeeCardDto>>>(url);
-
-        if (cancelled) return;
-
-        if (!result?.isSuccess || !result.data) {
-          setEmployees([]);
-          setTotalPages(1);
-          return;
-        }
-
-        const paged = result.data;
-
-        setEmployees(paged.items ?? []);
-
-        const computedTotalPages =
-          paged.totalCount > 0
-            ? Math.ceil(paged.totalCount / paged.pageSize)
-            : 1;
-
-        setTotalPages(computedTotalPages);
-      } catch (err) {
-        if (!cancelled) {
-          console.error("Error fetching employees", err);
-          setEmployees([]);
-          setTotalPages(1);
-        }
-      } finally {
-        if (!cancelled) setLoading(false);
-      }
-    };
-
-    fetchEmployees();
-
-    return () => {
-      cancelled = true;
-    };
-  }, [debouncedTerm, pageNumber]);
+  const {
+    items: employees,
+    loading,
+    term,
+    setTerm,
+    page,
+    setPage,
+    totalPages,
+  } = useEntitySearch({
+    listFn: listEmployees,
+    searchFn: searchEmployees,
+    pageSize,
+    minLength: 2, // consistent مع backend contract
+  });
 
   return (
     <div className="space-y-6">
@@ -185,8 +122,8 @@ const Employees = () => {
               <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
               <Input
                 placeholder="Search employees..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
