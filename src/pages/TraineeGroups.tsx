@@ -1,13 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Search, Plus, Users, Calendar, Play, MoreHorizontal, Clock, MapPin, Trophy } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
-import { useToast } from "@/hooks/use-toast";
 import { TraineeGroupFormModal } from "@/components/modals/TraineeGroupFormModal";
 import { GenerateSessionsModal } from "@/components/modals/GenerateSessionsModal";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { BasePagination } from "@/components/BasePagination";
 
 interface GroupSchedule { id: number; dayOfWeek: string; startTime: string; endTime: string; }
 interface TraineeGroup { id: number; name: string; sport: string; coach: string; branch: string; level: string; capacity: number; enrolledCount: number; status: "Active" | "Inactive" | "Full"; schedules: GroupSchedule[]; }
@@ -40,11 +41,13 @@ export default function TraineeGroups() {
   const [generateOpen, setGenerateOpen] = useState(false);
   const [selectedGroup, setSelectedGroup] = useState<TraineeGroup | null>(null);
 
-  const filteredGroups = mockGroups.filter((g) =>
+  const filteredGroups = useMemo(() => mockGroups.filter((g) =>
     g.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     g.sport.toLowerCase().includes(searchTerm.toLowerCase()) ||
     g.coach.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [searchTerm]);
+
+  const { paginatedData: groups, page, setPage, pageSize, setPageSize, totalPages, totalCount } = useClientPagination({ data: filteredGroups, initialPageSize: 10 });
 
   const handleGenerate = (group: TraineeGroup) => {
     setSelectedGroup(group);
@@ -82,7 +85,7 @@ export default function TraineeGroups() {
       </Card>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredGroups.map((group) => (
+        {groups.map((group) => (
           <Card key={group.id} className="card-athletic">
             <CardHeader className="pb-4">
               <div className="flex items-start justify-between">
@@ -135,6 +138,8 @@ export default function TraineeGroups() {
           </Card>
         ))}
       </div>
+
+      <BasePagination page={page} totalPages={totalPages} pageSize={pageSize} totalCount={totalCount} onPageChange={setPage} onPageSizeChange={setPageSize} />
 
       <TraineeGroupFormModal open={createOpen} onOpenChange={setCreateOpen} onSuccess={handleRefresh} />
       <GenerateSessionsModal

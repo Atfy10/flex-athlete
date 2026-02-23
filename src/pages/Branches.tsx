@@ -1,17 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { MapPin, Building, Plus, Search, Filter, Phone, Mail, Users, Trophy } from "lucide-react";
 import { BranchFormModal } from "@/components/modals/BranchFormModal";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { BasePagination } from "@/components/BasePagination";
 
-const Branches = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [modalOpen, setModalOpen] = useState(false);
-
-  // Mock branch data
-  const branches = [
+const allBranches = [
     {
       id: 1,
       name: "Main Campus",
@@ -51,7 +48,18 @@ const Branches = () => {
       status: "Active",
       facilities: ["Dance Studio", "Gymnastics Hall", "Mirrored Rooms"]
     }
-  ];
+];
+
+const Branches = () => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const filteredBranches = useMemo(() => allBranches.filter(b =>
+    b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+    b.address.toLowerCase().includes(searchTerm.toLowerCase())
+  ), [searchTerm]);
+
+  const { paginatedData: branches, page, setPage, pageSize, setPageSize, totalPages, totalCount } = useClientPagination({ data: filteredBranches, initialPageSize: 10 });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -238,6 +246,8 @@ const Branches = () => {
           </Card>
         ))}
       </div>
+
+      <BasePagination page={page} totalPages={totalPages} pageSize={pageSize} totalCount={totalCount} onPageChange={setPage} onPageSizeChange={setPageSize} />
 
       <BranchFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={handleRefresh} />
     </div>

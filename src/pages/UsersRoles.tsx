@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -33,6 +33,8 @@ import { BaseModal } from "@/components/modals/BaseModal";
 import { FormInput } from "@/components/modals/FormInput";
 import { FormMultiSelect, MultiSelectOption } from "@/components/modals/FormMultiSelect";
 import { FormToggle } from "@/components/modals/FormToggle";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { BasePagination } from "@/components/BasePagination";
 
 interface AppUser {
   id: string;
@@ -85,13 +87,15 @@ export default function UsersRoles() {
     fetchRoles();
   }, [fetchUsers, fetchRoles]);
 
-  const filteredUsers = users.filter((u) => {
+  const filteredUsers = useMemo(() => users.filter((u) => {
     const matchSearch =
       u.userName.toLowerCase().includes(searchTerm.toLowerCase()) ||
       u.email.toLowerCase().includes(searchTerm.toLowerCase());
     const matchRole = roleFilter === "all" || u.roles.includes(roleFilter);
     return matchSearch && matchRole;
-  });
+  }), [users, searchTerm, roleFilter]);
+
+  const { paginatedData: pagedUsers, page, setPage, pageSize, setPageSize, totalPages, totalCount } = useClientPagination({ data: filteredUsers, initialPageSize: 10 });
 
   const handleToggleActive = async (user: AppUser) => {
     setTogglingId(user.id);
@@ -233,7 +237,7 @@ export default function UsersRoles() {
       {/* Users Table */}
       <Card className="card-athletic">
         <CardHeader>
-          <CardTitle>All Users ({filteredUsers.length})</CardTitle>
+          <CardTitle>All Users ({totalCount})</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="rounded-md border">
@@ -255,7 +259,7 @@ export default function UsersRoles() {
                     </TableCell>
                   </TableRow>
                 ) : (
-                  filteredUsers.map((user) => (
+                  pagedUsers.map((user) => (
                     <TableRow key={user.id}>
                       <TableCell className="font-medium">{user.userName}</TableCell>
                       <TableCell>{user.email}</TableCell>
@@ -284,6 +288,7 @@ export default function UsersRoles() {
               </TableBody>
             </Table>
           </div>
+          <BasePagination page={page} totalPages={totalPages} pageSize={pageSize} totalCount={totalCount} onPageChange={setPage} onPageSizeChange={setPageSize} />
         </CardContent>
       </Card>
 
