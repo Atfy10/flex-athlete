@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -11,6 +11,8 @@ import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CoachFormModal } from "@/components/modals/CoachFormModal";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { BasePagination } from "@/components/BasePagination";
 
 const coaches = [
   { id: 1, name: "Mike Johnson", email: "mike.johnson@academy.com", phone: "+1 (555) 123-4567", sport: "Basketball", specialization: "Youth Development", experience: "8 years", rating: 4.9, trainees: 45, branch: "Downtown", certifications: ["FIBA Level 2", "Youth Coach"], joinDate: "2020-03-15", status: "Active", avatar: "/api/placeholder/40/40" },
@@ -31,11 +33,13 @@ export default function Coaches() {
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
-  const filteredCoaches = coaches.filter(coach => 
+  const filteredCoaches = useMemo(() => coaches.filter(coach => 
     coach.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
     coach.sport.toLowerCase().includes(searchTerm.toLowerCase()) ||
     coach.specialization.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  ), [searchTerm]);
+
+  const { paginatedData, page, setPage, pageSize, setPageSize, totalPages, totalCount } = useClientPagination({ data: filteredCoaches, initialPageSize: 10 });
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -97,7 +101,7 @@ export default function Coaches() {
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredCoaches.map((coach) => (
+        {paginatedData.map((coach) => (
           <Card key={coach.id} className="card-athletic">
             <CardHeader className="pb-4">
               <div className="flex items-center justify-between">
@@ -154,6 +158,8 @@ export default function Coaches() {
           </Card>
         ))}
       </div>
+
+      <BasePagination page={page} totalPages={totalPages} pageSize={pageSize} totalCount={totalCount} onPageChange={setPage} onPageSizeChange={setPageSize} />
 
       <CoachFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={handleRefresh} />
     </div>

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -7,6 +7,8 @@ import { Search, Plus, Filter, MoreHorizontal, Phone, Mail, MapPin, Calendar, Tr
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TraineeFormModal } from "@/components/modals/TraineeFormModal";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { BasePagination } from "@/components/BasePagination";
 
 const trainees = [
   { id: 1, name: "Alice Johnson", email: "alice.johnson@email.com", phone: "+1 (555) 123-4567", age: 16, joinDate: "2024-01-15", sport: "Basketball", level: "Intermediate", attendanceRate: 95, branch: "Downtown", status: "Active" },
@@ -27,7 +29,9 @@ export default function Trainees() {
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
-  const filteredTrainees = trainees.filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase()) || t.email.toLowerCase().includes(searchTerm.toLowerCase()));
+  const filteredTrainees = useMemo(() => trainees.filter(t => t.name.toLowerCase().includes(searchTerm.toLowerCase()) || t.email.toLowerCase().includes(searchTerm.toLowerCase())), [searchTerm]);
+
+  const { paginatedData, page, setPage, pageSize, setPageSize, totalPages, totalCount } = useClientPagination({ data: filteredTrainees, initialPageSize: 10 });
 
   const getStatusColor = (status: string) => {
     switch (status) { case "Active": return "bg-success/10 text-success hover:bg-success/20"; case "On Hold": return "bg-warning/10 text-warning hover:bg-warning/20"; default: return "bg-muted"; }
@@ -83,7 +87,7 @@ export default function Trainees() {
       </Card>
 
       <Card className="card-athletic">
-        <CardHeader><CardTitle>All Trainees ({filteredTrainees.length})</CardTitle></CardHeader>
+        <CardHeader><CardTitle>All Trainees ({totalCount})</CardTitle></CardHeader>
         <CardContent>
           <div className="rounded-md border">
             <Table>
@@ -99,7 +103,7 @@ export default function Trainees() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {filteredTrainees.map((trainee) => (
+                {paginatedData.map((trainee) => (
                   <TableRow key={trainee.id} className="hover:bg-muted/50">
                     <TableCell><div className="space-y-1"><div className="font-medium">{trainee.name}</div><div className="text-sm text-muted-foreground">Age: {trainee.age} • Joined {new Date(trainee.joinDate).toLocaleDateString()}</div></div></TableCell>
                     <TableCell><div className="space-y-1"><div className="flex items-center gap-2 text-sm"><Mail className="h-3 w-3" />{trainee.email}</div><div className="flex items-center gap-2 text-sm text-muted-foreground"><Phone className="h-3 w-3" />{trainee.phone}</div></div></TableCell>
@@ -125,6 +129,7 @@ export default function Trainees() {
               </TableBody>
             </Table>
           </div>
+          <BasePagination page={page} totalPages={totalPages} pageSize={pageSize} totalCount={totalCount} onPageChange={setPage} onPageSizeChange={setPageSize} />
         </CardContent>
       </Card>
 

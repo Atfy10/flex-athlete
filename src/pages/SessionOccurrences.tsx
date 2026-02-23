@@ -1,29 +1,14 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import {
-  Calendar,
-  Clock,
-  MapPin,
-  Users,
-  ClipboardCheck,
-  Search,
-} from "lucide-react";
+import { Calendar, Clock, MapPin, Users, ClipboardCheck, Search } from "lucide-react";
+import { useClientPagination } from "@/hooks/useClientPagination";
+import { BasePagination } from "@/components/BasePagination";
 
 interface SessionOccurrence {
-  id: number;
-  groupName: string;
-  sport: string;
-  coach: string;
-  branch: string;
-  date: string;
-  startTime: string;
-  endTime: string;
-  status: "Scheduled" | "Completed" | "Cancelled";
-  expectedTrainees: number;
-  attendedTrainees: number | null;
+  id: number; groupName: string; sport: string; coach: string; branch: string; date: string; startTime: string; endTime: string; status: "Scheduled" | "Completed" | "Cancelled"; expectedTrainees: number; attendedTrainees: number | null;
 }
 
 const mockOccurrences: SessionOccurrence[] = [
@@ -36,70 +21,47 @@ const mockOccurrences: SessionOccurrence[] = [
 ];
 
 const getStatusColor = (status: string) => {
-  switch (status) {
-    case "Scheduled": return "bg-primary/10 text-primary hover:bg-primary/20";
-    case "Completed": return "bg-success/10 text-success hover:bg-success/20";
-    case "Cancelled": return "bg-destructive/10 text-destructive hover:bg-destructive/20";
-    default: return "bg-muted";
-  }
+  switch (status) { case "Scheduled": return "bg-primary/10 text-primary hover:bg-primary/20"; case "Completed": return "bg-success/10 text-success hover:bg-success/20"; case "Cancelled": return "bg-destructive/10 text-destructive hover:bg-destructive/20"; default: return "bg-muted"; }
 };
 
 export default function SessionOccurrences() {
   const [searchTerm, setSearchTerm] = useState("");
   const [dateFilter, setDateFilter] = useState("2026-02-16");
 
-  const filtered = mockOccurrences.filter((o) => {
-    const matchesSearch =
-      o.groupName.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.sport.toLowerCase().includes(searchTerm.toLowerCase()) ||
-      o.coach.toLowerCase().includes(searchTerm.toLowerCase());
+  const filtered = useMemo(() => mockOccurrences.filter((o) => {
+    const matchesSearch = o.groupName.toLowerCase().includes(searchTerm.toLowerCase()) || o.sport.toLowerCase().includes(searchTerm.toLowerCase()) || o.coach.toLowerCase().includes(searchTerm.toLowerCase());
     const matchesDate = !dateFilter || o.date === dateFilter;
     return matchesSearch && matchesDate;
-  });
+  }), [searchTerm, dateFilter]);
+
+  const { paginatedData, page, setPage, pageSize, setPageSize, totalPages, totalCount } = useClientPagination({ data: filtered, initialPageSize: 10 });
 
   return (
     <div className="space-y-8">
-      {/* Header — no create button */}
       <div>
         <h1 className="text-3xl font-bold text-gradient">Session Occurrences</h1>
-        <p className="text-muted-foreground">
-          System-generated training sessions — read-only view
-        </p>
+        <p className="text-muted-foreground">System-generated training sessions — read-only view</p>
       </div>
 
-      {/* Filters */}
       <Card className="card-athletic">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-4">
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search by group, sport, or coach..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
+              <Input placeholder="Search by group, sport, or coach..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
             </div>
-            <Input
-              type="date"
-              value={dateFilter}
-              onChange={(e) => setDateFilter(e.target.value)}
-              className="w-auto"
-            />
+            <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="w-auto" />
           </div>
         </CardContent>
       </Card>
 
-      {/* Occurrences list */}
       <div className="space-y-4">
-        {filtered.length === 0 && (
+        {paginatedData.length === 0 && (
           <Card className="card-athletic">
-            <CardContent className="p-12 text-center text-muted-foreground">
-              No occurrences found for the selected filters.
-            </CardContent>
+            <CardContent className="p-12 text-center text-muted-foreground">No occurrences found for the selected filters.</CardContent>
           </Card>
         )}
-        {filtered.map((occ) => (
+        {paginatedData.map((occ) => (
           <Card key={occ.id} className="card-athletic">
             <CardContent className="p-6">
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
@@ -110,35 +72,18 @@ export default function SessionOccurrences() {
                     <Badge className={getStatusColor(occ.status)}>{occ.status}</Badge>
                   </div>
                   <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1">
-                      <Calendar className="h-3.5 w-3.5" />
-                      {new Date(occ.date).toLocaleDateString()}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Clock className="h-3.5 w-3.5" />
-                      {occ.startTime} – {occ.endTime}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <Users className="h-3.5 w-3.5" />
-                      Coach: {occ.coach}
-                    </span>
-                    <span className="flex items-center gap-1">
-                      <MapPin className="h-3.5 w-3.5" />
-                      {occ.branch}
-                    </span>
+                    <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{new Date(occ.date).toLocaleDateString()}</span>
+                    <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{occ.startTime} – {occ.endTime}</span>
+                    <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />Coach: {occ.coach}</span>
+                    <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{occ.branch}</span>
                   </div>
                 </div>
                 <div className="flex items-center gap-3">
                   {occ.status === "Completed" && occ.attendedTrainees !== null && (
-                    <span className="text-sm font-medium text-success">
-                      {occ.attendedTrainees}/{occ.expectedTrainees} attended
-                    </span>
+                    <span className="text-sm font-medium text-success">{occ.attendedTrainees}/{occ.expectedTrainees} attended</span>
                   )}
                   {occ.status === "Scheduled" && (
-                    <Button variant="outline" size="sm">
-                      <ClipboardCheck className="h-4 w-4 mr-1" />
-                      Open Attendance
-                    </Button>
+                    <Button variant="outline" size="sm"><ClipboardCheck className="h-4 w-4 mr-1" />Open Attendance</Button>
                   )}
                 </div>
               </div>
@@ -146,6 +91,8 @@ export default function SessionOccurrences() {
           </Card>
         ))}
       </div>
+
+      <BasePagination page={page} totalPages={totalPages} pageSize={pageSize} totalCount={totalCount} onPageChange={setPage} onPageSizeChange={setPageSize} />
     </div>
   );
 }

@@ -21,6 +21,7 @@ import { EmployeeCardDto } from "@/types/EmployeeCardDto";
 import { ApiResult, PagedData } from "@/types/api";
 import { useEntitySearch } from "@/hooks/useEntitySearch";
 import { listEmployees, searchEmployees } from "@/services/employees.service";
+import { BasePagination } from "@/components/BasePagination";
 
 const Employees = () => {
   const [modalOpen, setModalOpen] = useState(false);
@@ -195,6 +196,13 @@ const Employees = () => {
           </Card>
         ))}
       </div>
+
+      <BasePagination
+        page={page}
+        totalPages={totalPages}
+        pageSize={pageSize}
+        onPageChange={setPage}
+      />
 
       <EmployeeFormModal
         open={modalOpen}
