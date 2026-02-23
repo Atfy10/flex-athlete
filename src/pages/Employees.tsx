@@ -15,16 +15,29 @@ import {
   MapPin,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { apiFetch } from "@/lib/api";
 import { EmployeeFormModal } from "@/components/modals/EmployeeFormModal";
-import { EmployeeCardDto } from "@/types/EmployeeCardDto";
-import { ApiResult, PagedData } from "@/types/api";
 import { useEntitySearch } from "@/hooks/useEntitySearch";
-import { listEmployees, searchEmployees } from "@/services/employees.service";
+import {
+  listEmployees,
+  searchEmployees,
+  getActiveEmployees,
+  getBranchsCount,
+  getTotalEmployees,
+} from "@/services/employees.service";
 import { BasePagination } from "@/components/BasePagination";
 
+interface EmployeesStats {
+  totalEmployees: number;
+  activeEmployees: number;
+  departments: number;
+}
 const Employees = () => {
   const [modalOpen, setModalOpen] = useState(false);
+  const [stats, setStats] = useState<EmployeesStats>({
+    totalEmployees: 0,
+    activeEmployees: 0,
+    departments: 0,
+  });
 
   const pageSize = 9;
 
@@ -43,6 +56,49 @@ const Employees = () => {
   const handleRefresh = () => {
     setPage(1);
   };
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchStats = async () => {
+      try {
+        const results = await Promise.allSettled([
+          getTotalEmployees(),
+          getActiveEmployees(),
+          getBranchsCount(),
+        ]);
+
+        if (!active) return;
+
+        const [totalRes, activeRes, branchRes] = results;
+
+        setStats({
+          totalEmployees:
+            totalRes.status === "fulfilled" && totalRes.value?.isSuccess
+              ? totalRes.value.data
+              : 0,
+
+          activeEmployees:
+            activeRes.status === "fulfilled" && activeRes.value?.isSuccess
+              ? activeRes.value.data
+              : 0,
+
+          departments:
+            branchRes.status === "fulfilled" && branchRes.value?.isSuccess
+              ? branchRes.value.data
+              : 0,
+        });
+      } catch (err) {
+        console.error("Dashboard stats error", err);
+      }
+    };
+
+    fetchStats();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const {
     items: employees,
@@ -87,7 +143,7 @@ const Employees = () => {
             <Users className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">24</div>
+            <div className="text-2xl font-bold">{stats.totalEmployees}</div>
             <p className="text-xs text-muted-foreground">+2 from last month</p>
           </CardContent>
         </Card>
@@ -98,18 +154,18 @@ const Employees = () => {
             <UserCheck className="h-4 w-4 text-success" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">22</div>
+            <div className="text-2xl font-bold">{stats.activeEmployees}</div>
             <p className="text-xs text-muted-foreground">91.7% active rate</p>
           </CardContent>
         </Card>
 
         <Card className="card-athletic">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Departments</CardTitle>
+            <CardTitle className="text-sm font-medium">Branches</CardTitle>
             <MapPin className="h-4 w-4 text-secondary" />
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold">6</div>
+            <div className="text-2xl font-bold">{stats.departments}</div>
             <p className="text-xs text-muted-foreground">Across all branches</p>
           </CardContent>
         </Card>

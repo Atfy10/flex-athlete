@@ -14,6 +14,26 @@ export const searchEmployees = (
   pageSize: number,
 ) => {
   return apiFetch<ApiResult<PagedData<EmployeeCardDto>>>(
-    `/api/employee/search?term=${encodeURIComponent(term)}&page=${page}&pageSize=${pageSize}`,
+    `/api/employee/search?searchTerm=${encodeURIComponent(term)}&page=${page}&pageSize=${pageSize}`,
   );
+};
+
+// Total Employees
+export const getTotalEmployees = () => {
+  return apiFetch<ApiResult<number>>("/api/employee/count");
+};
+
+// Active Employees Count
+export const getActiveEmployees = () => {
+  return apiFetch<ApiResult<number>>("/api/employee/active/count");
+};
+
+// Branchs Count
+export const getBranchsCount = () => {
+  return apiFetch<ApiResult<number>>("/api/branch/count");
+};
+
+// Active Coaches Count
+export const getActiveCoachesCount = () => {
+  return apiFetch<ApiResult<number>>("/api/Employee/coaches/active/count");
 };

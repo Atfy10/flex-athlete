@@ -34,6 +34,7 @@ import { SportDto } from "@/types/SportDto";
 import { ListTraineeGroupDto } from "@/types/listTraineeGroup";
 import { mapSessions, getSessionsCount, SessionVm } from "@/lib/mappers";
 import { apiFetch } from "@/lib/api";
+import { getActiveCoachesCount } from "@/services/employees.service";
 
 const statsData = [
   {
@@ -182,7 +183,7 @@ export default function Dashboard() {
           apiFetch<ApiResult<PagedData<ListTraineeGroupDto>>>(
             `/api/TraineeGroup/get-all-for-specific-day?date=${todayIso()}&page=${page}&pageSize=${pageSize}`,
           ),
-          apiFetch<ApiResult<number>>("/api/Employee/get-active-coaches-count"),
+          getActiveCoachesCount(),
           apiFetch<ApiResult<number>>("/api/Attendance/rate"),
           apiFetch<ApiResult<number>>(
             `/api/Trainee/get-count-for-specific-day?date=${todayIso()}`,
