@@ -182,9 +182,7 @@ export default function Dashboard() {
           apiFetch<ApiResult<PagedData<ListTraineeGroupDto>>>(
             `/api/TraineeGroup/get-all-for-specific-day?date=${todayIso()}&page=${page}&pageSize=${pageSize}`,
           ),
-          apiFetch<ApiResult<number>>(
-            "/api/Emplopyee/get-active-coaches-count",
-          ),
+          apiFetch<ApiResult<number>>("/api/Employee/get-active-coaches-count"),
           apiFetch<ApiResult<number>>("/api/Attendance/rate"),
           apiFetch<ApiResult<number>>(
             `/api/Trainee/get-count-for-specific-day?date=${todayIso()}`,

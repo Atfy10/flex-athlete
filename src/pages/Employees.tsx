@@ -1,89 +1,137 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Users, 
-  UserCheck, 
-  Plus, 
-  Search, 
+import {
+  Users,
+  UserCheck,
+  Plus,
+  Search,
   Filter,
   Phone,
   Mail,
   Calendar,
-  MapPin
+  MapPin,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { apiFetch } from "@/lib/api";
 import { EmployeeFormModal } from "@/components/modals/EmployeeFormModal";
+import { EmployeeCardDto } from "@/types/EmployeeCardDto";
+import { ApiResult, PagedData } from "@/types/api";
+import { useEntitySearch } from "@/hooks/useEntitySearch";
+import { listEmployees, searchEmployees } from "@/services/employees.service";
 
 const Employees = () => {
   const [searchTerm, setSearchTerm] = useState("");
+  const [debouncedTerm, setDebouncedTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
+  const [employees, setEmployees] = useState<EmployeeCardDto[]>([]);
+  const [loading, setLoading] = useState(false);
+  const [pageNumber, setPageNumber] = useState(1);
+  const [totalPages, setTotalPages] = useState(1);
 
-  // Mock employee data
-  const employees = [
-    {
-      id: 1,
-      name: "Sarah Johnson",
-      email: "sarah.johnson@academy.com",
-      phone: "+1 234 567 8901",
-      department: "Administration",
-      position: "Manager",
-      branch: "Main Campus",
-      joinDate: "2023-01-15",
-      status: "Active",
-      avatar: "/api/placeholder/40/40"
-    },
-    {
-      id: 2,
-      name: "Mike Rodriguez",
-      email: "mike.rodriguez@academy.com", 
-      phone: "+1 234 567 8902",
-      department: "Maintenance",
-      position: "Facility Manager",
-      branch: "Downtown",
-      joinDate: "2022-08-20",
-      status: "Active",
-      avatar: "/api/placeholder/40/40"
-    },
-    {
-      id: 3,
-      name: "Emily Chen",
-      email: "emily.chen@academy.com",
-      phone: "+1 234 567 8903", 
-      department: "Reception",
-      position: "Front Desk",
-      branch: "Main Campus",
-      joinDate: "2023-03-10",
-      status: "Active",
-      avatar: "/api/placeholder/40/40"
-    }
-  ];
+  const pageSize = 9;
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Active": return "bg-success text-success-foreground";
-      case "Inactive": return "bg-muted text-muted-foreground";
-      default: return "bg-muted text-muted-foreground";
-    }
-  };
+  const getStatusColor = (isWork: boolean) =>
+    isWork
+      ? "bg-success text-success-foreground"
+      : "bg-muted text-muted-foreground";
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  };
+  const getInitials = (name: string) =>
+    name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase();
 
   const handleRefresh = () => {
-    // Will refetch when backend is connected
+    setPageNumber(1);
   };
+
+  // Debounce (مرة واحدة فقط)
+  useEffect(() => {
+    const id = setTimeout(() => {
+      setDebouncedTerm(searchTerm.trim());
+    }, 400);
+
+    return () => clearTimeout(id);
+  }, [searchTerm]);
+
+  // Reset page when search changes
+  useEffect(() => {
+    setPageNumber(1);
+  }, [debouncedTerm]);
+
+  // Fetch logic
+  useEffect(() => {
+    let cancelled = false;
+
+    const fetchEmployees = async () => {
+      // لو حرف واحد بس → لا نعمل call
+      if (debouncedTerm.length === 1) return;
+
+      setLoading(true);
+
+      try {
+        const isSearch = debouncedTerm.length >= 3;
+
+        const url = isSearch
+          ? `/api/employee/search?term=${encodeURIComponent(
+              debouncedTerm,
+            )}&page=${pageNumber}&pageSize=${pageSize}`
+          : `/api/employee?page=${pageNumber}&pageSize=${pageSize}`;
+
+        const result =
+          await apiFetch<ApiResult<PagedData<EmployeeCardDto>>>(url);
+
+        if (cancelled) return;
+
+        if (!result?.isSuccess || !result.data) {
+          setEmployees([]);
+          setTotalPages(1);
+          return;
+        }
+
+        const paged = result.data;
+
+        setEmployees(paged.items ?? []);
+
+        const computedTotalPages =
+          paged.totalCount > 0
+            ? Math.ceil(paged.totalCount / paged.pageSize)
+            : 1;
+
+        setTotalPages(computedTotalPages);
+      } catch (err) {
+        if (!cancelled) {
+          console.error("Error fetching employees", err);
+          setEmployees([]);
+          setTotalPages(1);
+        }
+      } finally {
+        if (!cancelled) setLoading(false);
+      }
+    };
+
+    fetchEmployees();
+
+    return () => {
+      cancelled = true;
+    };
+  }, [debouncedTerm, pageNumber]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gradient">Employee Management</h1>
-          <p className="text-muted-foreground">Manage academy staff and personnel</p>
+          <h1 className="text-3xl font-bold text-gradient">
+            Employee Management
+          </h1>
+          <p className="text-muted-foreground">
+            Manage academy staff and personnel
+          </p>
         </div>
         <Button className="btn-hero" onClick={() => setModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
@@ -95,7 +143,9 @@ const Employees = () => {
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="card-athletic">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Employees</CardTitle>
+            <CardTitle className="text-sm font-medium">
+              Total Employees
+            </CardTitle>
             <Users className="h-4 w-4 text-primary" />
           </CardHeader>
           <CardContent>
@@ -155,17 +205,20 @@ const Employees = () => {
             <CardContent className="p-6">
               <div className="flex items-center gap-4 mb-4">
                 <Avatar className="h-12 w-12">
-                  <AvatarImage src={employee.avatar} alt={employee.name} />
                   <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                    {getInitials(employee.name)}
+                    {getInitials(employee.firstName + " " + employee.lastName)}
                   </AvatarFallback>
                 </Avatar>
                 <div className="flex-1 min-w-0">
-                  <h3 className="font-semibold truncate">{employee.name}</h3>
-                  <p className="text-sm text-muted-foreground">{employee.position}</p>
+                  <h3 className="font-semibold truncate">
+                    {employee.firstName} {employee.lastName}
+                  </h3>
+                  <p className="text-sm text-muted-foreground">
+                    {employee.position}
+                  </p>
                 </div>
-                <Badge className={getStatusColor(employee.status)}>
-                  {employee.status}
+                <Badge className={getStatusColor(employee.isWork)}>
+                  {employee.isWork ? "Work" : "Off"}
                 </Badge>
               </div>
 
@@ -176,15 +229,20 @@ const Employees = () => {
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Phone className="h-4 w-4" />
-                  <span>{employee.phone}</span>
+                  <span>{employee.phoneNumber}</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <MapPin className="h-4 w-4" />
-                  <span>{employee.branch} • {employee.department}</span>
+                  <span>{employee.branchName}</span>
                 </div>
                 <div className="flex items-center gap-2 text-muted-foreground">
                   <Calendar className="h-4 w-4" />
-                  <span>Joined {employee.joinDate}</span>
+                  <span>
+                    Joined{" "}
+                    {employee.hireDate instanceof Date
+                      ? employee.hireDate.toLocaleDateString()
+                      : new Date(employee.hireDate).toLocaleDateString()}
+                  </span>
                 </div>
               </div>
 
@@ -201,7 +259,11 @@ const Employees = () => {
         ))}
       </div>
 
-      <EmployeeFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={handleRefresh} />
+      <EmployeeFormModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onSuccess={handleRefresh}
+      />
     </div>
   );
 };
