@@ -10,6 +10,9 @@ import { ScrollToTop } from "./components/ScrollToTop";
 import Dashboard from "./pages/Dashboard";
 import Trainees from "./pages/Trainees";
 import Coaches from "./pages/Coaches";
+import EmployeeProfile from "./pages/EmployeeProfile";
+import CoachProfile from "./pages/CoachProfile";
+import TraineeProfile from "./pages/TraineeProfile";
 import TraineeGroups from "./pages/TraineeGroups";
 import SessionOccurrences from "./pages/SessionOccurrences";
 import Employees from "./pages/Employees";
@@ -46,8 +49,12 @@ const App = () => (
                   <AppLayout>
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
-                      <Route path="/trainees" element={<Trainees />} />
+                      <Route path="/employees" element={<Employees />} />
+                      <Route path="/employees/:id" element={<EmployeeProfile />} />
                       <Route path="/coaches" element={<Coaches />} />
+                      <Route path="/coaches/:id" element={<CoachProfile />} />
+                      <Route path="/trainees" element={<Trainees />} />
+                      <Route path="/trainees/:id" element={<TraineeProfile />} />
                       <Route
                         path="/trainee-groups"
                         element={<TraineeGroups />}
@@ -56,7 +63,6 @@ const App = () => (
                         path="/session-occurrences"
                         element={<SessionOccurrences />}
                       />
-                      <Route path="/employees" element={<Employees />} />
                       <Route path="/branches" element={<Branches />} />
                       <Route path="/sports" element={<Sports />} />
                       <Route path="/enrollments" element={<Enrollments />} />

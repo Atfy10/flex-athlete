@@ -1,10 +1,10 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Filter, MoreHorizontal, Phone, Mail, MapPin, Calendar, Trophy, TrendingUp } from "lucide-react";
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+import { Search, Plus, Filter, Phone, Mail, MapPin, Calendar, Trophy, TrendingUp } from "lucide-react";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { TraineeFormModal } from "@/components/modals/TraineeFormModal";
 import { useClientPagination } from "@/hooks/useClientPagination";
@@ -26,6 +26,7 @@ const stats = [
 ];
 
 export default function Trainees() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -112,17 +113,14 @@ export default function Trainees() {
                     <TableCell><div className="flex items-center gap-2"><div className="text-sm font-medium">{trainee.attendanceRate}%</div><div className="w-16 bg-muted rounded-full h-2"><div className="bg-primary h-2 rounded-full" style={{ width: `${trainee.attendanceRate}%` }}></div></div></div></TableCell>
                     <TableCell><Badge className={getStatusColor(trainee.status)}>{trainee.status}</Badge></TableCell>
                     <TableCell className="text-right">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild><Button variant="ghost" className="h-8 w-8 p-0"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem>View Profile</DropdownMenuItem>
-                          <DropdownMenuItem>Edit Details</DropdownMenuItem>
-                          <DropdownMenuItem>View Attendance</DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem className="text-destructive">Remove Trainee</DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <Button
+                        variant="ghost"
+                        size="sm"
+                        onClick={() => navigate(`/trainees/${trainee.id}`)}
+                        className="text-primary hover:text-primary/80"
+                      >
+                        View Profile
+                      </Button>
                     </TableCell>
                   </TableRow>
                 ))}
