@@ -7,6 +7,7 @@ import { apiFetch } from "@/lib/api";
 import { ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { ApiResult } from "@/types/api";
 
 interface EmployeeFormModalProps {
   open: boolean;
@@ -14,7 +15,11 @@ interface EmployeeFormModalProps {
   onSuccess: () => void;
 }
 
-export function EmployeeFormModal({ open, onOpenChange, onSuccess }: EmployeeFormModalProps) {
+export function EmployeeFormModal({
+  open,
+  onOpenChange,
+  onSuccess,
+}: EmployeeFormModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -41,14 +46,29 @@ export function EmployeeFormModal({ open, onOpenChange, onSuccess }: EmployeeFor
     if (!open) return;
     setErrors([]);
     setForm({
-      firstName: "", lastName: "", ssn: "", salary: "", gender: "",
-      birthDate: undefined, email: "", nationality: "", street: "",
-      city: "", phoneNumber: "", secondNumber: "", position: "", branchId: "",
+      firstName: "",
+      lastName: "",
+      ssn: "",
+      salary: "",
+      gender: "",
+      birthDate: undefined,
+      email: "",
+      nationality: "",
+      street: "",
+      city: "",
+      phoneNumber: "",
+      secondNumber: "",
+      position: "",
+      branchId: "",
     });
-    apiFetch<{ data: { id: number; name: string }[]; isSuccess: boolean }>("/api/Branch/get-all")
+    apiFetch<{ data: { id: number; name: string }[]; isSuccess: boolean }>(
+      "/api/Branch",
+    )
       .then((res) => {
         if (res.isSuccess) {
-          setBranches(res.data.map((b) => ({ value: String(b.id), label: b.name })));
+          setBranches(
+            res.data.map((b) => ({ value: String(b.id), label: b.name })),
+          );
         }
       })
       .catch(() => {});
@@ -62,7 +82,7 @@ export function EmployeeFormModal({ open, onOpenChange, onSuccess }: EmployeeFor
     setErrors([]);
     setLoading(true);
     try {
-      await apiFetch("/api/Emplopyee/create", {
+      const result = await apiFetch<ApiResult<number>>("/api/Employee", {
         method: "POST",
         body: JSON.stringify({
           firstName: form.firstName,
@@ -70,7 +90,9 @@ export function EmployeeFormModal({ open, onOpenChange, onSuccess }: EmployeeFor
           ssn: form.ssn,
           salary: Number(form.salary),
           gender: form.gender,
-          birthDate: form.birthDate ? format(form.birthDate, "yyyy-MM-dd") : null,
+          birthDate: form.birthDate
+            ? format(form.birthDate, "yyyy-MM-dd")
+            : null,
           email: form.email,
           nationality: form.nationality,
           street: form.street,
@@ -81,6 +103,13 @@ export function EmployeeFormModal({ open, onOpenChange, onSuccess }: EmployeeFor
           branchId: Number(form.branchId),
         }),
       });
+
+      if (!result.isSuccess) {
+        throw new ApiError(result.statusCode, {
+          message: result.message || "Failed to create employee.",
+        });
+      }
+
       toast({ title: "Employee created successfully" });
       onSuccess();
       onOpenChange(false);
@@ -106,34 +135,118 @@ export function EmployeeFormModal({ open, onOpenChange, onSuccess }: EmployeeFor
       errors={errors}
     >
       <div className="grid grid-cols-2 gap-3">
-        <FormInput id="firstName" label="First Name" value={form.firstName} onChange={set("firstName")} required />
-        <FormInput id="lastName" label="Last Name" value={form.lastName} onChange={set("lastName")} required />
+        <FormInput
+          id="firstName"
+          label="First Name"
+          value={form.firstName}
+          onChange={set("firstName")}
+          required
+        />
+        <FormInput
+          id="lastName"
+          label="Last Name"
+          value={form.lastName}
+          onChange={set("lastName")}
+          required
+        />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <FormInput id="ssn" label="SSN" value={form.ssn} onChange={set("ssn")} required />
-        <FormInput id="salary" label="Salary" value={form.salary} onChange={set("salary")} type="number" min={0} required />
+        <FormInput
+          id="ssn"
+          label="SSN"
+          value={form.ssn}
+          onChange={set("ssn")}
+          required
+        />
+        <FormInput
+          id="salary"
+          label="Salary"
+          value={form.salary}
+          onChange={set("salary")}
+          type="number"
+          min={0}
+          required
+        />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <FormSelect id="gender" label="Gender" value={form.gender} onChange={set("gender")} required options={[
-          { value: "Male", label: "Male" },
-          { value: "Female", label: "Female" },
-        ]} />
-        <FormDatePicker id="birthDate" label="Birth Date" value={form.birthDate} onChange={(d) => setForm((f) => ({ ...f, birthDate: d }))} required />
+        <FormSelect
+          id="gender"
+          label="Gender"
+          value={form.gender}
+          onChange={set("gender")}
+          required
+          options={[
+            { value: "Male", label: "Male" },
+            { value: "Female", label: "Female" },
+          ]}
+        />
+        <FormDatePicker
+          id="birthDate"
+          label="Birth Date"
+          value={form.birthDate}
+          onChange={(d) => setForm((f) => ({ ...f, birthDate: d }))}
+          required
+        />
       </div>
-      <FormInput id="email" label="Email" value={form.email} onChange={set("email")} type="email" />
+      <FormInput
+        id="email"
+        label="Email"
+        value={form.email}
+        onChange={set("email")}
+        type="email"
+      />
       <div className="grid grid-cols-2 gap-3">
-        <FormInput id="nationality" label="Nationality" value={form.nationality} onChange={set("nationality")} />
-        <FormInput id="position" label="Position" value={form.position} onChange={set("position")} />
+        <FormInput
+          id="nationality"
+          label="Nationality"
+          value={form.nationality}
+          onChange={set("nationality")}
+        />
+        <FormInput
+          id="position"
+          label="Position"
+          value={form.position}
+          onChange={set("position")}
+        />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <FormInput id="street" label="Street" value={form.street} onChange={set("street")} />
-        <FormInput id="city" label="City" value={form.city} onChange={set("city")} />
+        <FormInput
+          id="street"
+          label="Street"
+          value={form.street}
+          onChange={set("street")}
+        />
+        <FormInput
+          id="city"
+          label="City"
+          value={form.city}
+          onChange={set("city")}
+        />
       </div>
       <div className="grid grid-cols-2 gap-3">
-        <FormInput id="phoneNumber" label="Phone Number" value={form.phoneNumber} onChange={set("phoneNumber")} required />
-        <FormInput id="secondNumber" label="Second Number" value={form.secondNumber} onChange={set("secondNumber")} />
+        <FormInput
+          id="phoneNumber"
+          label="Phone Number"
+          value={form.phoneNumber}
+          onChange={set("phoneNumber")}
+          required
+        />
+        <FormInput
+          id="secondNumber"
+          label="Second Number"
+          value={form.secondNumber}
+          onChange={set("secondNumber")}
+        />
       </div>
-      <FormSelect id="branchId" label="Branch" value={form.branchId} onChange={set("branchId")} options={branches} required placeholder="Select branch" />
+      <FormSelect
+        id="branchId"
+        label="Branch"
+        value={form.branchId}
+        onChange={set("branchId")}
+        options={branches}
+        required
+        placeholder="Select branch"
+      />
     </BaseModal>
   );
 }

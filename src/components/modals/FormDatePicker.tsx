@@ -43,7 +43,7 @@ export function FormDatePicker({
             className={cn(
               "w-full justify-start text-left font-normal",
               !value && "text-muted-foreground",
-              error && "border-destructive"
+              error && "border-destructive",
             )}
           >
             <CalendarIcon className="mr-2 h-4 w-4" />
@@ -55,8 +55,12 @@ export function FormDatePicker({
             mode="single"
             selected={value}
             onSelect={onChange}
+            captionLayout="dropdown"
+            fromYear={1950}
+            toYear={new Date().getFullYear()}
+            disabled={(date) => date > new Date()}
             initialFocus
-            className={cn("p-3 pointer-events-auto")}
+            className="p-3 pointer-events-auto"
           />
         </PopoverContent>
       </Popover>
