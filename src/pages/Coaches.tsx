@@ -1,11 +1,12 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { 
-  Search, Plus, Filter, MoreHorizontal, Phone, Mail, MapPin, Star, Trophy, Users, Calendar, Award
+  Search, Plus, Filter, MoreHorizontal, Phone, Mail, MapPin, Star, Trophy, Users, Calendar, Award, Eye
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger,
@@ -30,6 +31,7 @@ const stats = [
 ];
 
 export default function Coaches() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -151,7 +153,9 @@ export default function Coaches() {
                 <div className="flex flex-wrap gap-1">{coach.certifications.map((cert, index) => (<Badge key={index} variant="secondary" className="text-xs">{cert}</Badge>))}</div>
               </div>
               <div className="flex gap-2 pt-2">
-                <Button variant="default" size="sm" className="flex-1">View Profile</Button>
+                <Button variant="default" size="sm" className="flex-1" onClick={() => navigate(`/coaches/${coach.id}`)}>
+                  <Eye className="h-3.5 w-3.5 mr-1.5" />View Profile
+                </Button>
                 <Button variant="outline" size="sm" className="flex-1">Schedule</Button>
               </div>
             </CardContent>

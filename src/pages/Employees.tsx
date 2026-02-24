@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -13,6 +14,7 @@ import {
   Mail,
   Calendar,
   MapPin,
+  Eye,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { EmployeeFormModal } from "@/components/modals/EmployeeFormModal";
@@ -32,6 +34,7 @@ interface EmployeesStats {
   departments: number;
 }
 const Employees = () => {
+  const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
   const [stats, setStats] = useState<EmployeesStats>({
     totalEmployees: 0,
@@ -241,11 +244,14 @@ const Employees = () => {
               </div>
 
               <div className="flex gap-2 mt-4">
-                <Button variant="outline" size="sm" className="flex-1">
-                  Edit
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  View
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => navigate(`/employees/${employee.id}`)}
+                >
+                  <Eye className="h-3.5 w-3.5 mr-1.5" />
+                  View Profile
                 </Button>
               </div>
             </CardContent>
