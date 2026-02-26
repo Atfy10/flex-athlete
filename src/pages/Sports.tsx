@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Users, Plus, Search, Filter, Clock, DollarSign, Target, Star } from "lucide-react";
+import { Trophy, Users, Plus, Search, Filter, Clock, DollarSign, Target, Star, Eye } from "lucide-react";
 import { SportsFormModal } from "@/components/modals/SportsFormModal";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { BasePagination } from "@/components/BasePagination";
@@ -16,6 +17,7 @@ const allSports = [
 ];
 
 const Sports = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -161,8 +163,15 @@ const Sports = () => {
                 <div className="flex flex-wrap gap-1">{sport.branches.map((branch) => (<Badge key={branch} className="text-xs bg-primary/10 text-primary">{branch}</Badge>))}</div>
               </div>
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">Edit</Button>
-                <Button variant="outline" size="sm" className="flex-1">View Sessions</Button>
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => navigate(`/sports/${sport.id}`)}
+                >
+                  <Eye className="h-3.5 w-3.5 mr-1.5" />
+                  View Details
+                </Button>
               </div>
             </CardContent>
           </Card>

@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Building, Plus, Search, Filter, Phone, Mail, Users, Trophy } from "lucide-react";
+import { MapPin, Building, Plus, Search, Filter, Phone, Mail, Users, Trophy, Eye } from "lucide-react";
 import { BranchFormModal } from "@/components/modals/BranchFormModal";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { BasePagination } from "@/components/BasePagination";
@@ -51,6 +52,7 @@ const allBranches = [
 ];
 
 const Branches = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -235,10 +237,13 @@ const Branches = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  Edit
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => navigate(`/branches/${branch.id}`)}
+                >
+                  <Eye className="h-3.5 w-3.5 mr-1.5" />
                   View Details
                 </Button>
               </div>
