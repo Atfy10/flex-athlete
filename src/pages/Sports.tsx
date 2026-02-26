@@ -4,7 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Users, Plus, Search, Filter, Clock, DollarSign, Target, Star } from "lucide-react";
+import { Trophy, Users, Plus, Search, Filter, Clock, DollarSign, Target, Star, Eye } from "lucide-react";
 import { SportsFormModal } from "@/components/modals/SportsFormModal";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { BasePagination } from "@/components/BasePagination";
