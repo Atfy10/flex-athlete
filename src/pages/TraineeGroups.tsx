@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Users, Calendar, Play, MoreHorizontal, Clock, MapPin, Trophy } from "lucide-react";
+import { Search, Plus, Users, Calendar, Play, MoreHorizontal, Clock, MapPin, Trophy, Eye } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TraineeGroupFormModal } from "@/components/modals/TraineeGroupFormModal";
 import { GenerateSessionsModal } from "@/components/modals/GenerateSessionsModal";
