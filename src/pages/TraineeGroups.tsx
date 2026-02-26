@@ -37,6 +37,7 @@ const getStatusColor = (status: string) => {
 };
 
 export default function TraineeGroups() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
@@ -133,7 +134,10 @@ export default function TraineeGroups() {
                   <Play className="h-4 w-4 mr-1" />
                   Generate Sessions
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">View Details</Button>
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/trainee-groups/${group.id}`)}>
+                  <Eye className="h-3.5 w-3.5 mr-1.5" />
+                  View Details
+                </Button>
               </div>
             </CardContent>
           </Card>
