@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Building, Plus, Search, Filter, Phone, Mail, Users, Trophy } from "lucide-react";
+import { MapPin, Building, Plus, Search, Filter, Phone, Mail, Users, Trophy, Eye } from "lucide-react";
 import { BranchFormModal } from "@/components/modals/BranchFormModal";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { BasePagination } from "@/components/BasePagination";
