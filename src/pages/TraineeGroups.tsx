@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Search, Plus, Users, Calendar, Play, MoreHorizontal, Clock, MapPin, Trophy } from "lucide-react";
+import { Search, Plus, Users, Calendar, Play, MoreHorizontal, Clock, MapPin, Trophy, Eye } from "lucide-react";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuLabel, DropdownMenuSeparator, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
 import { TraineeGroupFormModal } from "@/components/modals/TraineeGroupFormModal";
 import { GenerateSessionsModal } from "@/components/modals/GenerateSessionsModal";
@@ -36,6 +37,7 @@ const getStatusColor = (status: string) => {
 };
 
 export default function TraineeGroups() {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [createOpen, setCreateOpen] = useState(false);
   const [generateOpen, setGenerateOpen] = useState(false);
@@ -132,7 +134,10 @@ export default function TraineeGroups() {
                   <Play className="h-4 w-4 mr-1" />
                   Generate Sessions
                 </Button>
-                <Button variant="outline" size="sm" className="flex-1">View Details</Button>
+                <Button variant="outline" size="sm" className="flex-1" onClick={() => navigate(`/trainee-groups/${group.id}`)}>
+                  <Eye className="h-3.5 w-3.5 mr-1.5" />
+                  View Details
+                </Button>
               </div>
             </CardContent>
           </Card>
