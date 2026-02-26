@@ -52,6 +52,7 @@ const allBranches = [
 ];
 
 const Branches = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -236,10 +237,13 @@ const Branches = () => {
               </div>
 
               <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  Edit
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => navigate(`/branches/${branch.id}`)}
+                >
+                  <Eye className="h-3.5 w-3.5 mr-1.5" />
                   View Details
                 </Button>
               </div>
