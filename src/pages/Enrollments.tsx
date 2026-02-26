@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Users, Plus, Search, Filter, Calendar, DollarSign, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { UserPlus, Users, Plus, Search, Filter, Calendar, DollarSign, CheckCircle, Clock, AlertCircle, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EnrollmentFormModal } from "@/components/modals/EnrollmentFormModal";
 import { useClientPagination } from "@/hooks/useClientPagination";
