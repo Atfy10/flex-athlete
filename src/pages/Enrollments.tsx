@@ -17,6 +17,7 @@ const allEnrollments = [
 ];
 
 const Enrollments = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
