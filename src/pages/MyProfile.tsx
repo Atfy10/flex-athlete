@@ -211,6 +211,7 @@ export default function MyProfile() {
         errors={pwErrors}
       >
         <FormInput
+          id="currentPassword"
           label="Current Password"
           type="password"
           value={pwForm.currentPassword}
@@ -218,6 +219,7 @@ export default function MyProfile() {
           required
         />
         <FormInput
+          id="newPassword"
           label="New Password"
           type="password"
           value={pwForm.newPassword}
@@ -225,6 +227,7 @@ export default function MyProfile() {
           required
         />
         <FormInput
+          id="confirmPassword"
           label="Confirm New Password"
           type="password"
           value={pwForm.confirmPassword}
