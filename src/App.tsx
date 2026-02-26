@@ -13,6 +13,11 @@ import Coaches from "./pages/Coaches";
 import EmployeeProfile from "./pages/EmployeeProfile";
 import CoachProfile from "./pages/CoachProfile";
 import TraineeProfile from "./pages/TraineeProfile";
+import BranchProfile from "./pages/BranchProfile";
+import SportProfile from "./pages/SportProfile";
+import TraineeGroupProfile from "./pages/TraineeGroupProfile";
+import EnrollmentProfile from "./pages/EnrollmentProfile";
+import MyProfile from "./pages/MyProfile";
 import TraineeGroups from "./pages/TraineeGroups";
 import SessionOccurrences from "./pages/SessionOccurrences";
 import Employees from "./pages/Employees";
@@ -49,12 +54,17 @@ const App = () => (
                   <AppLayout>
                     <Routes>
                       <Route path="/" element={<Dashboard />} />
+                      <Route path="/my-profile" element={<MyProfile />} />
                       <Route path="/employees" element={<Employees />} />
                       <Route path="/employees/:id" element={<EmployeeProfile />} />
                       <Route path="/coaches" element={<Coaches />} />
                       <Route path="/coaches/:id" element={<CoachProfile />} />
                       <Route path="/trainees" element={<Trainees />} />
                       <Route path="/trainees/:id" element={<TraineeProfile />} />
+                      <Route path="/branches/:id" element={<BranchProfile />} />
+                      <Route path="/sports/:id" element={<SportProfile />} />
+                      <Route path="/trainee-groups/:id" element={<TraineeGroupProfile />} />
+                      <Route path="/enrollments/:id" element={<EnrollmentProfile />} />
                       <Route
                         path="/trainee-groups"
                         element={<TraineeGroups />}

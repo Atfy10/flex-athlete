@@ -1,9 +1,10 @@
 import { useState, useMemo } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { UserPlus, Users, Plus, Search, Filter, Calendar, DollarSign, CheckCircle, Clock, AlertCircle } from "lucide-react";
+import { UserPlus, Users, Plus, Search, Filter, Calendar, DollarSign, CheckCircle, Clock, AlertCircle, Eye } from "lucide-react";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import { EnrollmentFormModal } from "@/components/modals/EnrollmentFormModal";
 import { useClientPagination } from "@/hooks/useClientPagination";
@@ -16,6 +17,7 @@ const allEnrollments = [
 ];
 
 const Enrollments = () => {
+  const navigate = useNavigate();
   const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
@@ -106,8 +108,15 @@ const Enrollments = () => {
                   <div className="flex items-center gap-2 text-sm"><DollarSign className="h-4 w-4 text-muted-foreground" /><span className="font-medium">${enrollment.monthlyFee}/month</span></div>
                   <div className="flex items-center gap-2 text-xs text-muted-foreground"><Calendar className="h-3 w-3" /><span>{enrollment.startDate} - {enrollment.endDate}</span></div>
                   <div className="flex gap-2 mt-2">
-                    <Button variant="outline" size="sm" className="flex-1">Edit</Button>
-                    <Button variant="outline" size="sm" className="flex-1">View</Button>
+                    <Button
+                      variant="default"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => navigate(`/enrollments/${enrollment.id}`)}
+                    >
+                      <Eye className="h-3.5 w-3.5 mr-1.5" />
+                      View Details
+                    </Button>
                   </div>
                 </div>
               </div>
