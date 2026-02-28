@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch, ApiError } from "@/lib/api";
 import { ApiResult } from "@/types/api";
 import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
-import { TraineeFormModal } from "@/components/modals/TraineeFormModal";
+import { TraineeEditModal } from "@/components/modals/TraineeEditModal";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Mail, Phone, MapPin, Calendar, Users, Shield, TrendingUp } from "lucide-react";
