@@ -35,6 +35,7 @@ export default function SportProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [skillLevelOpen, setSkillLevelOpen] = useState(false);
 
   const fetchSport = async () => {
     if (!id) return;
@@ -177,13 +178,36 @@ export default function SportProfile() {
         backPath="/sports"
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
+        extraActions={undefined}
         editModal={
-          <SportsFormModal
-            open={editOpen}
-            onOpenChange={setEditOpen}
-            onSuccess={() => { setEditOpen(false); fetchSport(); }}
-          />
+          <>
+            <SportEditModal
+              open={editOpen}
+              onOpenChange={setEditOpen}
+              onSuccess={() => { setEditOpen(false); fetchSport(); }}
+              sport={sport ? {
+                id: sport.id,
+                name: sport.name,
+                description: sport.description,
+                category: sport.category,
+                isRequireHealthTest: sport.isRequireHealthTest,
+              } : null}
+            />
+            <AddSkillLevelModal
+              open={skillLevelOpen}
+              onOpenChange={setSkillLevelOpen}
+              onSuccess={() => { setSkillLevelOpen(false); fetchSport(); }}
+              sportId={id ?? ""}
+            />
+          </>
         }
+        dropdownExtra={[
+          {
+            label: "Add Skill Level",
+            icon: <Layers className="h-3.5 w-3.5" />,
+            onClick: () => setSkillLevelOpen(true),
+          },
+        ]}
       />
     </>
   );
