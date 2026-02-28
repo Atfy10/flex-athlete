@@ -4,7 +4,7 @@ import { apiFetch, ApiError } from "@/lib/api";
 import { ApiResult } from "@/types/api";
 import { EmployeeCardDto } from "@/types/EmployeeCardDto";
 import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
-import { EmployeeFormModal } from "@/components/modals/EmployeeFormModal";
+import { EmployeeEditModal } from "@/components/modals/EmployeeEditModal";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -112,10 +112,19 @@ export default function EmployeeProfile() {
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
         editModal={
-          <EmployeeFormModal
+          <EmployeeEditModal
             open={editOpen}
             onOpenChange={setEditOpen}
             onSuccess={() => { setEditOpen(false); fetchEmployee(); }}
+            employee={employee ? {
+              id: employee.id,
+              firstName: employee.firstName,
+              lastName: employee.lastName,
+              email: employee.email,
+              phoneNumber: employee.phoneNumber,
+              position: employee.position,
+              branchName: employee.branchName,
+            } : null}
           />
         }
       />

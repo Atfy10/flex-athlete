@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch, ApiError } from "@/lib/api";
 import { ApiResult } from "@/types/api";
 import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
-import { TraineeFormModal } from "@/components/modals/TraineeFormModal";
+import { TraineeEditModal } from "@/components/modals/TraineeEditModal";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Mail, Phone, MapPin, Calendar, Users, Shield, TrendingUp } from "lucide-react";
@@ -182,10 +182,19 @@ export default function TraineeProfile() {
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
         editModal={
-          <TraineeFormModal
+          <TraineeEditModal
             open={editOpen}
             onOpenChange={setEditOpen}
             onSuccess={() => { setEditOpen(false); fetchTrainee(); }}
+            trainee={trainee ? {
+              id: trainee.id,
+              firstName: trainee.firstName,
+              lastName: trainee.lastName,
+              parentNumber: trainee.parentNumber,
+              guardianName: trainee.guardianName,
+              branchName: trainee.branchName,
+              sports: trainee.sports,
+            } : null}
           />
         }
       />

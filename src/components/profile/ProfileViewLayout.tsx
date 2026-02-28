@@ -53,6 +53,7 @@ export interface ProfileViewLayoutProps {
   toggleLabel?: string;
   editModal?: ReactNode;
   extraActions?: ReactNode;
+  dropdownExtra?: { label: string; icon?: ReactNode; onClick: () => void }[];
 }
 
 function ProfileSkeleton() {
@@ -108,6 +109,7 @@ export function ProfileViewLayout({
   toggleLabel = "Toggle Active",
   editModal,
   extraActions,
+  dropdownExtra = [],
 }: ProfileViewLayoutProps) {
   const navigate = useNavigate();
 
@@ -205,6 +207,12 @@ export function ProfileViewLayout({
                       Edit
                     </DropdownMenuItem>
                   )}
+                  {dropdownExtra.map((item) => (
+                    <DropdownMenuItem key={item.label} onClick={item.onClick} className="gap-2 cursor-pointer">
+                      {item.icon}
+                      {item.label}
+                    </DropdownMenuItem>
+                  ))}
                   {onToggleActive && (
                     <DropdownMenuItem
                       onClick={onToggleActive}

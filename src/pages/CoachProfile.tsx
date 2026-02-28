@@ -3,7 +3,7 @@ import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch, ApiError } from "@/lib/api";
 import { ApiResult } from "@/types/api";
 import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
-import { CoachFormModal } from "@/components/modals/CoachFormModal";
+import { CoachEditModal } from "@/components/modals/CoachEditModal";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { Mail, Phone, MapPin, Star, Trophy, Users, Award, Calendar, Dumbbell } from "lucide-react";
@@ -168,10 +168,17 @@ export default function CoachProfile() {
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
         editModal={
-          <CoachFormModal
+          <CoachEditModal
             open={editOpen}
             onOpenChange={setEditOpen}
             onSuccess={() => { setEditOpen(false); fetchCoach(); }}
+            coach={coach ? {
+              id: coach.id,
+              firstName: coach.firstName,
+              lastName: coach.lastName,
+              sportName: coach.sportName,
+              skillLevel: coach.skillLevel,
+            } : null}
           />
         }
       />
