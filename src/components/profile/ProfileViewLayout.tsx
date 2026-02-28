@@ -207,6 +207,12 @@ export function ProfileViewLayout({
                       Edit
                     </DropdownMenuItem>
                   )}
+                  {dropdownExtra.map((item) => (
+                    <DropdownMenuItem key={item.label} onClick={item.onClick} className="gap-2 cursor-pointer">
+                      {item.icon}
+                      {item.label}
+                    </DropdownMenuItem>
+                  ))}
                   {onToggleActive && (
                     <DropdownMenuItem
                       onClick={onToggleActive}
