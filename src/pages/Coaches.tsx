@@ -311,10 +311,7 @@ export default function Coaches() {
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  <strong>Specialization:</strong> {coach.specialization}
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  <strong>Experience:</strong> {coach.experience}
+                  <strong>Skill Level:</strong> {coach.SkillLevel}
                 </p>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-border">
