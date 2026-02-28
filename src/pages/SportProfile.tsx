@@ -4,7 +4,8 @@ import { ApiResult } from "@/types/api";
 import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { SportsFormModal } from "@/components/modals/SportsFormModal";
+import { SportEditModal } from "@/components/modals/SportEditModal";
+import { AddSkillLevelModal } from "@/components/modals/AddSkillLevelModal";
 import { useEffect, useState } from "react";
 import { Trophy, Users, Clock, DollarSign, Star, MapPin, Tag, Target } from "lucide-react";
 
