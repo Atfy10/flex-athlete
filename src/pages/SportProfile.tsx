@@ -7,7 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { SportEditModal } from "@/components/modals/SportEditModal";
 import { AddSkillLevelModal } from "@/components/modals/AddSkillLevelModal";
 import { useEffect, useState } from "react";
-import { Trophy, Users, Clock, DollarSign, Star, MapPin, Tag, Target } from "lucide-react";
+import { Trophy, Users, Clock, DollarSign, Star, MapPin, Tag, Target, Layers } from "lucide-react";
 
 interface SportDetailDto {
   id: number;
