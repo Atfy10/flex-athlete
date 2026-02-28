@@ -247,7 +247,6 @@ export default function Coaches() {
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-3">
                   <Avatar className="h-12 w-12">
-                    <AvatarImage src={coach.avatar} alt={coach.firstName} />
                     <AvatarFallback className="bg-gradient-primary text-primary-foreground">
                       {getInitials(coach.firstName + " " + coach.lastName)}
                     </AvatarFallback>
