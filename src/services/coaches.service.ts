@@ -4,12 +4,12 @@ import { CoachCardDto } from "@/types/CoachCardDto";
 
 export const listCoaches = (page: number, pageSize: number) => {
   return apiFetch<ApiResult<PagedData<CoachCardDto>>>(
-    `/api/coaches?page=${page}&pageSize=${pageSize}`,
+    `/api/employee/coaches?page=${page}&pageSize=${pageSize}`,
   );
 };
 
 export const searchCoaches = (term: string, page: number, pageSize: number) => {
   return apiFetch<ApiResult<PagedData<CoachCardDto>>>(
-    `/api/coaches/search?term=${encodeURIComponent(term)}&page=${page}&pageSize=${pageSize}`,
+    `/api/employee/coaches/search?term=${encodeURIComponent(term)}&page=${page}&pageSize=${pageSize}`,
   );
 };

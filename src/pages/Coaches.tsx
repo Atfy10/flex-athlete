@@ -29,9 +29,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { CoachFormModal } from "@/components/modals/CoachFormModal";
-import { useClientPagination } from "@/hooks/useClientPagination";
 import { BasePagination } from "@/components/BasePagination";
-
 import { useEntitySearch } from "@/hooks/useEntitySearch";
 import { listCoaches, searchCoaches } from "@/services/coaches.service";
 import { CoachCardDto } from "@/types/CoachCardDto";
@@ -126,7 +124,7 @@ const stats = [
   { title: "Total Trainees", value: "1,247", change: "+48", icon: Award },
 ];
 
-const pageSize = 12;
+const pageSize = 6;
 export default function Coaches() {
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
@@ -142,7 +140,7 @@ export default function Coaches() {
   } = useEntitySearch<CoachCardDto>({
     listFn: listCoaches,
     searchFn: searchCoaches,
-    pageSize: 10,
+    pageSize: pageSize,
     minLength: 2,
   });
 
@@ -303,7 +301,7 @@ export default function Coaches() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="font-medium">
-                    {coach.sport}
+                    {coach.Sport}
                   </Badge>
                   <Badge
                     className={getStatusColor(
@@ -334,13 +332,7 @@ export default function Coaches() {
                 <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
                   Certifications
                 </p>
-                <div className="flex flex-wrap gap-1">
-                  {coach.certifications.map((cert, index) => (
-                    <Badge key={index} variant="secondary" className="text-xs">
-                      {cert}
-                    </Badge>
-                  ))}
-                </div>
+                <div className="flex flex-wrap gap-1"></div>
               </div>
               <div className="flex gap-2 pt-2">
                 <Button
