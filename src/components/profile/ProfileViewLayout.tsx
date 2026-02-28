@@ -53,6 +53,7 @@ export interface ProfileViewLayoutProps {
   toggleLabel?: string;
   editModal?: ReactNode;
   extraActions?: ReactNode;
+  dropdownExtra?: { label: string; icon?: ReactNode; onClick: () => void }[];
 }
 
 function ProfileSkeleton() {
