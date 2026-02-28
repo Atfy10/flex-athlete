@@ -112,10 +112,19 @@ export default function EmployeeProfile() {
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
         editModal={
-          <EmployeeFormModal
+          <EmployeeEditModal
             open={editOpen}
             onOpenChange={setEditOpen}
             onSuccess={() => { setEditOpen(false); fetchEmployee(); }}
+            employee={employee ? {
+              id: employee.id,
+              firstName: employee.firstName,
+              lastName: employee.lastName,
+              email: employee.email,
+              phoneNumber: employee.phoneNumber,
+              position: employee.position,
+              branchName: employee.branchName,
+            } : null}
           />
         }
       />

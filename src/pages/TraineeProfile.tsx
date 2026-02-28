@@ -182,10 +182,19 @@ export default function TraineeProfile() {
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
         editModal={
-          <TraineeFormModal
+          <TraineeEditModal
             open={editOpen}
             onOpenChange={setEditOpen}
             onSuccess={() => { setEditOpen(false); fetchTrainee(); }}
+            trainee={trainee ? {
+              id: trainee.id,
+              firstName: trainee.firstName,
+              lastName: trainee.lastName,
+              parentNumber: trainee.parentNumber,
+              guardianName: trainee.guardianName,
+              branchName: trainee.branchName,
+              sports: trainee.sports,
+            } : null}
           />
         }
       />

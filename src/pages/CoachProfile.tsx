@@ -168,10 +168,17 @@ export default function CoachProfile() {
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
         editModal={
-          <CoachFormModal
+          <CoachEditModal
             open={editOpen}
             onOpenChange={setEditOpen}
             onSuccess={() => { setEditOpen(false); fetchCoach(); }}
+            coach={coach ? {
+              id: coach.id,
+              firstName: coach.firstName,
+              lastName: coach.lastName,
+              sportName: coach.sportName,
+              skillLevel: coach.skillLevel,
+            } : null}
           />
         }
       />
