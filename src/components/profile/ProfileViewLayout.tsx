@@ -109,6 +109,7 @@ export function ProfileViewLayout({
   toggleLabel = "Toggle Active",
   editModal,
   extraActions,
+  dropdownExtra = [],
 }: ProfileViewLayoutProps) {
   const navigate = useNavigate();
 
