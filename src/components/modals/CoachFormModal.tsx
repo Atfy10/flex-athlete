@@ -1,6 +1,7 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { BaseModal } from "./BaseModal";
-import { FormSelect, SelectOption } from "./FormSelect";
+import { FormSelect } from "./FormSelect";
+import { SearchableSelect, SearchableOption } from "@/components/ui/SearchableSelect";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 
@@ -10,46 +11,81 @@ interface CoachFormModalProps {
   onSuccess: () => void;
 }
 
+const SKILL_LEVELS = [
+  { value: "Beginner", label: "Beginner" },
+  { value: "Intermediate", label: "Intermediate" },
+  { value: "Advanced", label: "Advanced" },
+  { value: "Professional", label: "Professional" },
+];
+
 export function CoachFormModal({ open, onOpenChange, onSuccess }: CoachFormModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
-  const [employees, setEmployees] = useState<SelectOption[]>([]);
-  const [sports, setSports] = useState<SelectOption[]>([]);
 
-  const [form, setForm] = useState({ employeeId: "", sportId: "", skillLevel: "" });
+  const [selectedEmployee, setSelectedEmployee] = useState<SearchableOption | null>(null);
+  const [selectedSport, setSelectedSport] = useState<SearchableOption | null>(null);
+  const [skillLevel, setSkillLevel] = useState("");
 
   useEffect(() => {
     if (!open) return;
     setErrors([]);
-    setForm({ employeeId: "", sportId: "", skillLevel: "" });
-
-    Promise.all([
-      apiFetch<{ data: { id: number; firstName: string; lastName: string }[]; isSuccess: boolean }>("/api/Emplopyee/get-non-coaches"),
-      apiFetch<{ data: { id: number; name: string }[]; isSuccess: boolean }>("/api/Sports/get-all"),
-    ]).then(([empRes, sportRes]) => {
-      if (empRes.isSuccess) {
-        setEmployees(empRes.data.map((e) => ({ value: String(e.id), label: `${e.firstName} ${e.lastName}` })));
-      }
-      if (sportRes.isSuccess) {
-        setSports(sportRes.data.map((s) => ({ value: String(s.id), label: s.name })));
-      }
-    }).catch(() => {});
+    setSelectedEmployee(null);
+    setSelectedSport(null);
+    setSkillLevel("");
   }, [open]);
 
-  const set = (key: keyof typeof form) => (val: string) => setForm((f) => ({ ...f, [key]: val }));
+  const searchEmployees = useCallback(async (query: string): Promise<SearchableOption[]> => {
+    if (!query.trim()) return [];
+    try {
+      const res = await apiFetch<{ id: number; firstName: string; lastName: string; email: string }[]>(
+        `/api/employee/search?query=${encodeURIComponent(query)}`
+      );
+      const list = Array.isArray(res) ? res : (res as any)?.data ?? [];
+      return list.map((e: any) => ({
+        value: String(e.id),
+        label: `${e.firstName} ${e.lastName}`,
+        sublabel: e.email,
+      }));
+    } catch {
+      return [];
+    }
+  }, []);
+
+  const searchSports = useCallback(async (query: string): Promise<SearchableOption[]> => {
+    if (!query.trim()) return [];
+    try {
+      const res = await apiFetch<{ id: number; name: string }[]>(
+        `/api/sports/search?query=${encodeURIComponent(query)}`
+      );
+      const list = Array.isArray(res) ? res : (res as any)?.data ?? [];
+      return list.map((s: any) => ({
+        value: String(s.id),
+        label: s.name,
+      }));
+    } catch {
+      return [];
+    }
+  }, []);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors([]);
+
+    const errs: string[] = [];
+    if (!selectedEmployee) errs.push("Please select an employee.");
+    if (!selectedSport) errs.push("Please select a sport.");
+    if (!skillLevel) errs.push("Please select a skill level.");
+    if (errs.length) { setErrors(errs); return; }
+
     setLoading(true);
     try {
-      await apiFetch("/api/Coach/create", {
+      await apiFetch("/api/coaches", {
         method: "POST",
         body: JSON.stringify({
-          employeeId: Number(form.employeeId),
-          sportId: Number(form.sportId),
-          skillLevel: form.skillLevel,
+          employeeId: Number(selectedEmployee!.value),
+          sportId: Number(selectedSport!.value),
+          skillLevel,
         }),
       });
       toast({ title: "Coach created successfully" });
@@ -64,14 +100,44 @@ export function CoachFormModal({ open, onOpenChange, onSuccess }: CoachFormModal
   };
 
   return (
-    <BaseModal open={open} onOpenChange={onOpenChange} title="Add Coach" description="Assign an employee as a coach" onSubmit={handleSubmit} loading={loading} errors={errors}>
-      <FormSelect id="employeeId" label="Employee" value={form.employeeId} onChange={set("employeeId")} options={employees} required placeholder="Select employee" />
-      <FormSelect id="sportId" label="Sport" value={form.sportId} onChange={set("sportId")} options={sports} required placeholder="Select sport" />
-      <FormSelect id="skillLevel" label="Skill Level" value={form.skillLevel} onChange={set("skillLevel")} required options={[
-        { value: "Beginner", label: "Beginner" },
-        { value: "Intermediate", label: "Intermediate" },
-        { value: "Advanced", label: "Advanced" },
-      ]} />
+    <BaseModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Add Coach"
+      description="Assign an employee as a coach for a sport"
+      onSubmit={handleSubmit}
+      loading={loading}
+      errors={errors}
+    >
+      <SearchableSelect
+        id="employeeId"
+        label="Employee"
+        placeholder="Search employee by name or email..."
+        value={selectedEmployee}
+        onChange={setSelectedEmployee}
+        onSearch={searchEmployees}
+        required
+      />
+
+      <SearchableSelect
+        id="sportId"
+        label="Sport"
+        placeholder="Search sport by name..."
+        value={selectedSport}
+        onChange={setSelectedSport}
+        onSearch={searchSports}
+        required
+      />
+
+      <FormSelect
+        id="skillLevel"
+        label="Skill Level"
+        value={skillLevel}
+        onChange={setSkillLevel}
+        required
+        options={SKILL_LEVELS}
+        placeholder="Select skill level"
+      />
     </BaseModal>
   );
 }
