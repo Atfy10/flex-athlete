@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -31,91 +31,39 @@ import {
 import { CoachFormModal } from "@/components/modals/CoachFormModal";
 import { BasePagination } from "@/components/BasePagination";
 import { useEntitySearch } from "@/hooks/useEntitySearch";
-import { listCoaches, searchCoaches } from "@/services/coaches.service";
+import {
+  listCoaches,
+  searchCoaches,
+  averageRatingForAllCoaches,
+  countCoaches,
+} from "@/services/coaches.service";
+import { countSports } from "@/services/sport.services";
+import { countTrainees } from "@/services/trainee.service";
 import { CoachCardDto } from "@/types/CoachCardDto";
 
-const coachesDummy = [
-  {
-    id: 1,
-    name: "Mike Johnson",
-    email: "mike.johnson@academy.com",
-    phone: "+1 (555) 123-4567",
-    sport: "Basketball",
-    specialization: "Youth Development",
-    experience: "8 years",
-    rating: 4.9,
-    trainees: 45,
-    branch: "Downtown",
-    certifications: ["FIBA Level 2", "Youth Coach"],
-    joinDate: "2020-03-15",
-    status: "Active",
-    avatar: "/api/placeholder/40/40",
-  },
-  {
-    id: 2,
-    name: "Sarah Davis",
-    email: "sarah.davis@academy.com",
-    phone: "+1 (555) 234-5678",
-    sport: "Swimming",
-    specialization: "Competitive Swimming",
-    experience: "12 years",
-    rating: 4.8,
-    trainees: 32,
-    branch: "North Side",
-    certifications: ["Swimming Australia Level 3", "Safety Instructor"],
-    joinDate: "2019-01-20",
-    status: "Active",
-    avatar: "/api/placeholder/40/40",
-  },
-  {
-    id: 3,
-    name: "Carlos Rodriguez",
-    email: "carlos.rodriguez@academy.com",
-    phone: "+1 (555) 345-6789",
-    sport: "Tennis",
-    specialization: "Singles & Doubles",
-    experience: "15 years",
-    rating: 4.9,
-    trainees: 28,
-    branch: "East Branch",
-    certifications: ["PTR Professional", "USPTA Certified"],
-    joinDate: "2018-06-10",
-    status: "Active",
-    avatar: "/api/placeholder/40/40",
-  },
-  {
-    id: 4,
-    name: "Emma Wilson",
-    email: "emma.wilson@academy.com",
-    phone: "+1 (555) 456-7890",
-    sport: "Soccer",
-    specialization: "Team Strategy",
-    experience: "10 years",
-    rating: 4.7,
-    trainees: 52,
-    branch: "Downtown",
-    certifications: ["UEFA B License", "Grassroots Instructor"],
-    joinDate: "2021-08-01",
-    status: "Active",
-    avatar: "/api/placeholder/40/40",
-  },
-  {
-    id: 5,
-    name: "Alex Thompson",
-    email: "alex.thompson@academy.com",
-    phone: "+1 (555) 567-8901",
-    sport: "Volleyball",
-    specialization: "Beach Volleyball",
-    experience: "6 years",
-    rating: 4.6,
-    trainees: 24,
-    branch: "North Side",
-    certifications: ["FIVB Level 1", "Beach Specialist"],
-    joinDate: "2022-02-14",
-    status: "On Leave",
-    avatar: "/api/placeholder/40/40",
-  },
-];
+interface Coach {
+  id: number;
+  name: string;
+  email: string;
+  phone: string;
+  sport: string;
+  specialization: string;
+  experience: string;
+  rating: number;
+  trainees: number;
+  branch: string;
+  certifications: string[];
+  joinDate: string;
+  status: "Active" | "Inactive" | "On Leave";
+  avatar: string;
+}
+
+interface CoachesStats {
+  totalCoaches: number;
+  sportsCovered: number;
+  averageRating: number;
+  totalTrainees: number;
+}
 
 const stats = [
   { title: "Total Coaches", value: "89", change: "+5", icon: Users },
@@ -128,6 +76,12 @@ const pageSize = 6;
 export default function Coaches() {
   const navigate = useNavigate();
   const [modalOpen, setModalOpen] = useState(false);
+  const [statsReal, setStats] = useState<CoachesStats>({
+    totalCoaches: 0,
+    sportsCovered: 0,
+    averageRating: 0,
+    totalTrainees: 0,
+  });
 
   const {
     items: coaches,
@@ -143,6 +97,55 @@ export default function Coaches() {
     pageSize: pageSize,
     minLength: 2,
   });
+
+  useEffect(() => {
+    let active = true;
+
+    const fetchStats = async () => {
+      try {
+        const results = await Promise.allSettled([
+          countCoaches(),
+          averageRatingForAllCoaches(),
+          countSports(),
+          countTrainees(),
+        ]);
+
+        if (!active) return;
+
+        const [countRes, ratingRes, sportsRes, traineesRes] = results;
+
+        setStats({
+          totalCoaches:
+            countRes.status === "fulfilled" && countRes.value?.isSuccess
+              ? countRes.value.data
+              : 0,
+
+          sportsCovered:
+            sportsRes.status === "fulfilled" && sportsRes.value?.isSuccess
+              ? sportsRes.value.data
+              : 0,
+
+          averageRating:
+            ratingRes.status === "fulfilled" && ratingRes.value?.isSuccess
+              ? ratingRes.value.data
+              : 0,
+
+          totalTrainees:
+            traineesRes.status === "fulfilled" && traineesRes.value?.isSuccess
+              ? traineesRes.value.data
+              : 0,
+        });
+      } catch (err) {
+        console.error("Dashboard stats error", err);
+      }
+    };
+
+    fetchStats();
+
+    return () => {
+      active = false;
+    };
+  }, []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -166,6 +169,11 @@ export default function Coaches() {
     setTerm("");
     setPage(1);
   };
+
+  stats[0].value = statsReal.totalCoaches.toString();
+  stats[1].value = statsReal.sportsCovered.toString();
+  stats[2].value = statsReal.averageRating.toFixed(1);
+  stats[3].value = statsReal.totalTrainees.toString();
 
   return (
     <div className="space-y-8">
@@ -258,7 +266,7 @@ export default function Coaches() {
                     <div className="flex items-center gap-1 mt-1">
                       <Star className="h-4 w-4 fill-warning text-warning" />
                       <span className="text-sm font-medium">
-                        {coach.SkillLevel}
+                        {coach.skillLevel}
                       </span>
                     </div>
                   </div>
@@ -300,24 +308,24 @@ export default function Coaches() {
               <div className="space-y-2">
                 <div className="flex items-center gap-2">
                   <Badge variant="outline" className="font-medium">
-                    {coach.Sport}
+                    {coach.sportName}
                   </Badge>
                   <Badge
                     className={getStatusColor(
                       coach.isWork ? "Active" : "On Leave",
                     )}
                   >
-                    {coach.isWork}
+                    {coach.isWork ? "Active" : "On Leave"}
                   </Badge>
                 </div>
                 <p className="text-sm text-muted-foreground">
-                  <strong>Skill Level:</strong> {coach.SkillLevel}
+                  <strong>Skill Level:</strong> {coach.skillLevel}
                 </p>
               </div>
               <div className="flex items-center justify-between pt-2 border-t border-border">
                 <div className="flex items-center gap-1 text-sm">
                   <Users className="h-3 w-3 text-muted-foreground" />
-                  <span>{coach.TotalTrainees} trainees</span>
+                  <span>{coach.totalTrainees} trainees</span>
                 </div>
                 <div className="flex items-center gap-1 text-sm">
                   <Calendar className="h-3 w-3 text-muted-foreground" />

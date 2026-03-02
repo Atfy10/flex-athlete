@@ -2,35 +2,33 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch, ApiError } from "@/lib/api";
 import { ApiResult } from "@/types/api";
-import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
+import {
+  ProfileViewLayout,
+  ProfileSection,
+} from "@/components/profile/ProfileViewLayout";
 import { CoachEditModal } from "@/components/modals/CoachEditModal";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Phone, MapPin, Star, Trophy, Users, Award, Calendar, Dumbbell } from "lucide-react";
-
-interface CoachDetailDto {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email: string;
-  phoneNumber: string;
-  branchName: string;
-  sportName: string;
-  skillLevel: string;
-  experience?: string;
-  certifications?: string[];
-  numberOfTrainees?: number;
-  joinDate?: string;
-  status: string;
-  rating?: number;
-}
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Star,
+  Trophy,
+  Users,
+  Award,
+  Calendar,
+  Dumbbell,
+} from "lucide-react";
+import { getCoachById } from "@/services/coaches.service";
+import { CoachDetailsDto } from "@/types/CoachDetailDto";
 
 export default function CoachProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [coach, setCoach] = useState<CoachDetailDto | null>(null);
+  const [coach, setCoach] = useState<CoachDetailsDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -40,7 +38,7 @@ export default function CoachProfile() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch<ApiResult<CoachDetailDto>>(`/api/coach/${id}`);
+      const res = await getCoachById(Number(id));
       if (res.isSuccess && res.data) {
         setCoach(res.data);
       } else {
@@ -69,9 +67,12 @@ export default function CoachProfile() {
 
   const getSkillLevelClass = (level: string) => {
     switch (level?.toLowerCase()) {
-      case "advanced": return "bg-success/10 text-success border-0";
-      case "intermediate": return "bg-primary/10 text-primary border-0";
-      default: return "bg-secondary/10 text-secondary border-0";
+      case "advanced":
+        return "bg-success/10 text-success border-0";
+      case "intermediate":
+        return "bg-primary/10 text-primary border-0";
+      default:
+        return "bg-secondary/10 text-secondary border-0";
     }
   };
 
@@ -80,7 +81,11 @@ export default function CoachProfile() {
         {
           title: "Basic Information",
           fields: [
-            { label: "Sport", value: coach.sportName, icon: <Trophy className="h-3.5 w-3.5" /> },
+            {
+              label: "Sport",
+              value: coach.sportName,
+              icon: <Trophy className="h-3.5 w-3.5" />,
+            },
             {
               label: "Skill Level",
               value: (
@@ -91,13 +96,19 @@ export default function CoachProfile() {
               icon: <Star className="h-3.5 w-3.5" />,
             },
             coach.experience
-              ? { label: "Experience", value: coach.experience, icon: <Award className="h-3.5 w-3.5" /> }
+              ? {
+                  label: "Experience",
+                  value: coach.experience,
+                  icon: <Award className="h-3.5 w-3.5" />,
+                }
               : null,
             coach.joinDate
               ? {
                   label: "Joined",
                   value: new Date(coach.joinDate).toLocaleDateString("en-US", {
-                    year: "numeric", month: "long", day: "numeric",
+                    year: "numeric",
+                    month: "long",
+                    day: "numeric",
                   }),
                   icon: <Calendar className="h-3.5 w-3.5" />,
                 }
@@ -107,14 +118,26 @@ export default function CoachProfile() {
         {
           title: "Contact Information",
           fields: [
-            { label: "Email", value: coach.email, icon: <Mail className="h-3.5 w-3.5" /> },
-            { label: "Phone", value: coach.phoneNumber, icon: <Phone className="h-3.5 w-3.5" /> },
+            {
+              label: "Email",
+              value: coach.email,
+              icon: <Mail className="h-3.5 w-3.5" />,
+            },
+            {
+              label: "Phone",
+              value: coach.phoneNumber,
+              icon: <Phone className="h-3.5 w-3.5" />,
+            },
           ],
         },
         {
           title: "Organizational Info",
           fields: [
-            { label: "Branch", value: coach.branchName, icon: <MapPin className="h-3.5 w-3.5" /> },
+            {
+              label: "Branch",
+              value: coach.branchName,
+              icon: <MapPin className="h-3.5 w-3.5" />,
+            },
             coach.numberOfTrainees !== undefined
               ? {
                   label: "Trainees",
@@ -157,9 +180,9 @@ export default function CoachProfile() {
         fullName={coach ? `${coach.firstName} ${coach.lastName}` : ""}
         roleBadge="Coach"
         roleBadgeVariant="default"
-        statusBadge={coach?.status ?? ""}
+        statusBadge={coach?.isWork ? "Active" : "Off"}
         statusBadgeClass={
-          coach?.status === "Active"
+          coach?.isWork
             ? "bg-success/10 text-success"
             : "bg-warning/10 text-warning"
         }
@@ -171,14 +194,21 @@ export default function CoachProfile() {
           <CoachEditModal
             open={editOpen}
             onOpenChange={setEditOpen}
-            onSuccess={() => { setEditOpen(false); fetchCoach(); }}
-            coach={coach ? {
-              id: coach.id,
-              firstName: coach.firstName,
-              lastName: coach.lastName,
-              sportName: coach.sportName,
-              skillLevel: coach.skillLevel,
-            } : null}
+            onSuccess={() => {
+              setEditOpen(false);
+              fetchCoach();
+            }}
+            coach={
+              coach
+                ? {
+                    id: coach.id,
+                    firstName: coach.firstName,
+                    lastName: coach.lastName,
+                    sportName: coach.sportName,
+                    skillLevel: coach.skillLevel,
+                  }
+                : null
+            }
           />
         }
       />

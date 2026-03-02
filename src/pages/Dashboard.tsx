@@ -34,7 +34,7 @@ import { SportDto } from "@/types/SportDto";
 import { ListTraineeGroupDto } from "@/types/listTraineeGroup";
 import { mapSessions, getSessionsCount, SessionVm } from "@/lib/mappers";
 import { apiFetch } from "@/lib/api";
-import { getActiveCoachesCount } from "@/services/employees.service";
+import { getActiveCoachesCount } from "@/services/coaches.service";
 
 const statsData = [
   {

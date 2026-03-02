@@ -23,9 +23,9 @@ import {
   listEmployees,
   searchEmployees,
   getActiveEmployees,
-  getBranchsCount,
   getTotalEmployees,
 } from "@/services/employees.service";
+import { countBranches } from "@/services/branch.services";
 import { BasePagination } from "@/components/BasePagination";
 
 interface EmployeesStats {
@@ -68,7 +68,7 @@ const Employees = () => {
         const results = await Promise.allSettled([
           getTotalEmployees(),
           getActiveEmployees(),
-          getBranchsCount(),
+          countBranches(),
         ]);
 
         if (!active) return;
@@ -115,7 +115,7 @@ const Employees = () => {
     listFn: listEmployees,
     searchFn: searchEmployees,
     pageSize,
-    minLength: 2, // consistent مع backend contract
+    minLength: 2,
   });
 
   return (

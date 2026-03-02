@@ -32,8 +32,3 @@ export const getActiveEmployees = () => {
 export const getBranchsCount = () => {
   return apiFetch<ApiResult<number>>("/api/branch/count");
 };
-
-// Active Coaches Count
-export const getActiveCoachesCount = () => {
-  return apiFetch<ApiResult<number>>("/api/Employee/coaches/active/count");
-};
