@@ -7,10 +7,9 @@ export interface CoachDetailsDto {
   branchName: string;
   sportName: string;
   skillLevel: string;
-  experience?: string;
-  certifications?: string[];
-  numberOfTrainees?: number;
-  joinDate?: string;
-  isWork: string;
-  rating?: number;
+  certifications?: string[] | null;
+  totalTrainees?: number | null;
+  hireDate?: string | null;
+  isWork: boolean;
+  rating?: number | null;
 }
