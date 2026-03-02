@@ -30,3 +30,5 @@ export const getCoachById = (id: number) => {
 export const getActiveCoachesCount = () => {
   return apiFetch<ApiResult<number>>("/api/Employee/coaches/active/count");
 };
+
+export const createCoach = async () => {};
