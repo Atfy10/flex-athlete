@@ -2,6 +2,7 @@ import { apiFetch } from "@/lib/api";
 import { ApiResult, PagedData } from "@/types/api";
 import { CoachCardDto } from "@/types/CoachCardDto";
 import { CoachDetailsDto } from "@/types/CoachDetailDto";
+import { CreateCoachCommand } from "@/types/commands/createCoachCommand";
 
 export const listCoaches = (page: number, pageSize: number) => {
   return apiFetch<ApiResult<PagedData<CoachCardDto>>>(
@@ -31,4 +32,9 @@ export const getActiveCoachesCount = () => {
   return apiFetch<ApiResult<number>>("/api/Employee/coaches/active/count");
 };
 
-export const createCoach = async () => {};
+export const createCoach = async (command: CreateCoachCommand) => {
+  return await apiFetch<ApiResult<number>>("/api/coach", {
+    method: "POST",
+    body: JSON.stringify(command),
+  });
+};

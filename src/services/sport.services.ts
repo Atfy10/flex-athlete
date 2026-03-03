@@ -8,6 +8,6 @@ export const countSports = async () => {
 
 export const searchSportsName = async (term: string) => {
   return await apiFetch<ApiResult<SportDropDownListDto[]>>(
-    `/api/sports/search?searchTerm=${encodeURIComponent(term)}`,
+    `/api/sports/search-name?searchTerm=${encodeURIComponent(term)}`,
   );
 };

@@ -12,6 +12,7 @@ import { SportDropDownListDto } from "@/types/SportDropDownListDto";
 import { searchSportsName } from "@/services/sport.services";
 import { EmployeeCardDto } from "@/types/EmployeeCardDto";
 import { ApiResult, PagedData } from "@/types/api";
+import { createCoach } from "@/services/coaches.service";
 
 interface CoachFormModalProps {
   open: boolean;
@@ -104,7 +105,13 @@ export function CoachFormModal({
 
     setLoading(true);
     try {
-      toast({ title: "Coach created successfully" });
+      const res = await createCoach({
+        employeeId: Number(selectedEmployee!.value),
+        sportId: Number(selectedSport!.value),
+        skillLevel,
+      });
+
+      toast({ title: res.message || "Coach created successfully" });
       onSuccess();
       onOpenChange(false);
     } catch (err) {
