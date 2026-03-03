@@ -45,6 +45,12 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
+// Constants for localStorage keys
+const STORAGE_KEYS = {
+  ACCESS_TOKEN: "accessToken",
+  EXPIRES_AT: "expiresAt",
+} as const;
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [auth, setAuth] = useState<AuthState>({
     token: null,
@@ -55,35 +61,62 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const timerRef = React.useRef<number | null>(null);
   const isLoggingOutRef = React.useRef(false);
 
-  // Bootstrap: restore token from localStorage once, then remove it.
-  useEffect(() => {
-    const saved = localStorage.getItem("accessToken");
-    if (!saved) return;
-
-    try {
-      const parts = saved.split(".");
-      if (parts.length < 2) throw new Error("Invalid JWT");
-      const payload = JSON.parse(atob(parts[1])) as { exp?: number | string };
-      const exp = Number(payload?.exp);
-      if (!isNaN(exp)) {
-        const expiresAt = exp * 1000;
-        if (expiresAt > Date.now()) {
-          setAuth({ token: saved, expiresAt, isAuthenticated: true });
-          // inform api layer of current token
-          setApiAccessToken(saved);
-        }
-      }
-    } catch (e) {
-      void 0;
-    } finally {
-      // remove from storage regardless: localStorage should not be the session store
-      try {
-        localStorage.removeItem("accessToken");
-      } catch (err) {
-        void 0;
-      }
-    }
+  // Helper function to check if token is expired
+  const isTokenExpired = useCallback((expiresAt: number | null): boolean => {
+    if (!expiresAt) return true;
+    return expiresAt <= Date.now();
   }, []);
+
+  // Bootstrap: restore auth state from localStorage on initial load
+  useEffect(() => {
+    try {
+      const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      const expiresAtStr = localStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
+
+      if (!token || !expiresAtStr) {
+        // No saved session
+        return;
+      }
+
+      const expiresAt = parseInt(expiresAtStr, 10);
+
+      // Validate the token and expiration
+      if (isNaN(expiresAt) || isTokenExpired(expiresAt)) {
+        // Token expired, clear storage
+        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
+        return;
+      }
+
+      // Validate JWT format
+      const parts = token.split(".");
+      if (parts.length < 2) throw new Error("Invalid JWT");
+
+      // Optional: verify the exp in JWT matches our stored expiresAt
+      const payload = JSON.parse(atob(parts[1])) as { exp?: number | string };
+      const jwtExp = Number(payload?.exp) * 1000;
+
+      if (jwtExp !== expiresAt) {
+        // Mismatch - use the JWT exp as source of truth
+        console.warn("JWT exp mismatch with stored expiresAt");
+        localStorage.setItem(STORAGE_KEYS.EXPIRES_AT, jwtExp.toString());
+        setAuth({
+          token,
+          expiresAt: jwtExp,
+          isAuthenticated: !isTokenExpired(jwtExp),
+        });
+        setApiAccessToken(token);
+      } else {
+        setAuth({ token, expiresAt, isAuthenticated: true });
+        setApiAccessToken(token);
+      }
+    } catch (error) {
+      console.error("Failed to restore auth state:", error);
+      // Clear invalid data
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
+    }
+  }, [isTokenExpired]);
 
   const login = useCallback(async (payload: LoginPayload) => {
     const result = await apiFetch<LoginResponse>("/api/auth/login", {
@@ -100,33 +133,38 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
 
     const token = result.data;
-    // decode JWT and extract exp (seconds) as single source of truth
+
     try {
       const parts = token.split(".");
       if (parts.length < 2) throw new Error("Invalid JWT");
+
       const payloadObj = JSON.parse(atob(parts[1])) as {
         exp?: number | string;
       };
-      const exp = Number(payloadObj?.exp);
-      const expiresAt = isNaN(exp) ? null : exp * 1000;
 
-      if (!token || !expiresAt) throw new Error("Invalid token from server");
+      const exp = Number(payloadObj?.exp);
+      if (isNaN(exp)) throw new Error("Invalid expiration in token");
+
+      const expiresAt = exp * 1000; // Convert to milliseconds
+
+      if (!token || !expiresAt) {
+        throw new Error("Invalid token from server");
+      }
+
+      // Save to localStorage for persistence
+      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
+      localStorage.setItem(STORAGE_KEYS.EXPIRES_AT, expiresAt.toString());
 
       setAuth({
         token,
         expiresAt,
-        isAuthenticated: expiresAt > Date.now(),
+        isAuthenticated: true, // We know it's valid now
       });
-      // set token in api layer (in-memory)
+
       setApiAccessToken(token);
-      // persist to localStorage only to survive page reload; will be removed during bootstrap
-      try {
-        localStorage.setItem("accessToken", token);
-      } catch (err) {
-        void 0;
-      }
     } catch (err) {
-      void 0;
+      console.error("Login error:", err);
+      throw new Error("Failed to process authentication response");
     }
   }, []);
 
@@ -153,18 +191,19 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const logout = useCallback(() => {
     if (isLoggingOutRef.current) return;
     isLoggingOutRef.current = true;
+
     try {
-      try {
-        localStorage.removeItem("accessToken");
-      } catch (err) {
-        void 0;
-      }
-      try {
-        clearApiAccessToken();
-      } catch (err) {
-        void 0;
-      }
+      // Clear localStorage
+      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
+
+      // Clear API token
+      clearApiAccessToken();
+
+      // Clear auth state
       setAuth({ token: null, expiresAt: null, isAuthenticated: false });
+    } catch (error) {
+      console.error("Logout error:", error);
     } finally {
       isLoggingOutRef.current = false;
     }
@@ -172,33 +211,67 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   // Auto logout timer using numeric expiresAt (ms)
   useEffect(() => {
+    // Clear existing timer
     if (timerRef.current !== null) {
       clearTimeout(timerRef.current);
       timerRef.current = null;
     }
 
-    if (auth.expiresAt) {
-      const timeout = auth.expiresAt - Date.now();
-      if (timeout <= 0) {
-        // expired already — logout immediately
+    // Only set timer if we have a valid future expiration
+    if (auth.expiresAt && auth.isAuthenticated) {
+      const timeUntilExpiry = auth.expiresAt - Date.now();
+
+      if (timeUntilExpiry <= 0) {
+        // Already expired - logout immediately
         logout();
       } else {
+        // Set timer for exact expiration time
         timerRef.current = window.setTimeout(() => {
-          logout();
-        }, timeout);
+          // Double-check the expiration hasn't changed
+          const currentExpiresAt = localStorage.getItem(
+            STORAGE_KEYS.EXPIRES_AT,
+          );
+          const storedExpiresAt = currentExpiresAt
+            ? parseInt(currentExpiresAt, 10)
+            : null;
+
+          // Only logout if the expiration time matches what we expect
+          if (storedExpiresAt === auth.expiresAt) {
+            logout();
+          }
+        }, timeUntilExpiry);
       }
     }
 
     return () => {
-      if (timerRef.current !== null) clearTimeout(timerRef.current);
-      timerRef.current = null;
+      if (timerRef.current !== null) {
+        clearTimeout(timerRef.current);
+        timerRef.current = null;
+      }
     };
-  }, [auth.expiresAt, logout]);
+  }, [auth.expiresAt, auth.isAuthenticated, logout]);
 
-  // register logout handler with API module so 401 responses trigger single-flight logout
+  // Optional: Add window focus check to verify token status when tab becomes active
+  useEffect(() => {
+    const handleFocus = () => {
+      if (auth.token && auth.expiresAt) {
+        if (isTokenExpired(auth.expiresAt)) {
+          logout();
+        }
+      }
+    };
+
+    window.addEventListener("focus", handleFocus);
+    return () => window.removeEventListener("focus", handleFocus);
+  }, [auth.token, auth.expiresAt, logout, isTokenExpired]);
+
+  // Register logout handler with API module for 401 responses
   useEffect(() => {
     registerApiLogoutHandler(() => {
-      logout();
+      // Check if we're already logging out
+      if (!isLoggingOutRef.current) {
+        logout();
+      }
     });
   }, [logout]);
 
