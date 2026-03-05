@@ -191,7 +191,7 @@ export default function MyProfile() {
       <ProfileViewLayout
         loading={loading}
         error={error}
-        fullName={profile?.userName ?? "My Profile"}
+        fullName={profile ? (profile.userName === profile.email ? profile.email : profile.userName) : "My Profile"}
         roleBadge="Admin User"
         roleBadgeVariant="secondary"
         statusBadge="Active"
