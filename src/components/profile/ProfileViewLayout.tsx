@@ -264,7 +264,7 @@ export function ProfileViewLayout({
       </div>
 
       {/* ── Info Sections Grid ── */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+      <div className={`grid grid-cols-1 gap-5 ${visibleSections.length > 2 ? "lg:grid-cols-2" : ""}`}>
         {visibleSections.map((section) => {
           const visibleFields = section.fields.filter(
             (f) => f.value !== null && f.value !== undefined && f.value !== ""
