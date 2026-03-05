@@ -291,7 +291,7 @@ export function ProfileViewLayout({
                         )}
                         {field.label}
                       </dt>
-                      <dd className="text-sm font-medium text-foreground text-right">
+                      <dd className="text-sm font-medium text-foreground text-right break-all min-w-0">
                         {field.value}
                       </dd>
                     </div>
