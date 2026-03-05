@@ -70,6 +70,9 @@ export function TraineeEditModal({
           if (currentBranch) {
             setForm((f) => ({ ...f, branchId: currentBranch.value }));
           }
+
+          console.log("branchId", form.branchId);
+          console.log("branches", branches);
         }
         if (spRes.isSuccess) {
           const sportsData = spRes.data.map((s) => ({
@@ -165,14 +168,16 @@ export function TraineeEditModal({
           onChange={set("guardianName")}
         />
       </div>
-      <FormSelect
-        id="branchId"
-        label="Branch"
-        value={form.branchId}
-        onChange={set("branchId")}
-        options={branches}
-        placeholder="Keep current branch"
-      />
+      {branches.length > 0 && (
+        <FormSelect
+          id="branchId"
+          label="Branch"
+          value={form.branchId}
+          onChange={set("branchId")}
+          options={branches}
+          placeholder="Keep current branch"
+        />
+      )}
       <FormMultiSelect
         id="sportIds"
         label="Sports"

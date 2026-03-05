@@ -19,6 +19,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { TraineeDetailsDto } from "@/types/TraineeDetailsDto";
+import { deleteTrainee } from "@/services/trainee.service";
 
 export default function TraineeProfile() {
   const { id } = useParams<{ id: string }>();
@@ -58,7 +59,7 @@ export default function TraineeProfile() {
 
   const handleDelete = async () => {
     try {
-      await apiFetch(`/api/trainee/${id}`, { method: "DELETE" });
+      const result = await deleteTrainee(trainee!.id);
       toast({ title: "Trainee removed successfully." });
       navigate("/trainees");
     } catch {

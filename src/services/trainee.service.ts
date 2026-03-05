@@ -56,3 +56,9 @@ export const getTRaineesCountForSpecificDay = async (date: string) => {
     `/api/Trainee/get-count-for-specific-day?date=${date}`,
   );
 };
+
+export const deleteTrainee = async (id: number) => {
+  await apiFetch<ApiResult<boolean>>(`/api/trainee/${id}`, {
+    method: "DELETE",
+  });
+};
