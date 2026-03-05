@@ -11,3 +11,9 @@ export const searchSportsName = async (term: string) => {
     `/api/sports/search-name?searchTerm=${encodeURIComponent(term)}`,
   );
 };
+
+export const getSports = async () => {
+  return await apiFetch<ApiResult<{ id: number; name: string }[]>>(
+    `/api/sports`,
+  );
+};

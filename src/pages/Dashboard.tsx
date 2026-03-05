@@ -35,6 +35,14 @@ import { ListTraineeGroupDto } from "@/types/listTraineeGroup";
 import { mapSessions, getSessionsCount, SessionVm } from "@/lib/mappers";
 import { apiFetch } from "@/lib/api";
 import { getActiveCoachesCount } from "@/services/coaches.service";
+import { getSports } from "@/services/sport.services";
+import { getEnrollments } from "@/services/enrollment.services";
+import {
+  getAverageAttendance,
+  getAverageAttendanceForMonth,
+} from "@/services/attendance.services";
+import { getTRaineesCountForSpecificDay } from "@/services/trainee.service";
+import { getTraineeGroupsForSpecificDay } from "@/services/traineeGroup.services";
 
 const statsData = [
   {
@@ -144,9 +152,7 @@ export default function Dashboard() {
 
       const attendanceChart = await Promise.all(
         months.map(async (m) => {
-          const res = await apiFetch<ApiResult<number>>(
-            `/api/Attendance/rate?month=${m.value}`,
-          );
+          const res = await getAverageAttendanceForMonth(String(m.value));
 
           return {
             month: m.label,
@@ -157,18 +163,14 @@ export default function Dashboard() {
 
       setAttendanceData(attendanceChart);
 
-      const sportsRes = await apiFetch<ApiResult<SportDto[]>>(
-        "/api/Sports/get-all",
-      );
+      const sportsRes = await getSports();
 
       let chartData: { sport: string; enrolled: number }[] = [];
 
       if (sportsRes.isSuccess) {
         chartData = await Promise.all(
           sportsRes.data.map(async (sport) => {
-            const res = await apiFetch<ApiResult<number>>(
-              `/api/Enrollment/sports/${sport.id}/enrollments/count?from=2024-01-01`,
-            );
+            const res = await getEnrollments(sport.id);
 
             return {
               sport: sport.name,
@@ -180,14 +182,10 @@ export default function Dashboard() {
 
       const [sessionsRes, coachesRes, attendanceRes, traineesRes] =
         await Promise.all([
-          apiFetch<ApiResult<PagedData<ListTraineeGroupDto>>>(
-            `/api/TraineeGroup/get-all-for-specific-day?date=${todayIso()}&page=${page}&pageSize=${pageSize}`,
-          ),
+          getTraineeGroupsForSpecificDay(todayIso(), page, pageSize),
           getActiveCoachesCount(),
-          apiFetch<ApiResult<number>>("/api/Attendance/rate"),
-          apiFetch<ApiResult<number>>(
-            `/api/Trainee/get-count-for-specific-day?date=${todayIso()}`,
-          ),
+          getAverageAttendance(),
+          getTRaineesCountForSpecificDay(todayIso()),
         ]);
 
       setEnrollmentData(chartData);
