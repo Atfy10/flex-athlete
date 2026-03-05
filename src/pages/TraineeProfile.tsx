@@ -71,7 +71,7 @@ export default function TraineeProfile() {
   const sections: ProfileSection[] = trainee
     ? [
         {
-          title: "Personal Information",
+          title: "Basic Information",
           fields: [
             trainee.gender
               ? { label: "Gender", value: trainee.gender, icon: <Users className="h-3.5 w-3.5" /> }
@@ -94,6 +94,11 @@ export default function TraineeProfile() {
                   icon: <Calendar className="h-3.5 w-3.5" />,
                 }
               : null,
+          ].filter(Boolean) as ProfileSection["fields"],
+        },
+        {
+          title: "Contact Information",
+          fields: [
             trainee.email
               ? { label: "Email", value: trainee.email, icon: <Mail className="h-3.5 w-3.5" /> }
               : null,
@@ -103,14 +108,19 @@ export default function TraineeProfile() {
           ].filter(Boolean) as ProfileSection["fields"],
         },
         {
-          title: "Guardian & Academy",
+          title: "Guardian Info",
           fields: [
             trainee.guardianName
               ? { label: "Guardian", value: trainee.guardianName, icon: <Shield className="h-3.5 w-3.5" /> }
               : null,
             trainee.parentNumber
-              ? { label: "Parent Phone", value: trainee.parentNumber, icon: <Phone className="h-3.5 w-3.5" /> }
+              ? { label: "Parent Number", value: trainee.parentNumber, icon: <Phone className="h-3.5 w-3.5" /> }
               : null,
+          ].filter(Boolean) as ProfileSection["fields"],
+        },
+        {
+          title: "Academy Info",
+          fields: [
             { label: "Branch", value: trainee.branchName, icon: <MapPin className="h-3.5 w-3.5" /> },
             ...(trainee.sports && trainee.sports.length > 0
               ? [
