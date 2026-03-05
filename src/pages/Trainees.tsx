@@ -343,17 +343,29 @@ export default function Trainees() {
               </div>
 
               <div className="space-y-2">
-                <div className="flex items-center gap-2">
-                  <Badge variant="outline" className="font-medium">
-                    {trainee.sportName}
-                  </Badge>
-                  <Badge
-                    variant="secondary"
-                    className={getLevelColor(trainee.skillLevel)}
-                  >
-                    {trainee.skillLevel}
-                  </Badge>
-                  <Badge className={getStatusColor(trainee.isSubscribed)}>
+                {/* Sport + skill level pairs */}
+                <div className="flex flex-wrap gap-1.5">
+                  {(trainee.sportSkills && trainee.sportSkills.length > 0
+                    ? trainee.sportSkills
+                    : trainee.sportName
+                      ? [{ sportName: trainee.sportName, skillLevel: trainee.skillLevel ?? "" }]
+                      : []
+                  ).map((s, i) => (
+                    <span key={i} className="inline-flex items-center gap-1">
+                      <Badge variant="outline" className="font-medium text-xs">
+                        {s.sportName}
+                      </Badge>
+                      {s.skillLevel && (
+                        <Badge
+                          variant="secondary"
+                          className={`${getLevelColor(s.skillLevel)} text-xs`}
+                        >
+                          {s.skillLevel}
+                        </Badge>
+                      )}
+                    </span>
+                  ))}
+                  <Badge className={`${getStatusColor(trainee.isSubscribed)} text-xs`}>
                     {trainee.isSubscribed ? "Subscribed" : "Not Subscribed"}
                   </Badge>
                 </div>
