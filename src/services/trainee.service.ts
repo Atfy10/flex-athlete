@@ -28,13 +28,3 @@ export const searchTrainees = async (
     `/api/trainee/search?searchTerm=${encodeURIComponent(term)}&page=${page}&pageSize=${pageSize}`,
   );
 };
-
-export const searchTraineesById = async (
-  id: string,
-  page: number,
-  pageSize: number,
-): Promise<ApiResult<PagedData<TraineeCardDto>>> => {
-  return await apiFetch<ApiResult<PagedData<TraineeCardDto>>>(
-    `/api/trainee/search/${encodeURIComponent(id)}?page=${page}&pageSize=${pageSize}`,
-  );
-};

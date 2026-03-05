@@ -56,17 +56,10 @@ export default function EmployeeProfile() {
   const sections: ProfileSection[] = employee
     ? [
         {
-          title: "Basic Information",
+          title: "Employment Details",
           fields: [
             { label: "Position", value: employee.position, icon: <Briefcase className="h-3.5 w-3.5" /> },
-            {
-              label: "Status",
-              value: (
-                <Badge className={employee.isWork ? "bg-success/10 text-success border-0" : "bg-muted text-muted-foreground border-0"}>
-                  {employee.isWork ? "Working" : "Off"}
-                </Badge>
-              ),
-            },
+            { label: "Branch", value: employee.branchName, icon: <Building2 className="h-3.5 w-3.5" /> },
             {
               label: "Hire Date",
               value: new Date(employee.hireDate).toLocaleDateString("en-US", {
@@ -81,18 +74,10 @@ export default function EmployeeProfile() {
           fields: [
             { label: "Email", value: employee.email, icon: <Mail className="h-3.5 w-3.5" /> },
             { label: "Phone", value: employee.phoneNumber, icon: <Phone className="h-3.5 w-3.5" /> },
-            {
-              label: "Address",
-              value: employee.address || null,
-              icon: <MapPin className="h-3.5 w-3.5" />,
-            },
-          ],
-        },
-        {
-          title: "Organizational Info",
-          fields: [
-            { label: "Branch", value: employee.branchName, icon: <Building2 className="h-3.5 w-3.5" /> },
-          ],
+            employee.address
+              ? { label: "Address", value: employee.address, icon: <MapPin className="h-3.5 w-3.5" /> }
+              : null,
+          ].filter(Boolean) as ProfileSection["fields"],
         },
       ]
     : [];

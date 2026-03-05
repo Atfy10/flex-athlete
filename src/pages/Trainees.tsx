@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -34,7 +34,6 @@ import { useEntitySearch } from "@/hooks/useEntitySearch";
 import {
   listTrainees,
   searchTrainees,
-  searchTraineesById,
   countTrainees,
   countActiveTrainees,
 } from "@/services/trainee.service";
@@ -61,17 +60,6 @@ export default function Trainees() {
     averageAttendance: 0,
   });
 
-  const handleSearchTrainees = useCallback(
-    async (searchTerm: string, page: number, pageSize: number) => {
-      const isNumericSearch = /^\d+$/.test(searchTerm.trim());
-
-      return isNumericSearch
-        ? searchTraineesById(searchTerm, page, pageSize)
-        : searchTrainees(searchTerm, page, pageSize);
-    },
-    [],
-  );
-
   const {
     items: trainees,
     loading,
@@ -82,9 +70,9 @@ export default function Trainees() {
     totalPages,
   } = useEntitySearch<TraineeCardDto>({
     listFn: listTrainees,
-    searchFn: handleSearchTrainees,
+    searchFn: searchTrainees,
     pageSize: pageSize,
-    minLength: 1,
+    minLength: 2,
   });
 
   useEffect(() => {
@@ -172,8 +160,6 @@ export default function Trainees() {
       .toUpperCase()
       .substring(0, 2);
 
-  // Wrapper function to handle both ID and text search
-
   const handleRefresh = () => {
     setPage(1);
   };
@@ -260,7 +246,7 @@ export default function Trainees() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search trainees by name, email, or ID"
+                placeholder="Search trainees by name, email, or sport..."
                 value={term}
                 onChange={(e) => setTerm(e.target.value)}
                 className="pl-10"
