@@ -1,142 +1,144 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
   Search,
   Plus,
   Filter,
+  MoreHorizontal,
   Phone,
   Mail,
   MapPin,
   Calendar,
   Trophy,
+  Users,
   TrendingUp,
+  Eye,
+  Star,
 } from "lucide-react";
 import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 import { TraineeFormModal } from "@/components/modals/TraineeFormModal";
-import { useClientPagination } from "@/hooks/useClientPagination";
 import { BasePagination } from "@/components/BasePagination";
+import { useEntitySearch } from "@/hooks/useEntitySearch";
+import {
+  listTrainees,
+  searchTrainees,
+  countTrainees,
+  countActiveTrainees,
+} from "@/services/trainee.service";
+import { countSports } from "@/services/sport.services";
+import { getAverageAttendance } from "@/services/attendance.services";
+import { TraineeCardDto } from "@/types/TraineeCardDto";
 
-const trainees = [
-  {
-    id: 102127862,
-    name: "Alice Johnson",
-    email: "alice.johnson@email.com",
-    phone: "+1 (555) 123-4567",
-    age: 16,
-    joinDate: "2024-01-15",
-    sport: "Basketball",
-    level: "Intermediate",
-    attendanceRate: 95,
-    branch: "Downtown",
-    status: "Active",
-  },
-  {
-    id: 2,
-    name: "Marcus Thompson",
-    email: "marcus.t@email.com",
-    phone: "+1 (555) 234-5678",
-    age: 14,
-    joinDate: "2024-02-20",
-    sport: "Soccer",
-    level: "Beginner",
-    attendanceRate: 88,
-    branch: "North Side",
-    status: "Active",
-  },
-  {
-    id: 3,
-    name: "Sofia Rodriguez",
-    email: "sofia.rodriguez@email.com",
-    phone: "+1 (555) 345-6789",
-    age: 17,
-    joinDate: "2023-09-10",
-    sport: "Tennis",
-    level: "Advanced",
-    attendanceRate: 92,
-    branch: "East Branch",
-    status: "Active",
-  },
-  {
-    id: 4,
-    name: "David Kim",
-    email: "david.kim@email.com",
-    phone: "+1 (555) 456-7890",
-    age: 15,
-    joinDate: "2024-03-05",
-    sport: "Swimming",
-    level: "Intermediate",
-    attendanceRate: 97,
-    branch: "Downtown",
-    status: "Active",
-  },
-  {
-    id: 5,
-    name: "Emma Davis",
-    email: "emma.davis@email.com",
-    phone: "+1 (555) 567-8901",
-    age: 13,
-    joinDate: "2024-01-30",
-    sport: "Volleyball",
-    level: "Beginner",
-    attendanceRate: 85,
-    branch: "North Side",
-    status: "On Hold",
-  },
-];
+interface TraineesStats {
+  totalTrainees: number;
+  activeTrainees: number;
+  sportsCount: number;
+  averageAttendance: number;
+}
 
-const stats = [
-  { title: "Total Trainees", value: "1,247", change: "+12%", icon: Trophy },
-  { title: "Active Programs", value: "5", change: "+1", icon: Calendar },
-  { title: "Avg. Attendance", value: "91%", change: "+3%", icon: TrendingUp },
-  { title: "New This Month", value: "48", change: "+18%", icon: Plus },
-];
+const pageSize = 6;
 
 export default function Trainees() {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
-
-  const filteredTrainees = useMemo(
-    () =>
-      trainees.filter(
-        (t) =>
-          t.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-          t.email.toLowerCase().includes(searchTerm.toLowerCase()),
-      ),
-    [searchTerm],
-  );
+  const [stats, setStats] = useState<TraineesStats>({
+    totalTrainees: 0,
+    activeTrainees: 0,
+    sportsCount: 0,
+    averageAttendance: 0,
+  });
 
   const {
-    paginatedData,
+    items: trainees,
+    loading,
+    term,
+    setTerm,
     page,
     setPage,
-    pageSize,
-    setPageSize,
     totalPages,
-    totalCount,
-  } = useClientPagination({ data: filteredTrainees, initialPageSize: 10 });
+  } = useEntitySearch<TraineeCardDto>({
+    listFn: listTrainees,
+    searchFn: searchTrainees,
+    pageSize: pageSize,
+    minLength: 2,
+  });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Active":
+  useEffect(() => {
+    let active = true;
+
+    const fetchStats = async () => {
+      try {
+        const results = await Promise.allSettled([
+          countTrainees(),
+          countActiveTrainees(),
+          countSports(),
+          getAverageAttendance(),
+        ]);
+
+        if (!active) return;
+
+        const [countRes, activeTrianees, sportsRes, attendenceAvg] = results;
+
+        setStats({
+          totalTrainees:
+            countRes.status === "fulfilled" && countRes.value?.isSuccess
+              ? countRes.value.data
+              : 0,
+
+          activeTrainees:
+            activeTrianees.status === "fulfilled" &&
+            activeTrianees.value?.isSuccess
+              ? activeTrianees.value.data
+              : 0,
+
+          sportsCount:
+            sportsRes.status === "fulfilled" && sportsRes.value?.isSuccess
+              ? sportsRes.value.data
+              : 0,
+
+          averageAttendance:
+            attendenceAvg.status === "fulfilled" &&
+            attendenceAvg.value?.isSuccess
+              ? attendenceAvg.value.data
+              : 0,
+        });
+      } catch (err) {
+        console.error("Trainees stats error", err);
+      }
+    };
+
+    fetchStats();
+
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const getStatusColor = (isSubscribed: boolean) => {
+    switch (isSubscribed) {
+      case true:
         return "bg-success/10 text-success hover:bg-success/20";
-      case "On Hold":
-        return "bg-warning/10 text-warning hover:bg-warning/20";
+      // case false:
+      //   return "bg-warning/10 text-warning hover:bg-warning/20";
+      case false:
+        return "bg-destructive/10 text-destructive hover:bg-destructive/20";
       default:
         return "bg-muted";
     }
   };
+
   const getLevelColor = (level: string) => {
     switch (level) {
       case "Beginner":
@@ -150,7 +152,45 @@ export default function Trainees() {
     }
   };
 
-  const handleRefresh = () => {};
+  const getInitials = (name: string) =>
+    name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .toUpperCase()
+      .substring(0, 2);
+
+  const handleRefresh = () => {
+    setTerm("");
+    setPage(1);
+  };
+
+  const statsCards = [
+    {
+      title: "Total Trainees",
+      value: stats.totalTrainees.toString(),
+      change: "+12%",
+      icon: Users,
+    },
+    {
+      title: "Active Now",
+      value: stats.activeTrainees.toString(),
+      change: "+5%",
+      icon: TrendingUp,
+    },
+    {
+      title: "Sports Covered",
+      value: stats.sportsCount.toString(),
+      change: "+2",
+      icon: Trophy,
+    },
+    {
+      title: "Avg. Attendance",
+      value: `${stats.averageAttendance}%`,
+      change: "+3%",
+      icon: Star,
+    },
+  ];
 
   return (
     <div className="space-y-8">
@@ -169,8 +209,9 @@ export default function Trainees() {
         </Button>
       </div>
 
+      {/* Stats Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
+        {statsCards.map((stat, index) => (
           <Card key={index} className="card-athletic">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
@@ -196,6 +237,7 @@ export default function Trainees() {
         ))}
       </div>
 
+      {/* Search */}
       <Card className="card-athletic">
         <CardHeader>
           <CardTitle>Search & Filter</CardTitle>
@@ -205,9 +247,9 @@ export default function Trainees() {
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search trainees by name or email..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search trainees by name, email, or sport..."
+                value={term}
+                onChange={(e) => setTerm(e.target.value)}
                 className="pl-10"
               />
             </div>
@@ -223,111 +265,179 @@ export default function Trainees() {
         </CardContent>
       </Card>
 
-      <Card className="card-athletic">
-        <CardHeader>
-          <CardTitle>All Trainees ({totalCount})</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="rounded-md border">
-            <Table>
-              <TableHeader>
-                <TableRow>
-                  <TableHead>Trainee</TableHead>
-                  <TableHead>Contact</TableHead>
-                  <TableHead>Sport & Level</TableHead>
-                  <TableHead>Branch</TableHead>
-                  <TableHead>Attendance</TableHead>
-                  <TableHead>Status</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
-                </TableRow>
-              </TableHeader>
-              <TableBody>
-                {paginatedData.map((trainee) => (
-                  <TableRow key={trainee.id} className="hover:bg-muted/50">
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="font-medium">{trainee.name}</div>
-                        <div className="text-sm text-muted-foreground">
-                          Age: {trainee.age} • Joined{" "}
-                          {new Date(trainee.joinDate).toLocaleDateString()}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-1">
-                        <div className="flex items-center gap-2 text-sm">
-                          <Mail className="h-3 w-3" />
-                          {trainee.email}
-                        </div>
-                        <div className="flex items-center gap-2 text-sm text-muted-foreground">
-                          <Phone className="h-3 w-3" />
-                          {trainee.phone}
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="space-y-2">
-                        <Badge variant="outline" className="font-medium">
-                          {trainee.sport}
-                        </Badge>
-                        <Badge
-                          variant="secondary"
-                          className={getLevelColor(trainee.level)}
-                        >
-                          {trainee.level}
-                        </Badge>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-3 w-3 text-muted-foreground" />
-                        {trainee.branch}
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <div className="text-sm font-medium">
-                          {trainee.attendanceRate}%
-                        </div>
-                        <div className="w-16 bg-muted rounded-full h-2">
-                          <div
-                            className="bg-primary h-2 rounded-full"
-                            style={{ width: `${trainee.attendanceRate}%` }}
-                          ></div>
-                        </div>
-                      </div>
-                    </TableCell>
-                    <TableCell>
-                      <Badge className={getStatusColor(trainee.status)}>
-                        {trainee.status}
-                      </Badge>
-                    </TableCell>
-                    <TableCell className="text-right">
-                      <Button
-                        variant="ghost"
-                        size="sm"
-                        onClick={() => navigate(`/trainees/${trainee.id}`)}
-                        className="text-primary hover:text-primary/80"
-                      >
-                        View Profile
-                      </Button>
-                    </TableCell>
-                  </TableRow>
-                ))}
-              </TableBody>
-            </Table>
-          </div>
-          <BasePagination
-            page={page}
-            totalPages={totalPages}
-            pageSize={pageSize}
-            totalCount={totalCount}
-            onPageChange={setPage}
-            onPageSizeChange={setPageSize}
-          />
-        </CardContent>
-      </Card>
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {trainees.map((trainee) => (
+          <Card key={trainee.id} className="card-athletic">
+            <CardHeader className="pb-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-3">
+                  <Avatar className="h-12 w-12">
+                    <AvatarFallback className="bg-gradient-primary text-primary-foreground">
+                      {getInitials(trainee.firstName + " " + trainee.lastName)}
+                    </AvatarFallback>
+                  </Avatar>
+                  <div>
+                    <CardTitle className="text-lg">
+                      {trainee.firstName + " " + trainee.lastName}
+                    </CardTitle>
+                    <div className="flex items-center gap-1 mt-1">
+                      <span className="text-sm font-medium">
+                        Age: {trainee.age} • Joined{" "}
+                        {new Date(trainee.joinDate).getFullYear()}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem
+                      onClick={() => navigate(`/trainees/${trainee.id}`)}
+                    >
+                      View Profile
+                    </DropdownMenuItem>
+                    <DropdownMenuItem>Edit Details</DropdownMenuItem>
+                    <DropdownMenuItem>View Attendance</DropdownMenuItem>
+                    <DropdownMenuItem>View Payments</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem className="text-destructive">
+                      Remove Trainee
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <div className="flex items-center gap-2 text-sm">
+                  <Mail className="h-3 w-3 text-muted-foreground" />
+                  <span className="truncate">{trainee.email}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <Phone className="h-3 w-3 text-muted-foreground" />
+                  <span>{trainee.phoneNumber}</span>
+                </div>
+                <div className="flex items-center gap-2 text-sm">
+                  <MapPin className="h-3 w-3 text-muted-foreground" />
+                  <span>{trainee.branchName}</span>
+                </div>
+              </div>
 
+              <div className="space-y-2">
+                <div className="flex items-center gap-2">
+                  <Badge variant="outline" className="font-medium">
+                    {trainee.sportName}
+                  </Badge>
+                  <Badge
+                    variant="secondary"
+                    className={getLevelColor(trainee.skillLevel)}
+                  >
+                    {trainee.skillLevel}
+                  </Badge>
+                  <Badge className={getStatusColor(trainee.isSubscribed)}>
+                    {trainee.isSubscribed ? "Subscribed" : "Not Subscribed"}
+                  </Badge>
+                </div>
+              </div>
+
+              <div className="flex items-center justify-between pt-2 border-t border-border">
+                <div className="flex items-center gap-1 text-sm">
+                  <Users className="h-3 w-3 text-muted-foreground" />
+                  <span>Coach: {trainee.coachName}</span>
+                </div>
+                <div className="flex items-center gap-1 text-sm">
+                  <Calendar className="h-3 w-3 text-muted-foreground" />
+                  <span>Att: {trainee.attendanceRate}%</span>
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
+                  Medical Info
+                </p>
+                <div className="flex flex-wrap gap-1">
+                  {trainee.medicalConditions?.map((condition, idx) => (
+                    <Badge key={idx} variant="outline" className="text-xs">
+                      {condition}
+                    </Badge>
+                  ))}
+                  {(!trainee.medicalConditions ||
+                    trainee.medicalConditions.length === 0) && (
+                    <span className="text-xs text-muted-foreground">
+                      No medical conditions
+                    </span>
+                  )}
+                </div>
+              </div>
+
+              <div className="flex gap-2 pt-2">
+                <Button
+                  variant="default"
+                  size="sm"
+                  className="flex-1"
+                  onClick={() => navigate(`/trainees/${trainee.id}`)}
+                >
+                  <Eye className="h-3.5 w-3.5 mr-1.5" />
+                  View Profile
+                </Button>
+                <Button variant="outline" size="sm" className="flex-1">
+                  Attendance
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        ))}
+      </div>
+
+      {/* Loading State */}
+      {loading && (
+        <div className="text-center py-8">
+          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
+          <p className="mt-2 text-muted-foreground">Loading trainees...</p>
+        </div>
+      )}
+
+      {/* Empty State */}
+      {!loading && trainees.length === 0 && (
+        <Card className="card-athletic">
+          <CardContent className="py-12">
+            <div className="text-center">
+              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+              <h3 className="text-lg font-semibold mb-2">No trainees found</h3>
+              <p className="text-muted-foreground mb-4">
+                {term
+                  ? `No results for "${term}"`
+                  : "Get started by adding your first trainee"}
+              </p>
+              {!term && (
+                <Button variant="hero" onClick={() => setModalOpen(true)}>
+                  <Plus className="h-4 w-4 mr-2" />
+                  Add Trainee
+                </Button>
+              )}
+            </div>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Pagination */}
+      {trainees.length > 0 && (
+        <BasePagination
+          page={page}
+          totalPages={totalPages}
+          pageSize={pageSize}
+          onPageChange={setPage}
+          onPageSizeChange={setPage}
+        />
+      )}
+
+      {/* Modal */}
       <TraineeFormModal
         open={modalOpen}
         onOpenChange={setModalOpen}
