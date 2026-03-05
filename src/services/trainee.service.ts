@@ -25,6 +25,6 @@ export const searchTrainees = async (
   pageSize: number,
 ): Promise<ApiResult<PagedData<TraineeCardDto>>> => {
   return await apiFetch<ApiResult<PagedData<TraineeCardDto>>>(
-    `/api/trainee/search?term=${encodeURIComponent(term)}&page=${page}&pageSize=${pageSize}`,
+    `/api/trainee/search?searchTerm=${encodeURIComponent(term)}&page=${page}&pageSize=${pageSize}`,
   );
 };

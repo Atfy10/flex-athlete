@@ -161,7 +161,6 @@ export default function Trainees() {
       .substring(0, 2);
 
   const handleRefresh = () => {
-    setTerm("");
     setPage(1);
   };
 
