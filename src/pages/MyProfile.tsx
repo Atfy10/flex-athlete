@@ -124,12 +124,17 @@ export default function MyProfile() {
     }
   };
 
+  // Avoid showing email twice if userName === email
+  const showUsername = profile?.userName && profile.userName !== profile?.email;
+
   const sections: ProfileSection[] = profile
     ? [
         {
           title: "Account Information",
           fields: [
-            { label: "Username", value: profile.userName, icon: <User className="h-3.5 w-3.5" /> },
+            showUsername
+              ? { label: "Username", value: profile.userName, icon: <User className="h-3.5 w-3.5" /> }
+              : null,
             { label: "Email", value: profile.email, icon: <Mail className="h-3.5 w-3.5" /> },
             profile.phoneNumber
               ? { label: "Phone", value: profile.phoneNumber, icon: <Phone className="h-3.5 w-3.5" /> }
