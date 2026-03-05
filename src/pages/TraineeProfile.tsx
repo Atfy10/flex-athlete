@@ -2,36 +2,30 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { apiFetch, ApiError } from "@/lib/api";
 import { ApiResult } from "@/types/api";
-import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
+import {
+  ProfileViewLayout,
+  ProfileSection,
+} from "@/components/profile/ProfileViewLayout";
 import { TraineeEditModal } from "@/components/modals/TraineeEditModal";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Phone, MapPin, Calendar, Users, Shield, TrendingUp } from "lucide-react";
-
-interface TraineeDetailDto {
-  id: number;
-  firstName: string;
-  lastName: string;
-  email?: string;
-  phoneNumber?: string;
-  parentNumber?: string;
-  guardianName?: string;
-  branchName: string;
-  birthDate?: string;
-  gender?: string;
-  sports?: string[];
-  status: string;
-  attendanceRate?: number;
-  enrollmentCount?: number;
-  joinDate?: string;
-}
+import {
+  Mail,
+  Phone,
+  MapPin,
+  Calendar,
+  Users,
+  Shield,
+  TrendingUp,
+} from "lucide-react";
+import { TraineeDetailsDto } from "@/types/TraineeDetailsDto";
 
 export default function TraineeProfile() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
   const { toast } = useToast();
 
-  const [trainee, setTrainee] = useState<TraineeDetailDto | null>(null);
+  const [trainee, setTrainee] = useState<TraineeDetailsDto | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
@@ -41,14 +35,18 @@ export default function TraineeProfile() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch<ApiResult<TraineeDetailDto>>(`/api/trainee/${id}`);
+      const res = await apiFetch<ApiResult<TraineeDetailsDto>>(
+        `/api/trainee/${id}`,
+      );
       if (res.isSuccess && res.data) {
         setTrainee(res.data);
       } else {
         setError(res.message || "Trainee not found.");
       }
     } catch (err) {
-      setError(err instanceof ApiError ? err.message : "Failed to load trainee.");
+      setError(
+        err instanceof ApiError ? err.message : "Failed to load trainee.",
+      );
     } finally {
       setLoading(false);
     }
@@ -74,23 +72,37 @@ export default function TraineeProfile() {
           title: "Basic Information",
           fields: [
             trainee.gender
-              ? { label: "Gender", value: trainee.gender, icon: <Users className="h-3.5 w-3.5" /> }
+              ? {
+                  label: "Gender",
+                  value: trainee.gender,
+                  icon: <Users className="h-3.5 w-3.5" />,
+                }
               : null,
             trainee.birthDate
               ? {
                   label: "Birth Date",
-                  value: new Date(trainee.birthDate).toLocaleDateString("en-US", {
-                    year: "numeric", month: "long", day: "numeric",
-                  }),
+                  value: new Date(trainee.birthDate).toLocaleDateString(
+                    "en-US",
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    },
+                  ),
                   icon: <Calendar className="h-3.5 w-3.5" />,
                 }
               : null,
             trainee.joinDate
               ? {
                   label: "Joined",
-                  value: new Date(trainee.joinDate).toLocaleDateString("en-US", {
-                    year: "numeric", month: "long", day: "numeric",
-                  }),
+                  value: new Date(trainee.joinDate).toLocaleDateString(
+                    "en-US",
+                    {
+                      year: "numeric",
+                      month: "long",
+                      day: "numeric",
+                    },
+                  ),
                   icon: <Calendar className="h-3.5 w-3.5" />,
                 }
               : null,
@@ -100,10 +112,18 @@ export default function TraineeProfile() {
           title: "Contact Information",
           fields: [
             trainee.email
-              ? { label: "Email", value: trainee.email, icon: <Mail className="h-3.5 w-3.5" /> }
+              ? {
+                  label: "Email",
+                  value: trainee.email,
+                  icon: <Mail className="h-3.5 w-3.5" />,
+                }
               : null,
             trainee.phoneNumber
-              ? { label: "Phone", value: trainee.phoneNumber, icon: <Phone className="h-3.5 w-3.5" /> }
+              ? {
+                  label: "Phone",
+                  value: trainee.phoneNumber,
+                  icon: <Phone className="h-3.5 w-3.5" />,
+                }
               : null,
           ].filter(Boolean) as ProfileSection["fields"],
         },
@@ -111,17 +131,29 @@ export default function TraineeProfile() {
           title: "Guardian Info",
           fields: [
             trainee.guardianName
-              ? { label: "Guardian", value: trainee.guardianName, icon: <Shield className="h-3.5 w-3.5" /> }
+              ? {
+                  label: "Guardian",
+                  value: trainee.guardianName,
+                  icon: <Shield className="h-3.5 w-3.5" />,
+                }
               : null,
             trainee.parentNumber
-              ? { label: "Parent Number", value: trainee.parentNumber, icon: <Phone className="h-3.5 w-3.5" /> }
+              ? {
+                  label: "Parent Number",
+                  value: trainee.parentNumber,
+                  icon: <Phone className="h-3.5 w-3.5" />,
+                }
               : null,
           ].filter(Boolean) as ProfileSection["fields"],
         },
         {
           title: "Academy Info",
           fields: [
-            { label: "Branch", value: trainee.branchName, icon: <MapPin className="h-3.5 w-3.5" /> },
+            {
+              label: "Branch",
+              value: trainee.branchName,
+              icon: <MapPin className="h-3.5 w-3.5" />,
+            },
             ...(trainee.sports && trainee.sports.length > 0
               ? [
                   {
@@ -156,7 +188,11 @@ export default function TraineeProfile() {
                 }
               : null,
             trainee.enrollmentCount !== undefined
-              ? { label: "Enrollments", value: `${trainee.enrollmentCount} active`, icon: <Users className="h-3.5 w-3.5" /> }
+              ? {
+                  label: "Enrollments",
+                  value: `${trainee.enrollmentCount} active`,
+                  icon: <Users className="h-3.5 w-3.5" />,
+                }
               : null,
           ].filter(Boolean) as ProfileSection["fields"],
         },
@@ -171,9 +207,9 @@ export default function TraineeProfile() {
         fullName={trainee ? `${trainee.firstName} ${trainee.lastName}` : ""}
         roleBadge="Trainee"
         roleBadgeVariant="outline"
-        statusBadge={trainee?.status ?? ""}
+        statusBadge={trainee?.isSubscribed ? "Active" : "Inactive"}
         statusBadgeClass={
-          trainee?.status === "Active"
+          trainee?.isSubscribed
             ? "bg-success/10 text-success"
             : "bg-warning/10 text-warning"
         }
@@ -185,16 +221,23 @@ export default function TraineeProfile() {
           <TraineeEditModal
             open={editOpen}
             onOpenChange={setEditOpen}
-            onSuccess={() => { setEditOpen(false); fetchTrainee(); }}
-            trainee={trainee ? {
-              id: trainee.id,
-              firstName: trainee.firstName,
-              lastName: trainee.lastName,
-              parentNumber: trainee.parentNumber,
-              guardianName: trainee.guardianName,
-              branchName: trainee.branchName,
-              sports: trainee.sports,
-            } : null}
+            onSuccess={() => {
+              setEditOpen(false);
+              fetchTrainee();
+            }}
+            trainee={
+              trainee
+                ? {
+                    id: trainee.id,
+                    firstName: trainee.firstName,
+                    lastName: trainee.lastName,
+                    parentNumber: trainee.parentNumber,
+                    guardianName: trainee.guardianName,
+                    branchName: trainee.branchName,
+                    sports: trainee.sports,
+                  }
+                : null
+            }
           />
         }
       />
