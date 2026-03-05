@@ -285,7 +285,7 @@ export function ProfileViewLayout({
                       key={field.label}
                       className="flex items-start justify-between gap-4 py-1 border-b border-border/50 last:border-0"
                     >
-                      <dt className="flex items-center gap-2 text-sm text-muted-foreground shrink-0 min-w-[120px]">
+                      <dt className="flex items-center gap-2 text-sm text-muted-foreground shrink-0 min-w-[100px] max-w-[140px]">
                         {field.icon && (
                           <span className="text-muted-foreground/60">{field.icon}</span>
                         )}
