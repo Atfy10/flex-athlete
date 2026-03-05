@@ -1,3 +1,8 @@
+export interface TraineeSportSkill {
+  sportName: string;
+  skillLevel: string;
+}
+
 export interface TraineeCardDto {
   id: number;
   firstName: string;
@@ -6,11 +11,15 @@ export interface TraineeCardDto {
   phoneNumber: string;
   age: number;
   joinDate: string;
-  sportName: string;
-  skillLevel: string;
+  /** Legacy single-sport fields — kept for backward compat */
+  sportName?: string;
+  skillLevel?: string;
+  /** Preferred: multiple sports with individual skill levels */
+  sportSkills?: TraineeSportSkill[];
   branchName: string;
   coachName: string;
   isSubscribed: boolean;
   attendanceRate: number;
   medicalConditions?: string[];
 }
+
