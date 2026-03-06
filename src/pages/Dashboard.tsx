@@ -44,16 +44,11 @@ import {
 import { getTRaineesCountForSpecificDay } from "@/services/trainee.service";
 import { getTraineeGroupsForSpecificDay } from "@/services/traineeGroup.services";
 
-const statsData = [
-  {
-    title: "Total Trainees",
-    value: "1,247",
-    icon: GraduationCap,
-    change: "+12%",
-  },
-  { title: "Active Coaches", value: "89", icon: UserCheck, change: "+5%" },
-  { title: "Today's Sessions", value: "24", icon: Calendar, change: "+8%" },
-  { title: "Attendance Rate", value: "94%", icon: Activity, change: "+2%" },
+const STATS_META = [
+  { title: "Total Trainees", icon: GraduationCap, change: "+12%" },
+  { title: "Active Coaches",  icon: UserCheck,    change: "+5%"  },
+  { title: "Today's Sessions", icon: Calendar,    change: "+8%"  },
+  { title: "Attendance Rate", icon: Activity,     change: "+2%"  },
 ];
 
 const attendanceDummyData = [

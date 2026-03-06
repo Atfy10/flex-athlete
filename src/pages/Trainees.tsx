@@ -467,7 +467,7 @@ export default function Trainees() {
           totalPages={totalPages}
           pageSize={pageSize}
           onPageChange={setPage}
-          onPageSizeChange={setPage}
+          onPageSizeChange={(_newSize) => { setPage(1); }}
         />
       )}
 

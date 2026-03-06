@@ -65,11 +65,11 @@ interface CoachesStats {
   totalTrainees: number;
 }
 
-const stats = [
-  { title: "Total Coaches", value: "89", change: "+5", icon: Users },
-  { title: "Sports Covered", value: "12", change: "+2", icon: Trophy },
-  { title: "Avg. Rating", value: "4.8", change: "+0.1", icon: Star },
-  { title: "Total Trainees", value: "1,247", change: "+48", icon: Award },
+const STATS_META = [
+  { title: "Total Coaches",  change: "+5",   icon: Users  },
+  { title: "Sports Covered", change: "+2",   icon: Trophy },
+  { title: "Avg. Rating",    change: "+0.1", icon: Star   },
+  { title: "Total Trainees", change: "+48",  icon: Award  },
 ];
 
 const pageSize = 6;
