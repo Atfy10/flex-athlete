@@ -206,10 +206,12 @@ export default function Dashboard() {
     load();
   }, []);
 
-  statsData[0].value = traineesCount.toString();
-  statsData[1].value = activeCoaches.toString();
-  statsData[2].value = todayCount.toString();
-  statsData[3].value = attendanceRate.toString() + "%";
+  const statsData = [
+    { ...STATS_META[0], value: traineesCount.toString() },
+    { ...STATS_META[1], value: activeCoaches.toString() },
+    { ...STATS_META[2], value: todayCount.toString() },
+    { ...STATS_META[3], value: `${attendanceRate}%` },
+  ];
 
   return (
     <div className="space-y-8">

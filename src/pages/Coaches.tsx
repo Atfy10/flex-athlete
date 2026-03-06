@@ -170,10 +170,12 @@ export default function Coaches() {
     setPage(1);
   };
 
-  stats[0].value = statsReal.totalCoaches.toString();
-  stats[1].value = statsReal.sportsCovered.toString();
-  stats[2].value = statsReal.averageRating.toFixed(1);
-  stats[3].value = statsReal.totalTrainees.toString();
+  const stats = [
+    { ...STATS_META[0], value: statsReal.totalCoaches.toString() },
+    { ...STATS_META[1], value: statsReal.sportsCovered.toString() },
+    { ...STATS_META[2], value: statsReal.averageRating.toFixed(1) },
+    { ...STATS_META[3], value: statsReal.totalTrainees.toString() },
+  ];
 
   return (
     <div className="space-y-8">
