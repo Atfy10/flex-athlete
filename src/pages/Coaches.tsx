@@ -364,7 +364,7 @@ export default function Coaches() {
         totalPages={totalPages}
         pageSize={pageSize}
         onPageChange={setPage}
-        onPageSizeChange={setPage}
+        onPageSizeChange={(_newSize) => { setPage(1); }}
       />
 
       <CoachFormModal

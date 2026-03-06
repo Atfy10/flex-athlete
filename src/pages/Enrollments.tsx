@@ -37,7 +37,10 @@ const Enrollments = () => {
   const getInitials = (name: string) => name.split(' ').map(n => n[0]).join('').toUpperCase();
   const getProgressPercentage = (completed: number, total: number) => Math.round((completed / total) * 100);
 
-  const handleRefresh = () => {};
+  const handleRefresh = () => {
+    setSearchTerm("");
+    setPage(1);
+  };
 
   return (
     <div className="space-y-6">

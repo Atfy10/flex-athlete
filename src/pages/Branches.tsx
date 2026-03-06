@@ -79,7 +79,10 @@ const Branches = () => {
     return "bg-success";
   };
 
-  const handleRefresh = () => {};
+  const handleRefresh = () => {
+    setSearchTerm("");
+    setPage(1);
+  };
 
   return (
     <div className="space-y-6">
