@@ -153,12 +153,14 @@ export default function Trainees() {
 
   const getLevelColor = (level: string) => {
     switch (level) {
-      case "Beginner":
+      case "beginner":
         return "bg-secondary/10 text-secondary hover:bg-secondary/20";
-      case "Intermediate":
+      case "intermediate":
         return "bg-primary/10 text-primary hover:bg-primary/20";
-      case "Advanced":
-        return "bg-success/10 text-success hover:bg-success/20";
+      case "advanced":
+        return "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20";
+      case "expert":
+        return "bg-purple-500/10 text-purple-500 hover:bg-purple-500/20";
       default:
         return "bg-muted";
     }
@@ -348,7 +350,12 @@ export default function Trainees() {
                   {(trainee.sportSkills && trainee.sportSkills.length > 0
                     ? trainee.sportSkills
                     : trainee.sportName
-                      ? [{ sportName: trainee.sportName, skillLevel: trainee.skillLevel ?? "" }]
+                      ? [
+                          {
+                            sportName: trainee.sportName,
+                            skillLevel: trainee.skillLevel ?? "",
+                          },
+                        ]
                       : []
                   ).map((s, i) => (
                     <span key={i} className="inline-flex items-center gap-1">
@@ -365,7 +372,9 @@ export default function Trainees() {
                       )}
                     </span>
                   ))}
-                  <Badge className={`${getStatusColor(trainee.isSubscribed)} text-xs`}>
+                  <Badge
+                    className={`${getStatusColor(trainee.isSubscribed)} text-xs`}
+                  >
                     {trainee.isSubscribed ? "Subscribed" : "Not Subscribed"}
                   </Badge>
                 </div>
