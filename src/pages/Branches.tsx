@@ -1,96 +1,126 @@
-import { useState, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { MapPin, Building, Plus, Search, Filter, Phone, Mail, Users, Trophy, Eye } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  MapPin,
+  Building,
+  Plus,
+  Search,
+  Phone,
+  Mail,
+  Eye,
+} from "lucide-react";
 import { BranchFormModal } from "@/components/modals/BranchFormModal";
-import { useClientPagination } from "@/hooks/useClientPagination";
 import { BasePagination } from "@/components/BasePagination";
+import { useEntitySearch } from "@/hooks/useEntitySearch";
+import { listBranches, searchBranches } from "@/services/branch.services";
+import { BranchCardDto } from "@/types/BranchCardDto";
 
-const allBranches = [
-    {
-      id: 1,
-      name: "Main Campus",
-      address: "123 Sport Academy Dr, City Center",
-      phone: "+1 234 567 8900",
-      email: "main@academy.com",
-      manager: "Sarah Johnson",
-      capacity: 500,
-      currentEnrollment: 420,
-      sports: ["Basketball", "Soccer", "Tennis", "Swimming"],
-      status: "Active",
-      facilities: ["Pool", "Gymnasium", "Tennis Courts", "Track"]
-    },
-    {
-      id: 2,
-      name: "Downtown Branch",
-      address: "456 Athletic Ave, Downtown",
-      phone: "+1 234 567 8901", 
-      email: "downtown@academy.com",
-      manager: "Mike Rodriguez",
-      capacity: 300,
-      currentEnrollment: 275,
-      sports: ["Boxing", "Martial Arts", "Fitness"],
-      status: "Active",
-      facilities: ["Boxing Ring", "Fitness Center", "Yoga Studio"]
-    },
-    {
-      id: 3,
-      name: "Westside Location",
-      address: "789 Champions Blvd, Westside",
-      phone: "+1 234 567 8902",
-      email: "westside@academy.com", 
-      manager: "Emily Chen",
-      capacity: 200,
-      currentEnrollment: 150,
-      sports: ["Gymnastics", "Dance", "Cheerleading"],
-      status: "Active",
-      facilities: ["Dance Studio", "Gymnastics Hall", "Mirrored Rooms"]
-    }
-];
+const PAGE_SIZE = 9;
 
+// ── Skeleton card shown during initial / page loads ──────────────────────────
+function BranchCardSkeleton() {
+  return (
+    <Card className="card-athletic">
+      <CardContent className="p-6 space-y-4">
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-3">
+            <Skeleton className="w-12 h-12 rounded-lg" />
+            <div className="space-y-2">
+              <Skeleton className="h-4 w-32" />
+              <Skeleton className="h-3 w-24" />
+            </div>
+          </div>
+          <Skeleton className="h-5 w-16 rounded-full" />
+        </div>
+        <div className="space-y-2">
+          <Skeleton className="h-3 w-48" />
+          <Skeleton className="h-3 w-36" />
+          <Skeleton className="h-3 w-40" />
+        </div>
+        <Skeleton className="h-8 w-full rounded-md" />
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Empty state ───────────────────────────────────────────────────────────────
+function BranchesEmptyState({
+  term,
+  onAdd,
+}: {
+  term: string;
+  onAdd: () => void;
+}) {
+  return (
+    <Card className="card-athletic col-span-full">
+      <CardContent className="py-16">
+        <div className="flex flex-col items-center text-center gap-4">
+          <div className="p-4 rounded-full bg-muted">
+            <Building className="h-10 w-10 text-muted-foreground" />
+          </div>
+          <div>
+            <h3 className="text-lg font-semibold">
+              {term ? `No results for "${term}"` : "No branches yet"}
+            </h3>
+            <p className="text-muted-foreground text-sm mt-1">
+              {term
+                ? "Try a different search term."
+                : "Add your first branch to get started."}
+            </p>
+          </div>
+          {!term && (
+            <Button className="btn-hero" onClick={onAdd}>
+              <Plus className="h-4 w-4 mr-2" />
+              Add Branch
+            </Button>
+          )}
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ── Main page ─────────────────────────────────────────────────────────────────
 const Branches = () => {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
   const [modalOpen, setModalOpen] = useState(false);
 
-  const filteredBranches = useMemo(() => allBranches.filter(b =>
-    b.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    b.address.toLowerCase().includes(searchTerm.toLowerCase())
-  ), [searchTerm]);
+  const {
+    items: branches,
+    loading,
+    term,
+    setTerm,
+    page,
+    setPage,
+    totalPages,
+  } = useEntitySearch<BranchCardDto>({
+    listFn: listBranches,
+    searchFn: searchBranches,
+    pageSize: PAGE_SIZE,
+    minLength: 2,
+  });
 
-  const { paginatedData: branches, page, setPage, pageSize, setPageSize, totalPages, totalCount } = useClientPagination({ data: filteredBranches, initialPageSize: 10 });
-
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Active": return "bg-success text-success-foreground";
-      case "Maintenance": return "bg-warning text-warning-foreground";
-      case "Inactive": return "bg-muted text-muted-foreground";
-      default: return "bg-muted text-muted-foreground";
-    }
-  };
-
-  const getCapacityColor = (current: number, max: number) => {
-    const percentage = (current / max) * 100;
-    if (percentage >= 90) return "bg-destructive";
-    if (percentage >= 75) return "bg-warning";
-    return "bg-success";
-  };
-
-  const handleRefresh = () => {
-    setSearchTerm("");
+  const handleRefresh = useCallback(() => {
+    setTerm("");
     setPage(1);
-  };
+  }, [setTerm, setPage]);
 
   return (
     <div className="space-y-6">
       {/* Header */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gradient">Branch Management</h1>
-          <p className="text-muted-foreground">Manage academy locations and facilities</p>
+          <h1 className="text-3xl font-bold text-gradient">
+            Branch Management
+          </h1>
+          <p className="text-muted-foreground">
+            Manage academy locations and facilities
+          </p>
         </div>
         <Button className="btn-hero" onClick={() => setModalOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
@@ -98,166 +128,124 @@ const Branches = () => {
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Branches</CardTitle>
-            <Building className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">3</div>
-            <p className="text-xs text-muted-foreground">Across the city</p>
-          </CardContent>
-        </Card>
-
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Capacity</CardTitle>
-            <Users className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">1,000</div>
-            <p className="text-xs text-muted-foreground">Maximum students</p>
-          </CardContent>
-        </Card>
-
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Current Enrollment</CardTitle>
-            <Users className="h-4 w-4 text-secondary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">845</div>
-            <p className="text-xs text-muted-foreground">84.5% capacity</p>
-          </CardContent>
-        </Card>
-
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Sports Offered</CardTitle>
-            <Trophy className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">Different disciplines</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search and Filters */}
+      {/* Search */}
       <Card className="card-athletic">
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search branches..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button variant="outline">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
+          <div className="relative">
+            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search branches by name or city…"
+              value={term}
+              onChange={(e) => setTerm(e.target.value)}
+              className="pl-10"
+            />
           </div>
         </CardContent>
       </Card>
 
-      {/* Branches Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {branches.map((branch) => (
-          <Card key={branch.id} className="card-athletic">
-            <CardContent className="p-6">
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-primary flex items-center justify-center">
-                    <Building className="h-6 w-6 text-primary-foreground" />
+      {/* Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {/* Loading skeletons */}
+        {loading &&
+          Array.from({ length: PAGE_SIZE }).map((_, i) => (
+            <BranchCardSkeleton key={i} />
+          ))}
+
+        {/* Empty state */}
+        {!loading && branches.length === 0 && (
+          <BranchesEmptyState term={term} onAdd={() => setModalOpen(true)} />
+        )}
+
+        {/* Branch cards */}
+        {!loading &&
+          branches.map((branch) => (
+            <Card key={branch.id} className="card-athletic">
+              <CardContent className="p-6">
+                {/* Header */}
+                <div className="flex items-start justify-between mb-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-12 h-12 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
+                      <Building className="h-6 w-6 text-primary-foreground" />
+                    </div>
+                    <div>
+                      <h3 className="font-semibold text-lg leading-tight">
+                        {branch.name}
+                      </h3>
+                      <p className="text-sm text-muted-foreground">
+                        {[branch.city, branch.country]
+                          .filter(Boolean)
+                          .join(", ")}
+                      </p>
+                    </div>
                   </div>
-                  <div>
-                    <h3 className="font-semibold text-lg">{branch.name}</h3>
-                    <p className="text-sm text-muted-foreground">Manager: {branch.manager}</p>
-                  </div>
                 </div>
-                <Badge className={getStatusColor(branch.status)}>
-                  {branch.status}
-                </Badge>
-              </div>
 
-              <div className="space-y-3 mb-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">{branch.address}</span>
+                {/* Contact details */}
+                <div className="space-y-2 mb-5">
+                  {branch.phoneNumber && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground">
+                        {branch.phoneNumber}
+                      </span>
+                    </div>
+                  )}
+                  {branch.email && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground truncate">
+                        {branch.email}
+                      </span>
+                    </div>
+                  )}
+                  {(branch.coX != null || branch.coY != null) && (
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+                      <span className="text-muted-foreground text-xs font-mono">
+                        {branch.coX}, {branch.coY}
+                      </span>
+                    </div>
+                  )}
+                  {!branch.phoneNumber &&
+                    !branch.email &&
+                    branch.coX == null && (
+                      <p className="text-sm text-muted-foreground italic">
+                        No contact details
+                      </p>
+                    )}
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">{branch.phone}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">{branch.email}</span>
-                </div>
-              </div>
 
-              {/* Capacity */}
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-2">
-                  <span>Capacity</span>
-                  <span>{branch.currentEnrollment}/{branch.capacity}</span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div 
-                    className={`h-2 rounded-full ${getCapacityColor(branch.currentEnrollment, branch.capacity)}`}
-                    style={{ width: `${(branch.currentEnrollment / branch.capacity) * 100}%` }}
-                  />
-                </div>
-              </div>
-
-              {/* Sports */}
-              <div className="mb-4">
-                <p className="text-sm font-medium mb-2">Sports Offered</p>
-                <div className="flex flex-wrap gap-1">
-                  {branch.sports.map((sport) => (
-                    <Badge key={sport} variant="secondary" className="text-xs">
-                      {sport}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Facilities */}
-              <div className="mb-4">
-                <p className="text-sm font-medium mb-2">Facilities</p>
-                <div className="flex flex-wrap gap-1">
-                  {branch.facilities.map((facility) => (
-                    <Badge key={facility} variant="outline" className="text-xs">
-                      {facility}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex gap-2">
+                {/* Action */}
                 <Button
                   variant="default"
                   size="sm"
-                  className="flex-1"
+                  className="w-full"
                   onClick={() => navigate(`/branches/${branch.id}`)}
                 >
                   <Eye className="h-3.5 w-3.5 mr-1.5" />
                   View Details
                 </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          ))}
       </div>
 
-      <BasePagination page={page} totalPages={totalPages} pageSize={pageSize} totalCount={totalCount} onPageChange={setPage} onPageSizeChange={setPageSize} />
+      {/* Pagination */}
+      {!loading && branches.length > 0 && (
+        <BasePagination
+          page={page}
+          totalPages={totalPages}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          onPageSizeChange={() => setPage(1)}
+        />
+      )}
 
-      <BranchFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={handleRefresh} />
+      <BranchFormModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onSuccess={handleRefresh}
+      />
     </div>
   );
 };
