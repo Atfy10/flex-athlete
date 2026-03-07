@@ -71,6 +71,8 @@ export const createTrainee = async (command: CreateTraineeCommand) => {
       gender: command.gender,
       branchId: Number(command.branchId),
       sportIds: command.sportIds.map(Number),
+      familyId: Number(command.familyId),
+      nationalityCategoryId: Number(command.nationalityCategoryId),
     }),
   });
 };

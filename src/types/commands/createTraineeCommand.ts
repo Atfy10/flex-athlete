@@ -8,6 +8,8 @@ export interface CreateTraineeCommand {
   gender: string;
   branchId: number;
   sportIds: number[];
+  familyId: number;
+  nationalityCategoryId: number;
 }
 
 enum Gender {
