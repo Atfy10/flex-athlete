@@ -39,6 +39,14 @@ export function RealtimeProvider({ children, initialUnreadCount = 0 }: RealtimeP
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
   const startedRef = useRef(false);
 
+  // ── Hydrate unread count from API on mount ────────────────────────────
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    getUnreadCount().then((res) => {
+      if (res.isSuccess) setUnreadCount(res.data);
+    }).catch(() => {/* silent */});
+  }, [isAuthenticated]);
+
   // ── Connect on auth, disconnect on logout ──────────────────────────────
   useEffect(() => {
     if (!isAuthenticated) {

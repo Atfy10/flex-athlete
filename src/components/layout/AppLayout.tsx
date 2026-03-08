@@ -58,6 +58,13 @@ function AppLayoutContent({ children }: AppLayoutProps) {
   // Register global keyboard shortcuts (Alt+D / Ctrl+Shift+D → Dashboard)
   useGlobalShortcuts();
 
+  // ── Update browser tab title with unread count ──────────────────────────
+  useEffect(() => {
+    const base = "AURA Sport Academy";
+    document.title = unreadCount > 0 ? `(${unreadCount}) ${base}` : base;
+    return () => { document.title = base; };
+  }, [unreadCount]);
+
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
