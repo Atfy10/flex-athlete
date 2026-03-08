@@ -137,7 +137,24 @@ function AppLayoutContent({ children }: AppLayoutProps) {
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Button variant="ghost" size="icon">
+              {/* Command Palette trigger */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden sm:flex items-center gap-2 text-muted-foreground hover:text-foreground px-3 border border-border/60 rounded-md h-8"
+                onClick={() => setPaletteOpen(true)}
+              >
+                <Search className="h-3.5 w-3.5" />
+                <span className="text-xs">Search…</span>
+                <kbd className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[10px]">⌘K</kbd>
+              </Button>
+              {/* Mobile search icon */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="sm:hidden"
+                onClick={() => setPaletteOpen(true)}
+              >
                 <Search className="h-5 w-5" />
               </Button>
 
