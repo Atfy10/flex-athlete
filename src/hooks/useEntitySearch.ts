@@ -29,6 +29,7 @@ export function useEntitySearch<T>({
 }: UseEntitySearchProps<T>) {
   const [term, setTerm] = useState("");
   const [debouncedTerm, setDebouncedTerm] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
@@ -93,7 +94,9 @@ export function useEntitySearch<T>({
     return () => {
       active = false;
     };
-  }, [debouncedTerm, page, minLength, pageSize, listFn, searchFn]);
+  }, [debouncedTerm, page, minLength, pageSize, listFn, searchFn, refreshKey]);
+
+  const refresh = () => setRefreshKey((k) => k + 1);
 
   return {
     items,
@@ -103,5 +106,6 @@ export function useEntitySearch<T>({
     page,
     setPage,
     totalPages,
+    refresh,
   };
 }

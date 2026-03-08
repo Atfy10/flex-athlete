@@ -32,6 +32,7 @@ import {
   countSessions,
 } from "@/services/session.services";
 import { SessionCardDto } from "@/types/SessionCardDto";
+import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function todayIso() {
@@ -39,8 +40,7 @@ function todayIso() {
 }
 
 function formatTime(time: string) {
-  // "09:00:00" → "09:00"
-  return time.slice(0, 5);
+  return time?.slice(0, 5) ?? "";
 }
 
 function formatDuration(minutes: number) {
@@ -52,7 +52,6 @@ function formatDuration(minutes: number) {
 }
 
 function getCapacityColor(count: number) {
-  // We don't have capacity in DTO; just show trainee count styled neutrally
   return count > 0 ? "text-success" : "text-muted-foreground";
 }
 
@@ -91,12 +90,12 @@ function SessionsEmptyState({ isSearch }: { isSearch: boolean }) {
     <div className="col-span-full flex flex-col items-center justify-center py-20 text-muted-foreground">
       <Layers className="h-12 w-12 mb-4 opacity-30" />
       <p className="text-base font-medium">
-        {isSearch ? "No sessions match your search" : "No sessions found"}
+        {isSearch ? "No sessions match your search" : "No sessions scheduled yet"}
       </p>
       <p className="text-sm mt-1">
         {isSearch
           ? "Try a different search term or clear the filter."
-          : "Sessions will appear here once they are scheduled."}
+          : 'Use "Operate Group" to generate sessions from a trainee group\'s weekly schedule.'}
       </p>
     </div>
   );
@@ -113,16 +112,17 @@ const STATS_META = [
 // ─── Main Page ────────────────────────────────────────────────────────────────
 export default function Sessions() {
   const [selectedDate, setSelectedDate] = useState(todayIso());
-  const [useDate, setUseDate] = useState(false);
+  const [useDate, setUseDate]           = useState(false);
+  const [modalOpen, setModalOpen]       = useState(false);
 
   // Stats
-  const [totalSessions, setTotalSessions] = useState<number | null>(null);
+  const [totalSessions,  setTotalSessions]  = useState<number | null>(null);
   const [todayGroupCount, setTodayGroupCount] = useState<number | null>(null);
 
   // Date-filtered mode uses a separate local state
-  const [dateItems, setDateItems]     = useState<SessionCardDto[]>([]);
-  const [dateLoading, setDateLoading] = useState(false);
-  const [datePage, setDatePage]       = useState(1);
+  const [dateItems,      setDateItems]      = useState<SessionCardDto[]>([]);
+  const [dateLoading,    setDateLoading]    = useState(false);
+  const [datePage,       setDatePage]       = useState(1);
   const [dateTotalPages, setDateTotalPages] = useState(1);
   const DATE_PAGE_SIZE = 9;
 
@@ -138,6 +138,7 @@ export default function Sessions() {
     page,
     setPage,
     totalPages,
+    refresh,
   } = useEntitySearch<SessionCardDto>({
     listFn:   stableListSessions,
     searchFn: stableSearchSessions,
@@ -145,26 +146,25 @@ export default function Sessions() {
   });
 
   // Derived display values
-  const items   = useDate ? dateItems   : searchItems;
-  const loading = useDate ? dateLoading : searchLoading;
-  const currentPage    = useDate ? datePage    : page;
+  const items          = useDate ? dateItems      : searchItems;
+  const loading        = useDate ? dateLoading    : searchLoading;
+  const currentPage    = useDate ? datePage       : page;
   const currentTotal   = useDate ? dateTotalPages : totalPages;
-  const setCurrentPage = useDate ? setDatePage : setPage;
+  const setCurrentPage = useDate ? setDatePage    : setPage;
 
   // ── Stats fetch ──────────────────────────────────────────────────────────
-  useEffect(() => {
-    const loadStats = async () => {
-      const [total, todayRes] = await Promise.allSettled([
-        countSessions(),
-        getSessionsByDate(todayIso(), 1, 1),
-      ]);
-      if (total.status === "fulfilled" && total.value.isSuccess)
-        setTotalSessions(total.value.data);
-      if (todayRes.status === "fulfilled" && todayRes.value.isSuccess)
-        setTodayGroupCount(todayRes.value.data.totalCount);
-    };
-    loadStats();
+  const loadStats = useCallback(async () => {
+    const [total, todayRes] = await Promise.allSettled([
+      countSessions(),
+      getSessionsByDate(todayIso(), 1, 1),
+    ]);
+    if (total.status === "fulfilled" && total.value.isSuccess)
+      setTotalSessions(total.value.data);
+    if (todayRes.status === "fulfilled" && todayRes.value.isSuccess)
+      setTodayGroupCount(todayRes.value.data.totalCount);
   }, []);
+
+  useEffect(() => { loadStats(); }, [loadStats]);
 
   // ── Date-mode fetch ──────────────────────────────────────────────────────
   useEffect(() => {
@@ -177,9 +177,7 @@ export default function Sessions() {
         if (!active) return;
         if (res.isSuccess) {
           setDateItems(res.data.items);
-          setDateTotalPages(
-            Math.max(1, Math.ceil(res.data.totalCount / DATE_PAGE_SIZE)),
-          );
+          setDateTotalPages(Math.max(1, Math.ceil(res.data.totalCount / DATE_PAGE_SIZE)));
         } else {
           setDateItems([]);
           setDateTotalPages(1);
@@ -195,11 +193,17 @@ export default function Sessions() {
   // Reset date page when date changes
   useEffect(() => { setDatePage(1); }, [selectedDate]);
 
+  // ── onSuccess callback — refresh list + stats ────────────────────────────
+  const handleGenerateSuccess = useCallback(() => {
+    refresh();
+    loadStats();
+  }, [refresh, loadStats]);
+
   const statsValues = [
-    totalSessions  != null ? String(totalSessions) : "—",
+    totalSessions   != null ? String(totalSessions)   : "—",
     todayGroupCount != null ? String(todayGroupCount) : "—",
-    "—", // no coaches endpoint here
-    "—", // no avg duration endpoint here
+    "—",
+    "—",
   ];
 
   return (
@@ -208,11 +212,11 @@ export default function Sessions() {
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gradient">Sessions Management</h1>
-          <p className="text-muted-foreground">Schedule and manage training sessions</p>
+          <p className="text-muted-foreground">Operate groups to generate training session occurrences</p>
         </div>
-        <Button variant="hero" size="lg">
+        <Button variant="hero" size="lg" onClick={() => setModalOpen(true)}>
           <Plus className="h-5 w-5" />
-          Schedule New Session
+          Operate Group
         </Button>
       </div>
 
@@ -223,9 +227,7 @@ export default function Sessions() {
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    {meta.title}
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">{meta.title}</p>
                   {statsValues[i] === "—" ? (
                     <Skeleton className="h-7 w-12 mt-1" />
                   ) : (
@@ -313,6 +315,13 @@ export default function Sessions() {
           onPageChange={setCurrentPage}
         />
       )}
+
+      {/* ── Operate Group Modal ──────────────────────────────────────────── */}
+      <OperateGroupModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onSuccess={handleGenerateSuccess}
+      />
     </div>
   );
 }
@@ -324,17 +333,12 @@ function SessionCard({ session }: { session: SessionCardDto }) {
       <CardHeader className="pb-4">
         <div className="flex items-start justify-between">
           <div className="space-y-2 flex-1 min-w-0">
-            <CardTitle className="text-base leading-snug">
-              {session.sportName}
-            </CardTitle>
+            <CardTitle className="text-base leading-snug">{session.sportName}</CardTitle>
             <div className="flex items-center gap-2 flex-wrap">
               <Badge variant="outline" className="font-medium">
                 {session.sportName}
               </Badge>
-              <Badge
-                variant="secondary"
-                className="bg-primary/10 text-primary hover:bg-primary/20"
-              >
+              <Badge variant="secondary" className="bg-primary/10 text-primary hover:bg-primary/20">
                 {formatDuration(session.durationInMinutes)}
               </Badge>
             </div>
@@ -351,9 +355,7 @@ function SessionCard({ session }: { session: SessionCardDto }) {
               <DropdownMenuItem>Edit Session</DropdownMenuItem>
               <DropdownMenuItem>Mark Attendance</DropdownMenuItem>
               <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">
-                Cancel Session
-              </DropdownMenuItem>
+              <DropdownMenuItem className="text-destructive">Cancel Session</DropdownMenuItem>
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -386,14 +388,9 @@ function SessionCard({ session }: { session: SessionCardDto }) {
           </div>
         </div>
 
-        {/* Action Buttons */}
         <div className="flex gap-2 pt-3 border-t border-border">
-          <Button variant="default" size="sm" className="flex-1">
-            View Details
-          </Button>
-          <Button variant="outline" size="sm" className="flex-1">
-            Attendance
-          </Button>
+          <Button variant="default" size="sm" className="flex-1">View Details</Button>
+          <Button variant="outline" size="sm" className="flex-1">Attendance</Button>
         </div>
       </CardContent>
     </Card>
