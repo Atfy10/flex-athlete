@@ -84,6 +84,7 @@ export function EmployeeFormModal({
   onSuccess,
 }: EmployeeFormModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [apiErrors, setApiErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
