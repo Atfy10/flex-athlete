@@ -31,6 +31,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
+import { useNavigate } from "react-router-dom";
 import { mapSessions, SessionVm } from "@/lib/mappers";
 import { getActiveCoachesCount } from "@/services/coaches.service";
 import { getSports } from "@/services/sport.services";
@@ -68,6 +69,7 @@ function getLastFiveMonths(): { value: number; label: string }[] {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
   // Scalar stats — all derived from API
@@ -310,9 +312,13 @@ export default function Dashboard() {
               <Calendar className="h-5 w-5 text-primary" />
               Today's Sessions
             </div>
-            <Button variant="ghost" size="sm">
-              View All
-            </Button>
+            <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => navigate(`/session-occurrences?date=${todayIso()}`)}
+              >
+                View All
+              </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
@@ -326,7 +332,8 @@ export default function Dashboard() {
               {sessions.map((session) => (
                 <div
                   key={session.id}
-                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors"
+                  className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer group"
+                  onClick={() => navigate(`/session-occurrences?date=${todayIso()}`)}
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
@@ -349,9 +356,7 @@ export default function Dashboard() {
                       </span>
                     </div>
                   </div>
-                  <Button variant="ghost" size="sm">
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
+                  <ArrowRight className="h-4 w-4 text-muted-foreground opacity-0 group-hover:opacity-100 transition-opacity" />
                 </div>
               ))}
             </div>

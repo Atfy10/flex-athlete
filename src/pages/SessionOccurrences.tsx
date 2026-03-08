@@ -1,5 +1,5 @@
-import { useCallback, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useCallback, useEffect, useState } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -160,8 +160,17 @@ function OccurrenceCard({
 
 // ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function SessionOccurrences() {
+  const [searchParams] = useSearchParams();
   const [calendarOpen, setCalendarOpen] = useState(false);
-  const [dateFilter, setDateFilter] = useState<string>("");
+
+  // Initialise date filter from ?date= query param ("today" resolves to today's ISO date)
+  const [dateFilter, setDateFilter] = useState<string>(() => {
+    const param = searchParams.get("date");
+    if (!param) return "";
+    if (param === "today") return new Date().toISOString().split("T")[0];
+    return param;
+  });
+
   const [markOpen, setMarkOpen] = useState(false);
   const [markSession, setMarkSession] = useState<SessionOccurrenceDto | null>(null);
 
@@ -189,6 +198,14 @@ export default function SessionOccurrences() {
     } finally {
       setDateLoading(false);
     }
+  }, []);
+
+  // Auto-load when initial dateFilter is set from query param
+  useEffect(() => {
+    if (dateFilter) {
+      loadByDate(dateFilter, 1);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // When date filter changes, fetch by date
