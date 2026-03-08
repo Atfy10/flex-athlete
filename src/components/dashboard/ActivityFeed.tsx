@@ -1,4 +1,3 @@
-import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import {
   ClipboardCheck,
@@ -14,6 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { NotificationDto } from "@/services/notifications.service";
+import { formatRelativeDateTime, formatSmartDate } from "@/lib/dateUtils";
 
 // ─── Type config ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<
