@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { formatRelativeDate } from "@/lib/dateUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -256,7 +257,11 @@ export default function Sessions() {
           />
           {useDate && (
             <p className="mt-2 text-xs text-muted-foreground">
-              Showing sessions for <span className="font-medium">{selectedDate}</span>. Search is disabled in date mode.
+              Showing sessions for{" "}
+              <span className="font-medium">{formatRelativeDate(selectedDate + "T00:00:00")}</span>
+              {" "}
+              <span className="text-muted-foreground/60">({selectedDate})</span>.{" "}
+              Search is disabled in date mode.
             </p>
           )}
         </CardContent>

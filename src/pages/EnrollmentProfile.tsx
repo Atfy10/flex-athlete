@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { EnrollmentEditModal, EnrollmentEditData } from "@/components/modals/EnrollmentEditModal";
 import { useEffect, useState, useCallback } from "react";
+import { formatSmartDate } from "@/lib/dateUtils";
 import {
   User, Trophy, MapPin, Users, Calendar, DollarSign, TrendingUp,
   CheckCircle, CreditCard, CalendarDays,
@@ -190,27 +191,34 @@ export default function EnrollmentProfile() {
             enrollment.enrollmentDate
               ? {
                   label: "Enrolled On",
-                  value: new Date(enrollment.enrollmentDate).toLocaleDateString("en-US", {
-                    year: "numeric", month: "long", day: "numeric",
-                  }),
+                  value: (() => {
+                    const { label, title } = formatSmartDate(enrollment.enrollmentDate!);
+                    return (
+                      <span title={title} className="cursor-default">
+                        {label}
+                      </span>
+                    );
+                  })(),
                   icon: <Calendar className="h-3.5 w-3.5" />,
                 }
               : null,
             enrollment.startDate
               ? {
                   label: "Start Date",
-                  value: new Date(enrollment.startDate).toLocaleDateString("en-US", {
-                    year: "numeric", month: "long", day: "numeric",
-                  }),
+                  value: (() => {
+                    const { label, title } = formatSmartDate(enrollment.startDate! + "T00:00:00");
+                    return <span title={title} className="cursor-default">{label}</span>;
+                  })(),
                   icon: <Calendar className="h-3.5 w-3.5" />,
                 }
               : null,
             enrollment.endDate
               ? {
                   label: "End Date",
-                  value: new Date(enrollment.endDate).toLocaleDateString("en-US", {
-                    year: "numeric", month: "long", day: "numeric",
-                  }),
+                  value: (() => {
+                    const { label, title } = formatSmartDate(enrollment.endDate! + "T00:00:00");
+                    return <span title={title} className="cursor-default">{label}</span>;
+                  })(),
                   icon: <Calendar className="h-3.5 w-3.5" />,
                 }
               : null,

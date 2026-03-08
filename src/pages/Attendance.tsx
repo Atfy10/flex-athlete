@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
+import { formatRelativeDate, formatSmartDate } from "@/lib/dateUtils";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -415,10 +416,9 @@ type AttendanceSortKey = "sportName" | "coachName" | "branchName" | "startTime" 
                 <div className="text-2xl font-bold">{todayTotal}</div>
                 <p className="text-xs text-muted-foreground">
                   for{" "}
-                  {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
+                  <span title={new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}>
+                    {formatRelativeDate(selectedDate + "T00:00:00")}
+                  </span>
                 </p>
               </CardContent>
             </Card>
@@ -479,9 +479,14 @@ type AttendanceSortKey = "sportName" | "coachName" | "branchName" | "startTime" 
                   className="flex items-center gap-2 w-auto min-w-[160px] justify-start font-normal"
                 >
                   <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                  {selectedDate
-                    ? format(new Date(selectedDate + "T00:00:00"), "MMM d, yyyy")
-                    : "Pick a date"}
+                  {selectedDate ? (
+                    <>
+                      <span>{formatRelativeDate(selectedDate + "T00:00:00")}</span>
+                      <span className="text-muted-foreground/60 text-xs hidden sm:inline">
+                        — {format(new Date(selectedDate + "T00:00:00"), "MMM d, yyyy")}
+                      </span>
+                    </>
+                  ) : "Pick a date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
