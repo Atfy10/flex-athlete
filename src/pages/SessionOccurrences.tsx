@@ -20,8 +20,6 @@ import {
   Search,
   X,
   AlertCircle,
-  ChevronUp,
-  ChevronDown,
 } from "lucide-react";
 import { BasePagination } from "@/components/BasePagination";
 import { useEntitySearch } from "@/hooks/useEntitySearch";
@@ -33,6 +31,8 @@ import {
 import { SessionOccurrenceDto } from "@/types/AttendanceDto";
 import { MarkAttendanceModal } from "@/components/modals/MarkAttendanceModal";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
+import { SortableTableHead } from "@/components/ui/SortableTableHead";
+import { useSortable } from "@/hooks/useSortable";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatTime(t: string) { return t?.slice(0, 5) ?? ""; }

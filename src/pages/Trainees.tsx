@@ -9,6 +9,8 @@ import { FilterBar } from "@/components/FilterBar";
 import { EmptyState } from "@/components/EmptyState";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
+import { SortableTableHead } from "@/components/ui/SortableTableHead";
+import { useSortable } from "@/hooks/useSortable";
 import {
   Plus,
   MoreHorizontal,
@@ -21,9 +23,6 @@ import {
   TrendingUp,
   Eye,
   Star,
-  ChevronUp,
-  ChevronDown as ChevronDownIcon,
-  ChevronsUpDown,
   Trash2,
   Pencil,
 } from "lucide-react";

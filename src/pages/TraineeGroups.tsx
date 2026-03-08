@@ -8,7 +8,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import {
   Plus, Users, Calendar, Play, MoreHorizontal,
-  Clock, MapPin, Trophy, Eye, AlertCircle, ChevronUp, ChevronDown,
+  Clock, MapPin, Trophy, Eye, AlertCircle,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -29,6 +29,8 @@ import { ListTraineeGroupDto } from "@/types/listTraineeGroup";
 import { useToast } from "@/hooks/use-toast";
 import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
+import { SortableTableHead } from "@/components/ui/SortableTableHead";
+import { useSortable } from "@/hooks/useSortable";
 
 type SortKey = keyof Pick<ListTraineeGroupDto, "sportName" | "coachName" | "branchName" | "durationInMinutes" | "traineesCount" | "startTime">;
 

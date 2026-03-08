@@ -26,7 +26,6 @@ import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import {
   UserPlus, Users, Plus, Calendar, DollarSign, CheckCircle, Clock,
   Eye, MoreHorizontal, Pencil, Trash2, PlayCircle, PauseCircle, CreditCard,
-  ChevronUp, ChevronDown,
 } from "lucide-react";
 import { EnrollmentFormModal } from "@/components/modals/EnrollmentFormModal";
 import { EnrollmentEditModal, EnrollmentEditData } from "@/components/modals/EnrollmentEditModal";
@@ -40,6 +39,8 @@ import {
 } from "@/services/enrollment.services";
 import { EnrollmentCardDto } from "@/types/EnrollmentCardDto";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
+import { SortableTableHead } from "@/components/ui/SortableTableHead";
+import { useSortable } from "@/hooks/useSortable";
 
 const PAGE_SIZE = 10;
 
