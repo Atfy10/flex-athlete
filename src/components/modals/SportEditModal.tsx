@@ -73,6 +73,7 @@ export function SportEditModal({ open, onOpenChange, onSuccess, sport }: SportEd
       }
 
       toast({ title: "Sport updated successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
