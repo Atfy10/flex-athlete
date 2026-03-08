@@ -100,6 +100,7 @@ export function EmployeeEditModal({ open, onOpenChange, onSuccess, employee }: E
       }
 
       toast({ title: "Employee updated successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
