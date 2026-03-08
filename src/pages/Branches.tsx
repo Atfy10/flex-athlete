@@ -20,6 +20,7 @@ import {
   Mail,
   Eye,
 } from "lucide-react";
+import { RowActions } from "@/components/ui/RowActions";
 import { BranchFormModal } from "@/components/modals/BranchFormModal";
 import { BasePagination } from "@/components/BasePagination";
 import { useEntitySearch } from "@/hooks/useEntitySearch";
@@ -156,14 +157,7 @@ const Branches = () => {
                           : "—"}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <Button
-                          variant="ghost"
-                          size="sm"
-                          onClick={() => navigate(`/branches/${branch.id}`)}
-                          className="h-8 px-2"
-                        >
-                          <Eye className="h-3.5 w-3.5" />
-                        </Button>
+                        <RowActions viewHref={`/branches/${branch.id}`} />
                       </TableCell>
                     </TableRow>
                   ))}

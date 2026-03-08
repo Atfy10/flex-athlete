@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy, Plus, Eye, Target } from "lucide-react";
+import { RowActions } from "@/components/ui/RowActions";
 import { SportsFormModal } from "@/components/modals/SportsFormModal";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { BasePagination } from "@/components/BasePagination";
@@ -185,26 +186,15 @@ export default function Sports() {
                         </Badge>
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
-                              <MoreHorizontal className="h-3.5 w-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => navigate(`/sports/${sport.id}`)}>
-                              <Eye className="h-4 w-4 mr-2" /> View Details
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive focus:text-destructive"
-                              onClick={() => setTimeout(() => setDeleteTarget(sport), 0)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" /> Delete Sport
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <RowActions viewHref={`/sports/${sport.id}`}>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setTimeout(() => setDeleteTarget(sport), 0)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" /> Delete Sport
+                          </DropdownMenuItem>
+                        </RowActions>
                       </TableCell>
                     </TableRow>
                   ))}

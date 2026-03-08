@@ -33,6 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RowActions } from "@/components/ui/RowActions";
 import {
   Table,
   TableBody,
@@ -342,9 +343,9 @@ export default function Coaches() {
                   <TableHead>Status</TableHead>
                   <SortTH col="trainees" label="Trainees" />
                   <SortTH col="hired" label="Hired" />
-                  <TableHead className="w-[50px]" />
-                </TableRow>
-              </TableHeader>
+                   <TableHead className="w-[88px]" />
+                 </TableRow>
+               </TableHeader>
               <TableBody>
                 {filteredCoaches.map((coach) => (
                   <TableRow
@@ -387,29 +388,18 @@ export default function Coaches() {
                       {new Date(coach.hireDate).getFullYear()}
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-7 w-7">
-                            <MoreHorizontal className="h-3.5 w-3.5" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => navigate(`/coaches/${coach.id}`)}>
-                            <Eye className="h-4 w-4 mr-2" /> View Profile
-                          </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => handleEditClick(coach)}>
-                            <Pencil className="h-4 w-4 mr-2" /> Edit Details
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive focus:text-destructive"
-                            onClick={() => handleDeleteClick(coach)}
-                          >
-                            <Trash2 className="h-4 w-4 mr-2" /> Remove Coach
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <RowActions viewHref={`/coaches/${coach.id}`}>
+                        <DropdownMenuItem onClick={() => handleEditClick(coach)}>
+                          <Pencil className="h-4 w-4 mr-2" /> Edit Details
+                        </DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => handleDeleteClick(coach)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" /> Remove Coach
+                        </DropdownMenuItem>
+                      </RowActions>
                     </TableCell>
                   </TableRow>
                 ))}
