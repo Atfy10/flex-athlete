@@ -1,5 +1,6 @@
 import { NotificationDto } from "@/services/notifications.service";
 import { NotificationItem, NotificationItemSkeleton } from "./NotificationItem";
+import { EmptyState } from "@/components/EmptyState";
 import { Bell } from "lucide-react";
 
 interface NotificationListProps {
@@ -26,7 +27,7 @@ export function NotificationList({
   if (notifications.length === 0) {
     return (
       <EmptyState
-        icon={<Bell className="h-10 w-10 opacity-30" />}
+        icon={Bell}
         title="No notifications"
         description="You're all caught up! Notifications will appear here when events occur."
       />
