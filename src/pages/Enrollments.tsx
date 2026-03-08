@@ -378,12 +378,12 @@ const Enrollments = () => {
       <div className="space-y-4">
         {loading && Array.from({ length: 5 }).map((_, i) => <EnrollmentRowSkeleton key={i} />)}
 
-        {!loading && enrollments.length === 0 && (
+        {!loading && filteredEnrollments.length === 0 && (
           <EnrollmentsEmptyState term={term} onAdd={() => setModalOpen(true)} />
         )}
 
         {!loading &&
-          enrollments.map((enrollment) => {
+          filteredEnrollments.map((enrollment) => {
             const pct = progressPct(enrollment.sessionsCompleted, enrollment.totalSessions);
             const isLoading = actionLoadingId === enrollment.id;
             const isActive = enrollment.status === "Active";
