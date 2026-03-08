@@ -291,6 +291,11 @@ export default function EnrollmentProfile() {
         }
         dropdownExtra={[
           {
+            label: "View Session Occurrences",
+            icon: <CalendarDays className="h-3.5 w-3.5" />,
+            onClick: () => navigate("/session-occurrences"),
+          },
+          {
             label: "Mark as Paid",
             icon: <CreditCard className="h-3.5 w-3.5" />,
             onClick: () => handlePaymentStatus("Paid"),
