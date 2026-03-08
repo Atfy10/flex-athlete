@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, useCallback } from "react";
-import { Loader2, ChevronDown, X } from "lucide-react";
+import { Loader2, ChevronDown, X, AlertCircle } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 export interface SearchableOption {
@@ -19,12 +19,16 @@ interface SearchableSelectProps {
   required?: boolean;
   disabled?: boolean;
   className?: string;
+  /** Inline validation error from parent Zod schema */
+  error?: string;
+  /** Hint text shown when there is no error */
+  hint?: string;
 }
 
 export function SearchableSelect({
   id,
   label,
-  placeholder = "Search...",
+  placeholder = "Search…",
   value,
   onChange,
   onSearch,
@@ -32,11 +36,14 @@ export function SearchableSelect({
   required,
   disabled,
   className,
+  error,
+  hint,
 }: SearchableSelectProps) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [options, setOptions] = useState<SearchableOption[]>([]);
   const [loading, setLoading] = useState(false);
+  const [fetchError, setFetchError] = useState(false);
   const [touched, setTouched] = useState(false);
   const containerRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -45,16 +52,18 @@ export function SearchableSelect({
   const doSearch = useCallback(
     async (q: string) => {
       setLoading(true);
+      setFetchError(false);
       try {
         const results = await onSearch(q);
         setOptions(results);
       } catch {
         setOptions([]);
+        setFetchError(true);
       } finally {
         setLoading(false);
       }
     },
-    [onSearch]
+    [onSearch],
   );
 
   useEffect(() => {
@@ -71,7 +80,10 @@ export function SearchableSelect({
   // Close on outside click
   useEffect(() => {
     const handler = (e: MouseEvent) => {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      if (
+        containerRef.current &&
+        !containerRef.current.contains(e.target as Node)
+      ) {
         setOpen(false);
       }
     };
@@ -103,10 +115,17 @@ export function SearchableSelect({
     <div className={cn("flex flex-col gap-1.5", className)}>
       <label
         htmlFor={id}
-        className="text-sm font-medium text-foreground"
+        className={cn(
+          "text-sm font-medium text-foreground",
+          disabled && "opacity-60",
+        )}
       >
         {label}
-        {required && <span className="text-destructive ml-1">*</span>}
+        {required && (
+          <span className="text-destructive ml-1" aria-hidden>
+            *
+          </span>
+        )}
       </label>
 
       <div ref={containerRef} className="relative">
@@ -116,11 +135,16 @@ export function SearchableSelect({
           type="button"
           onClick={handleOpen}
           disabled={disabled}
+          aria-invalid={!!error}
+          aria-describedby={
+            error ? `${id}-error` : hint ? `${id}-hint` : undefined
+          }
           className={cn(
             "w-full flex items-center justify-between gap-2 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background",
             "focus:outline-none focus:ring-2 focus:ring-ring focus:ring-offset-2",
             "disabled:cursor-not-allowed disabled:opacity-50",
-            open && "ring-2 ring-ring ring-offset-2"
+            open && "ring-2 ring-ring ring-offset-2",
+            error && "border-destructive focus:ring-destructive",
           )}
         >
           <span className={cn("truncate", !value && "text-muted-foreground")}>
@@ -136,7 +160,12 @@ export function SearchableSelect({
                 <X className="h-3 w-3 text-muted-foreground" />
               </span>
             )}
-            <ChevronDown className={cn("h-4 w-4 text-muted-foreground transition-transform", open && "rotate-180")} />
+            <ChevronDown
+              className={cn(
+                "h-4 w-4 text-muted-foreground transition-transform",
+                open && "rotate-180",
+              )}
+            />
           </div>
         </button>
 
@@ -155,24 +184,34 @@ export function SearchableSelect({
                   viewBox="0 0 24 24"
                   stroke="currentColor"
                 >
-                  <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+                  />
                 </svg>
               )}
               <input
                 ref={inputRef}
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
-                placeholder="Type to search..."
+                placeholder="Type to search…"
                 className="flex-1 bg-transparent py-2 pl-2 text-sm outline-none placeholder:text-muted-foreground"
               />
             </div>
 
             {/* Options list */}
             <div className="max-h-52 overflow-y-auto p-1">
-              {loading && options.length === 0 ? (
+              {fetchError ? (
+                <div className="flex items-center justify-center gap-2 py-4 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  Failed to load results
+                </div>
+              ) : loading && options.length === 0 ? (
                 <div className="flex items-center justify-center gap-2 py-4 text-sm text-muted-foreground">
                   <Loader2 className="h-4 w-4 animate-spin" />
-                  Searching...
+                  Searching…
                 </div>
               ) : options.length === 0 ? (
                 <div className="py-4 text-center text-sm text-muted-foreground">
@@ -186,12 +225,15 @@ export function SearchableSelect({
                     onClick={() => handleSelect(opt)}
                     className={cn(
                       "w-full flex flex-col items-start rounded px-3 py-2 text-sm hover:bg-accent cursor-pointer text-left",
-                      value?.value === opt.value && "bg-accent text-accent-foreground font-medium"
+                      value?.value === opt.value &&
+                        "bg-accent text-accent-foreground font-medium",
                     )}
                   >
                     <span>{opt.label}</span>
                     {opt.sublabel && (
-                      <span className="text-xs text-muted-foreground">{opt.sublabel}</span>
+                      <span className="text-xs text-muted-foreground">
+                        {opt.sublabel}
+                      </span>
                     )}
                   </button>
                 ))
@@ -200,6 +242,21 @@ export function SearchableSelect({
           </div>
         )}
       </div>
+
+      {hint && !error && (
+        <p id={`${id}-hint`} className="text-xs text-muted-foreground">
+          {hint}
+        </p>
+      )}
+      {error && (
+        <p
+          id={`${id}-error`}
+          role="alert"
+          className="text-xs text-destructive flex items-center gap-1"
+        >
+          <span aria-hidden>⚠</span> {error}
+        </p>
+      )}
     </div>
   );
 }
