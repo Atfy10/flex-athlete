@@ -17,6 +17,10 @@ import {
   ArrowRight,
   ChevronLeft,
   ChevronRight,
+  UserPlus,
+  ClipboardCheck,
+  Zap,
+  BookOpen,
 } from "lucide-react";
 import heroImage from "@/assets/hero-academy.jpg";
 import {
@@ -47,6 +51,9 @@ import { getTraineeGroupsForSpecificDay } from "@/services/traineeGroup.services
 import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
 import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
 import { getNotifications, NotificationDto } from "@/services/notifications.service";
+import { TraineeFormModal } from "@/components/modals/TraineeFormModal";
+import { EnrollmentFormModal } from "@/components/modals/EnrollmentFormModal";
+import { CoachFormModal } from "@/components/modals/CoachFormModal";
 
 // ─── Static meta ──────────────────────────────────────────────────────────────
 const STATS_META = [
