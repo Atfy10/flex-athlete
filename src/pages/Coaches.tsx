@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FilterBar } from "@/components/FilterBar";
 import { EmptyState } from "@/components/EmptyState";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
+import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 import {
   Plus,
   MoreHorizontal,
@@ -20,6 +21,10 @@ import {
   Award,
   Eye,
   Trash2,
+  Pencil,
+  ChevronUp,
+  ChevronDown as ChevronDownIcon,
+  ChevronsUpDown,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -29,6 +34,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { CoachFormModal } from "@/components/modals/CoachFormModal";
 import { CoachEditModal } from "@/components/modals/CoachEditModal";
 import { BasePagination } from "@/components/BasePagination";
@@ -52,6 +65,9 @@ interface CoachesStats {
   averageRating: number;
   totalTrainees: number;
 }
+
+type SortKey = "name" | "sport" | "branch" | "trainees" | "hired";
+type SortDir = "asc" | "desc";
 
 const STATS_META = [
   { title: "Total Coaches",  change: "+5",   icon: Users  },
@@ -84,9 +100,20 @@ function CoachCardSkeleton() {
   );
 }
 
+function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
+  if (col !== sortKey) return <ChevronsUpDown className="h-3.5 w-3.5 ml-1 text-muted-foreground/50" />;
+  return sortDir === "asc"
+    ? <ChevronUp className="h-3.5 w-3.5 ml-1 text-primary" />
+    : <ChevronDownIcon className="h-3.5 w-3.5 ml-1 text-primary" />;
+}
+
 export default function Coaches() {
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -123,7 +150,6 @@ export default function Coaches() {
     minLength: 2,
   });
 
-  // Stats + filter options
   useEffect(() => {
     let active = true;
     Promise.allSettled([
@@ -142,22 +168,32 @@ export default function Coaches() {
         averageRating: ratingRes.status === "fulfilled" && ratingRes.value?.isSuccess ? ratingRes.value.data : 0,
         totalTrainees: traineesRes.status === "fulfilled" && traineesRes.value?.isSuccess ? traineesRes.value.data : 0,
       });
-      if (sportsListRes.status === "fulfilled" && sportsListRes.value?.isSuccess) {
-        setSports(sportsListRes.value.data ?? []);
-      }
-      if (branchesListRes.status === "fulfilled" && branchesListRes.value?.isSuccess) {
-        setBranches(branchesListRes.value.data ?? []);
-      }
+      if (sportsListRes.status === "fulfilled" && sportsListRes.value?.isSuccess) setSports(sportsListRes.value.data ?? []);
+      if (branchesListRes.status === "fulfilled" && branchesListRes.value?.isSuccess) setBranches(branchesListRes.value.data ?? []);
     });
     return () => { active = false; };
   }, []);
 
-  // Client-side filtering
-  const filteredCoaches = coaches.filter((c) => {
+  const filtered = coaches.filter((c) => {
     const matchesSport = sportFilter === "all" || c.sportName === sportFilter;
     const matchesBranch = branchFilter === "all" || c.branchName === branchFilter;
     return matchesSport && matchesBranch;
   });
+
+  const filteredCoaches = [...filtered].sort((a, b) => {
+    let av = "", bv = "";
+    if (sortKey === "name") { av = `${a.firstName} ${a.lastName}`; bv = `${b.firstName} ${b.lastName}`; }
+    else if (sortKey === "sport") { av = a.sportName; bv = b.sportName; }
+    else if (sortKey === "branch") { av = a.branchName; bv = b.branchName; }
+    else if (sortKey === "trainees") { return sortDir === "asc" ? a.totalTrainees - b.totalTrainees : b.totalTrainees - a.totalTrainees; }
+    else if (sortKey === "hired") { return sortDir === "asc" ? new Date(a.hireDate).getTime() - new Date(b.hireDate).getTime() : new Date(b.hireDate).getTime() - new Date(a.hireDate).getTime(); }
+    return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir((d) => d === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
+  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -200,11 +236,7 @@ export default function Coaches() {
     }
   };
 
-  const handleRefresh = () => {
-    setTerm("");
-    setPage(1);
-    refresh();
-  };
+  const handleRefresh = () => { setTerm(""); setPage(1); refresh(); };
 
   const stats = [
     { ...STATS_META[0], value: statsReal.totalCoaches.toString() },
@@ -212,6 +244,20 @@ export default function Coaches() {
     { ...STATS_META[2], value: statsReal.averageRating.toFixed(1) },
     { ...STATS_META[3], value: statsReal.totalTrainees.toString() },
   ];
+
+  const hasFilters = term !== "" || sportFilter !== "all" || branchFilter !== "all";
+
+  const SortTH = ({ col, label }: { col: SortKey; label: string }) => (
+    <TableHead
+      className="cursor-pointer select-none whitespace-nowrap group"
+      onClick={() => handleSort(col)}
+    >
+      <span className="inline-flex items-center gap-0.5 group-hover:text-foreground transition-colors">
+        {label}
+        <SortIcon col={col} sortKey={sortKey} sortDir={sortDir} />
+      </span>
+    </TableHead>
+  );
 
   return (
     <div className="space-y-8">
@@ -248,10 +294,13 @@ export default function Coaches() {
         ))}
       </div>
 
-      {/* Search & Filters */}
+      {/* Search & Filters + View Toggle */}
       <Card className="card-athletic">
         <CardHeader>
-          <CardTitle>Search & Filter</CardTitle>
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle>Search & Filter</CardTitle>
+            <ViewToggle view={viewMode} onViewChange={setViewMode} />
+          </div>
         </CardHeader>
         <CardContent>
           <FilterBar
@@ -281,120 +330,218 @@ export default function Coaches() {
         </CardContent>
       </Card>
 
-      {/* Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {Array.from({ length: pageSize }).map((_, i) => <CoachCardSkeleton key={i} />)}
-        </div>
-      ) : filteredCoaches.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="No coaches found"
-          description={term || sportFilter !== "all" || branchFilter !== "all" ? "Try adjusting your search or filters." : "Add your first coach to get started."}
-          actionLabel={!term && sportFilter === "all" && branchFilter === "all" ? "Add Coach" : undefined}
-          onAction={!term && sportFilter === "all" && branchFilter === "all" ? () => setModalOpen(true) : undefined}
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-          {filteredCoaches.map((coach) => (
-            <Card key={coach.id} className="card-athletic">
-              <CardHeader className="pb-4">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <Avatar className="h-12 w-12">
-                      <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                        {getInitials(coach.firstName + " " + coach.lastName)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <div>
-                      <CardTitle className="text-lg">
-                        {coach.firstName} {coach.lastName}
-                      </CardTitle>
-                      <div className="flex items-center gap-1 mt-1">
-                        <Star className="h-4 w-4 fill-warning text-warning" />
-                        <span className="text-sm font-medium">{coach.skillLevel}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <DropdownMenu>
-                    <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon">
-                        <MoreHorizontal className="h-4 w-4" />
-                      </Button>
-                    </DropdownMenuTrigger>
-                    <DropdownMenuContent align="end">
-                      <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                      <DropdownMenuItem onClick={() => navigate(`/coaches/${coach.id}`)}>
-                        <Eye className="h-4 w-4 mr-2" /> View Profile
-                      </DropdownMenuItem>
-                      <DropdownMenuItem onClick={() => handleEditClick(coach)}>
-                        Edit Details
-                      </DropdownMenuItem>
-                      <DropdownMenuSeparator />
-                      <DropdownMenuItem
-                        className="text-destructive focus:text-destructive"
-                        onClick={() => handleDeleteClick(coach)}
-                      >
-                        <Trash2 className="h-4 w-4 mr-2" /> Remove Coach
-                      </DropdownMenuItem>
-                    </DropdownMenuContent>
-                  </DropdownMenu>
+      {/* ── TABLE VIEW ── */}
+      {viewMode === "table" ? (
+        loading ? (
+          <Card className="card-athletic">
+            <CardContent className="p-0">
+              {Array.from({ length: pageSize }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-border last:border-0">
+                  <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-4 w-24 ml-auto" />
+                  <Skeleton className="h-4 w-20" />
+                  <Skeleton className="h-4 w-16" />
                 </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-2 text-sm">
-                    <Mail className="h-3 w-3 text-muted-foreground" />
-                    <span className="truncate">{coach.email}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <Phone className="h-3 w-3 text-muted-foreground" />
-                    <span>{coach.phoneNumber}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-sm">
-                    <MapPin className="h-3 w-3 text-muted-foreground" />
-                    <span>{coach.branchName}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 flex-wrap">
-                  <Badge variant="outline" className="font-medium">{coach.sportName}</Badge>
-                  <Badge className={getStatusColor(coach.isWork ? "Active" : "On Leave")}>
-                    {coach.isWork ? "Active" : "On Leave"}
-                  </Badge>
-                </div>
-                <p className="text-sm text-muted-foreground">
-                  <strong>Skill Level:</strong> {coach.skillLevel}
-                </p>
-                <div className="flex items-center justify-between pt-2 border-t border-border text-sm">
-                  <div className="flex items-center gap-1">
-                    <Users className="h-3 w-3 text-muted-foreground" />
-                    <span>{coach.totalTrainees} trainees</span>
-                  </div>
-                  <span>Since {new Date(coach.hireDate).getFullYear()}</span>
-                </div>
-                <div className="flex gap-2 pt-2">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="flex-1"
+              ))}
+            </CardContent>
+          </Card>
+        ) : filteredCoaches.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="No coaches found"
+            description={hasFilters ? "Try adjusting your search or filters." : "Add your first coach to get started."}
+            actionLabel={!hasFilters ? "Add Coach" : undefined}
+            onAction={!hasFilters ? () => setModalOpen(true) : undefined}
+          />
+        ) : (
+          <Card className="card-athletic overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <SortTH col="name" label="Name" />
+                  <SortTH col="sport" label="Sport" />
+                  <SortTH col="branch" label="Branch" />
+                  <TableHead>Skill</TableHead>
+                  <TableHead>Status</TableHead>
+                  <SortTH col="trainees" label="Trainees" />
+                  <SortTH col="hired" label="Hired" />
+                  <TableHead className="w-[50px]" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredCoaches.map((coach) => (
+                  <TableRow
+                    key={coach.id}
+                    className="cursor-pointer hover:bg-muted/40 transition-colors"
                     onClick={() => navigate(`/coaches/${coach.id}`)}
                   >
-                    <Eye className="h-3.5 w-3.5 mr-1.5" />
-                    View Profile
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleEditClick(coach)}
-                  >
-                    Edit
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <Avatar className="h-8 w-8 shrink-0">
+                          <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
+                            {getInitials(`${coach.firstName} ${coach.lastName}`)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm">{coach.firstName} {coach.lastName}</p>
+                          <p className="text-xs text-muted-foreground truncate">{coach.email}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <Badge variant="outline" className="text-xs">{coach.sportName}</Badge>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1.5 text-sm">
+                        <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                        {coach.branchName}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="text-sm">{coach.skillLevel}</span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(coach.isWork ? "Active" : "On Leave")}>
+                        {coach.isWork ? "Active" : "On Leave"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-center">{coach.totalTrainees}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(coach.hireDate).getFullYear()}
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <MoreHorizontal className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => navigate(`/coaches/${coach.id}`)}>
+                            <Eye className="h-4 w-4 mr-2" /> View Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditClick(coach)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Edit Details
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDeleteClick(coach)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" /> Remove Coach
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        )
+      ) : (
+        /* ── GRID VIEW ── */
+        loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {Array.from({ length: pageSize }).map((_, i) => <CoachCardSkeleton key={i} />)}
+          </div>
+        ) : filteredCoaches.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="No coaches found"
+            description={hasFilters ? "Try adjusting your search or filters." : "Add your first coach to get started."}
+            actionLabel={!hasFilters ? "Add Coach" : undefined}
+            onAction={!hasFilters ? () => setModalOpen(true) : undefined}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {filteredCoaches.map((coach) => (
+              <Card key={coach.id} className="card-athletic">
+                <CardHeader className="pb-4">
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3">
+                      <Avatar className="h-12 w-12">
+                        <AvatarFallback className="bg-gradient-primary text-primary-foreground">
+                          {getInitials(coach.firstName + " " + coach.lastName)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div>
+                        <CardTitle className="text-lg">{coach.firstName} {coach.lastName}</CardTitle>
+                        <div className="flex items-center gap-1 mt-1">
+                          <Star className="h-4 w-4 fill-warning text-warning" />
+                          <span className="text-sm font-medium">{coach.skillLevel}</span>
+                        </div>
+                      </div>
+                    </div>
+                    <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                        <Button variant="ghost" size="icon">
+                          <MoreHorizontal className="h-4 w-4" />
+                        </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                        <DropdownMenuItem onClick={() => navigate(`/coaches/${coach.id}`)}>
+                          <Eye className="h-4 w-4 mr-2" /> View Profile
+                        </DropdownMenuItem>
+                        <DropdownMenuItem onClick={() => handleEditClick(coach)}>Edit Details</DropdownMenuItem>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => handleDeleteClick(coach)}
+                        >
+                          <Trash2 className="h-4 w-4 mr-2" /> Remove Coach
+                        </DropdownMenuItem>
+                      </DropdownMenuContent>
+                    </DropdownMenu>
+                  </div>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  <div className="space-y-2">
+                    <div className="flex items-center gap-2 text-sm">
+                      <Mail className="h-3 w-3 text-muted-foreground" />
+                      <span className="truncate">{coach.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <Phone className="h-3 w-3 text-muted-foreground" />
+                      <span>{coach.phoneNumber}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-sm">
+                      <MapPin className="h-3 w-3 text-muted-foreground" />
+                      <span>{coach.branchName}</span>
+                    </div>
+                  </div>
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <Badge variant="outline" className="font-medium">{coach.sportName}</Badge>
+                    <Badge className={getStatusColor(coach.isWork ? "Active" : "On Leave")}>
+                      {coach.isWork ? "Active" : "On Leave"}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    <strong>Skill Level:</strong> {coach.skillLevel}
+                  </p>
+                  <div className="flex items-center justify-between pt-2 border-t border-border text-sm">
+                    <div className="flex items-center gap-1">
+                      <Users className="h-3 w-3 text-muted-foreground" />
+                      <span>{coach.totalTrainees} trainees</span>
+                    </div>
+                    <span>Since {new Date(coach.hireDate).getFullYear()}</span>
+                  </div>
+                  <div className="flex gap-2 pt-2">
+                    <Button variant="default" size="sm" className="flex-1" onClick={() => navigate(`/coaches/${coach.id}`)}>
+                      <Eye className="h-3.5 w-3.5 mr-1.5" /> View Profile
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditClick(coach)}>
+                      Edit
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )
       )}
 
       <BasePagination
@@ -406,12 +553,7 @@ export default function Coaches() {
       />
 
       {/* Modals */}
-      <CoachFormModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        onSuccess={handleRefresh}
-      />
-
+      <CoachFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={handleRefresh} />
       <CoachEditModal
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
@@ -424,7 +566,6 @@ export default function Coaches() {
           skillLevel: selectedCoach.skillLevel,
         } : null}
       />
-
       <ConfirmDialog
         open={confirmDeleteOpen}
         onOpenChange={setConfirmDeleteOpen}

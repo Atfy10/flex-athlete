@@ -8,6 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { FilterBar } from "@/components/FilterBar";
 import { EmptyState } from "@/components/EmptyState";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
+import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 import {
   Plus,
   MoreHorizontal,
@@ -20,6 +21,11 @@ import {
   TrendingUp,
   Eye,
   Star,
+  ChevronUp,
+  ChevronDown as ChevronDownIcon,
+  ChevronsUpDown,
+  Trash2,
+  Pencil,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -29,6 +35,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { TraineeFormModal } from "@/components/modals/TraineeFormModal";
 import { TraineeEditModal } from "@/components/modals/TraineeEditModal";
 import { BasePagination } from "@/components/BasePagination";
@@ -52,6 +66,9 @@ interface TraineesStats {
   sportsCount: number;
   averageAttendance: number;
 }
+
+type SortKey = "name" | "branch" | "attendance" | "joined";
+type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 6;
 
@@ -80,9 +97,21 @@ function TraineeCardSkeleton() {
   );
 }
 
+function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
+  if (col !== sortKey) return <ChevronsUpDown className="h-3.5 w-3.5 ml-1 text-muted-foreground/50" />;
+  return sortDir === "asc"
+    ? <ChevronUp className="h-3.5 w-3.5 ml-1 text-primary" />
+    : <ChevronDownIcon className="h-3.5 w-3.5 ml-1 text-primary" />;
+}
+
 export default function Trainees() {
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  // ── View mode ────────────────────────────────────────────────────────────
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   // ── Modals & dialogs ──────────────────────────────────────────────────────
   const [createOpen, setCreateOpen] = useState(false);
@@ -103,14 +132,12 @@ export default function Trainees() {
     averageAttendance: 0,
   });
 
-  // ── Load sport options for filter ─────────────────────────────────────────
   useEffect(() => {
     getSports()
       .then((res) => { if (res.isSuccess) setSportOptions(res.data); })
       .catch(() => {});
   }, []);
 
-  // ── Stats fetch ───────────────────────────────────────────────────────────
   useEffect(() => {
     let active = true;
     const fetchStats = async () => {
@@ -137,7 +164,6 @@ export default function Trainees() {
     return () => { active = false; };
   }, []);
 
-  // ── Search hook ───────────────────────────────────────────────────────────
   const handleSearchFn = useCallback(
     async (searchTerm: string, page: number, pageSize: number) => {
       const isNumericSearch = /^\d+$/.test(searchTerm.trim());
@@ -164,24 +190,35 @@ export default function Trainees() {
     minLength: 1,
   });
 
-  // ── Client-side sport + status filters ───────────────────────────────────
-  const trainees = rawTrainees.filter((t) => {
+  // ── Client-side filters ───────────────────────────────────────────────────
+  const filtered = rawTrainees.filter((t) => {
     const sportMatch =
       sportFilter === "all" ||
-      (t.sportSkills?.some((s) =>
-        s.sportName.toLowerCase() === sportFilter.toLowerCase()
-      )) ||
+      (t.sportSkills?.some((s) => s.sportName.toLowerCase() === sportFilter.toLowerCase())) ||
       t.sportName?.toLowerCase() === sportFilter.toLowerCase();
-
     const statusMatch =
       statusFilter === "all" ||
       (statusFilter === "active" && t.isSubscribed) ||
       (statusFilter === "inactive" && !t.isSubscribed);
-
     return sportMatch && statusMatch;
   });
 
-  // ── Delete handler ────────────────────────────────────────────────────────
+  // ── Client-side sort (table mode) ─────────────────────────────────────────
+  const trainees = [...filtered].sort((a, b) => {
+    let av = "", bv = "";
+    if (sortKey === "name") { av = `${a.firstName} ${a.lastName}`; bv = `${b.firstName} ${b.lastName}`; }
+    else if (sortKey === "branch") { av = a.branchName; bv = b.branchName; }
+    else if (sortKey === "attendance") { return sortDir === "asc" ? a.attendanceRate - b.attendanceRate : b.attendanceRate - a.attendanceRate; }
+    else if (sortKey === "joined") { return sortDir === "asc" ? new Date(a.joinDate).getTime() - new Date(b.joinDate).getTime() : new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime(); }
+    return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir((d) => d === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
+  };
+
+  // ── Delete ────────────────────────────────────────────────────────────────
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
@@ -217,11 +254,25 @@ export default function Trainees() {
     name.split(" ").map((n) => n[0]).join("").toUpperCase().substring(0, 2);
 
   const statsCards = [
-    { title: "Total Trainees", value: stats.totalTrainees.toString(), change: "+12%", icon: Users },
-    { title: "Active Now",     value: stats.activeTrainees.toString(), change: "+5%",  icon: TrendingUp },
-    { title: "Sports Covered", value: stats.sportsCount.toString(),    change: "+2",   icon: Trophy },
-    { title: "Avg. Attendance",value: `${stats.averageAttendance}%`,   change: "+3%",  icon: Star },
+    { title: "Total Trainees",  value: stats.totalTrainees.toString(),    change: "+12%", icon: Users },
+    { title: "Active Now",      value: stats.activeTrainees.toString(),   change: "+5%",  icon: TrendingUp },
+    { title: "Sports Covered",  value: stats.sportsCount.toString(),      change: "+2",   icon: Trophy },
+    { title: "Avg. Attendance", value: `${stats.averageAttendance}%`,     change: "+3%",  icon: Star },
   ];
+
+  const hasFilters = term !== "" || sportFilter !== "all" || statusFilter !== "all";
+
+  const SortTH = ({ col, label }: { col: SortKey; label: string }) => (
+    <TableHead
+      className="cursor-pointer select-none whitespace-nowrap group"
+      onClick={() => handleSort(col)}
+    >
+      <span className="inline-flex items-center gap-0.5 group-hover:text-foreground transition-colors">
+        {label}
+        <SortIcon col={col} sortKey={sortKey} sortDir={sortDir} />
+      </span>
+    </TableHead>
+  );
 
   return (
     <div className="space-y-8">
@@ -260,10 +311,13 @@ export default function Trainees() {
         ))}
       </div>
 
-      {/* Search & Filters */}
+      {/* Search & Filters + View Toggle */}
       <Card className="card-athletic">
         <CardHeader>
-          <CardTitle>Search & Filter</CardTitle>
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle>Search & Filter</CardTitle>
+            <ViewToggle view={viewMode} onViewChange={setViewMode} />
+          </div>
         </CardHeader>
         <CardContent>
           <FilterBar
@@ -296,158 +350,294 @@ export default function Trainees() {
         </CardContent>
       </Card>
 
-      {/* Grid */}
-      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {loading
-          ? Array.from({ length: PAGE_SIZE }).map((_, i) => <TraineeCardSkeleton key={i} />)
-          : trainees.map((trainee) => {
-              const fullName = `${trainee.firstName} ${trainee.lastName}`;
-              const sportSkills =
-                trainee.sportSkills && trainee.sportSkills.length > 0
-                  ? trainee.sportSkills
-                  : trainee.sportName
-                  ? [{ sportName: trainee.sportName, skillLevel: trainee.skillLevel ?? "" }]
-                  : [];
-              return (
-                <Card key={trainee.id} className="card-athletic">
-                  <CardHeader className="pb-4">
-                    <div className="flex items-center justify-between">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-12 w-12">
-                          <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                            {getInitials(fullName)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <CardTitle className="text-lg">{fullName}</CardTitle>
-                          <p className="text-sm text-muted-foreground mt-0.5">
-                            Age: {trainee.age} · Joined {new Date(trainee.joinDate).getFullYear()}
-                          </p>
+      {/* ── TABLE VIEW ── */}
+      {viewMode === "table" ? (
+        loading ? (
+          <Card className="card-athletic">
+            <CardContent className="p-0">
+              <div className="space-y-0">
+                {Array.from({ length: PAGE_SIZE }).map((_, i) => (
+                  <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-border last:border-0">
+                    <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                    <Skeleton className="h-4 w-40" />
+                    <Skeleton className="h-4 w-24 ml-auto" />
+                    <Skeleton className="h-4 w-20" />
+                    <Skeleton className="h-4 w-16" />
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        ) : trainees.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title={term ? `No results for "${term}"` : "No trainees yet"}
+            description={hasFilters ? "Try adjusting your search or filters." : "Get started by adding your first trainee."}
+            actionLabel={!hasFilters ? "Add Trainee" : undefined}
+            onAction={!hasFilters ? () => setCreateOpen(true) : undefined}
+          />
+        ) : (
+          <Card className="card-athletic overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <SortTH col="name" label="Name" />
+                  <TableHead>Sport / Level</TableHead>
+                  <SortTH col="branch" label="Branch" />
+                  <TableHead>Status</TableHead>
+                  <SortTH col="attendance" label="Attendance" />
+                  <SortTH col="joined" label="Joined" />
+                  <TableHead className="w-[50px]" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {trainees.map((trainee) => {
+                  const fullName = `${trainee.firstName} ${trainee.lastName}`;
+                  const sportSkills =
+                    trainee.sportSkills && trainee.sportSkills.length > 0
+                      ? trainee.sportSkills
+                      : trainee.sportName
+                      ? [{ sportName: trainee.sportName, skillLevel: trainee.skillLevel ?? "" }]
+                      : [];
+                  return (
+                    <TableRow
+                      key={trainee.id}
+                      className="cursor-pointer hover:bg-muted/40 transition-colors"
+                      onClick={() => navigate(`/trainees/${trainee.id}`)}
+                    >
+                      <TableCell>
+                        <div className="flex items-center gap-2.5 min-w-0">
+                          <Avatar className="h-8 w-8 shrink-0">
+                            <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
+                              {getInitials(fullName)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div className="min-w-0">
+                            <p className="font-medium text-sm truncate">{fullName}</p>
+                            <p className="text-xs text-muted-foreground truncate">{trainee.email}</p>
+                          </div>
                         </div>
-                      </div>
-
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                          <DropdownMenuItem onClick={() => navigate(`/trainees/${trainee.id}`)}>
-                            View Profile
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => setTimeout(() => setEditTrainee(trainee), 100)}
-                          >
-                            Edit Details
-                          </DropdownMenuItem>
-                          <DropdownMenuItem
-                            onClick={() => navigate(`/attendance?traineeId=${trainee.id}`)}
-                          >
-                            View Attendance
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => setTimeout(() => setDeleteTarget(trainee), 100)}
-                          >
-                            Remove Trainee
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </CardHeader>
-
-                  <CardContent className="space-y-4">
-                    <div className="space-y-2">
-                      <div className="flex items-center gap-2 text-sm">
-                        <Mail className="h-3 w-3 text-muted-foreground" />
-                        <span className="truncate">{trainee.email}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Phone className="h-3 w-3 text-muted-foreground" />
-                        <span>{trainee.phoneNumber}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <MapPin className="h-3 w-3 text-muted-foreground" />
-                        <span>{trainee.branchName}</span>
-                      </div>
-                    </div>
-
-                    {/* Sport + skill badges */}
-                    <div className="flex flex-wrap gap-1.5">
-                      {sportSkills.map((s, i) => (
-                        <span key={i} className="inline-flex items-center gap-1">
-                          <Badge variant="outline" className="font-medium text-xs">{s.sportName}</Badge>
-                          {s.skillLevel && (
-                            <Badge variant="secondary" className={`${getLevelColor(s.skillLevel)} text-xs`}>
-                              {s.skillLevel}
-                            </Badge>
-                          )}
-                        </span>
-                      ))}
-                      <Badge className={`${getStatusColor(trainee.isSubscribed)} text-xs`}>
-                        {trainee.isSubscribed ? "Subscribed" : "Not Subscribed"}
-                      </Badge>
-                    </div>
-
-                    <div className="flex items-center justify-between pt-2 border-t border-border">
-                      <div className="flex items-center gap-1 text-sm">
-                        <Users className="h-3 w-3 text-muted-foreground" />
-                        <span>{trainee.coachName}</span>
-                      </div>
-                      <div className="flex items-center gap-1 text-sm">
-                        <Calendar className="h-3 w-3 text-muted-foreground" />
-                        <span>Att: {trainee.attendanceRate}%</span>
-                      </div>
-                    </div>
-
-                    {trainee.medicalConditions && trainee.medicalConditions.length > 0 && (
-                      <div className="space-y-1">
-                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Medical</p>
+                      </TableCell>
+                      <TableCell>
                         <div className="flex flex-wrap gap-1">
-                          {trainee.medicalConditions.map((c, idx) => (
-                            <Badge key={idx} variant="outline" className="text-xs">{c}</Badge>
+                          {sportSkills.slice(0, 2).map((s, i) => (
+                            <span key={i} className="inline-flex items-center gap-1">
+                              <Badge variant="outline" className="text-xs py-0">{s.sportName}</Badge>
+                              {s.skillLevel && (
+                                <Badge variant="secondary" className={`${getLevelColor(s.skillLevel)} text-xs py-0`}>
+                                  {s.skillLevel}
+                                </Badge>
+                              )}
+                            </span>
                           ))}
                         </div>
-                      </div>
-                    )}
-
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        variant="default"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => navigate(`/trainees/${trainee.id}`)}
-                      >
-                        <Eye className="h-3.5 w-3.5 mr-1.5" />
-                        View Profile
-                      </Button>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="flex-1"
-                        onClick={() => navigate(`/attendance?traineeId=${trainee.id}`)}
-                      >
-                        Attendance
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              );
-            })}
-      </div>
-
-      {/* Empty state / error */}
-      {!loading && trainees.length === 0 && (
-        <EmptyState
-          icon={Users}
-          title={term ? `No results for "${term}"` : sportFilter !== "all" ? `No trainees in ${sportFilter}` : "No trainees yet"}
-          description={term || sportFilter !== "all" ? "Try adjusting your search or filters." : "Get started by adding your first trainee."}
-          actionLabel={!term && sportFilter === "all" ? "Add Trainee" : undefined}
-          onAction={!term && sportFilter === "all" ? () => setCreateOpen(true) : undefined}
-        />
+                      </TableCell>
+                      <TableCell>
+                        <span className="flex items-center gap-1.5 text-sm">
+                          <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                          {trainee.branchName}
+                        </span>
+                      </TableCell>
+                      <TableCell>
+                        <Badge className={`${getStatusColor(trainee.isSubscribed)} text-xs`}>
+                          {trainee.isSubscribed ? "Subscribed" : "Inactive"}
+                        </Badge>
+                      </TableCell>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <div className="w-16 bg-muted rounded-full h-1.5 hidden sm:block">
+                            <div
+                              className={`h-1.5 rounded-full ${
+                                trainee.attendanceRate >= 80 ? "bg-success" :
+                                trainee.attendanceRate >= 60 ? "bg-warning" : "bg-destructive"
+                              }`}
+                              style={{ width: `${Math.min(trainee.attendanceRate, 100)}%` }}
+                            />
+                          </div>
+                          <span className="text-sm font-medium">{trainee.attendanceRate}%</span>
+                        </div>
+                      </TableCell>
+                      <TableCell className="text-sm text-muted-foreground">
+                        {new Date(trainee.joinDate).getFullYear()}
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon" className="h-7 w-7">
+                              <MoreHorizontal className="h-3.5 w-3.5" />
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                            <DropdownMenuItem onClick={() => navigate(`/trainees/${trainee.id}`)}>
+                              <Eye className="h-4 w-4 mr-2" /> View Profile
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => setTimeout(() => setEditTrainee(trainee), 100)}>
+                              <Pencil className="h-4 w-4 mr-2" /> Edit Details
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => navigate(`/attendance?traineeId=${trainee.id}`)}>
+                              <Calendar className="h-4 w-4 mr-2" /> View Attendance
+                            </DropdownMenuItem>
+                            <DropdownMenuSeparator />
+                            <DropdownMenuItem
+                              className="text-destructive"
+                              onClick={() => setTimeout(() => setDeleteTarget(trainee), 100)}
+                            >
+                              <Trash2 className="h-4 w-4 mr-2" /> Remove Trainee
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </Card>
+        )
+      ) : (
+        /* ── GRID VIEW ── */
+        <>
+          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+            {loading
+              ? Array.from({ length: PAGE_SIZE }).map((_, i) => <TraineeCardSkeleton key={i} />)
+              : trainees.map((trainee) => {
+                  const fullName = `${trainee.firstName} ${trainee.lastName}`;
+                  const sportSkills =
+                    trainee.sportSkills && trainee.sportSkills.length > 0
+                      ? trainee.sportSkills
+                      : trainee.sportName
+                      ? [{ sportName: trainee.sportName, skillLevel: trainee.skillLevel ?? "" }]
+                      : [];
+                  return (
+                    <Card key={trainee.id} className="card-athletic">
+                      <CardHeader className="pb-4">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Avatar className="h-12 w-12">
+                              <AvatarFallback className="bg-gradient-primary text-primary-foreground">
+                                {getInitials(fullName)}
+                              </AvatarFallback>
+                            </Avatar>
+                            <div>
+                              <CardTitle className="text-lg">{fullName}</CardTitle>
+                              <p className="text-sm text-muted-foreground mt-0.5">
+                                Age: {trainee.age} · Joined {new Date(trainee.joinDate).getFullYear()}
+                              </p>
+                            </div>
+                          </div>
+                          <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                              </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                              <DropdownMenuItem onClick={() => navigate(`/trainees/${trainee.id}`)}>
+                                View Profile
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => setTimeout(() => setEditTrainee(trainee), 100)}>
+                                Edit Details
+                              </DropdownMenuItem>
+                              <DropdownMenuItem onClick={() => navigate(`/attendance?traineeId=${trainee.id}`)}>
+                                View Attendance
+                              </DropdownMenuItem>
+                              <DropdownMenuSeparator />
+                              <DropdownMenuItem
+                                className="text-destructive"
+                                onClick={() => setTimeout(() => setDeleteTarget(trainee), 100)}
+                              >
+                                Remove Trainee
+                              </DropdownMenuItem>
+                            </DropdownMenuContent>
+                          </DropdownMenu>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-4">
+                        <div className="space-y-2">
+                          <div className="flex items-center gap-2 text-sm">
+                            <Mail className="h-3 w-3 text-muted-foreground" />
+                            <span className="truncate">{trainee.email}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <Phone className="h-3 w-3 text-muted-foreground" />
+                            <span>{trainee.phoneNumber}</span>
+                          </div>
+                          <div className="flex items-center gap-2 text-sm">
+                            <MapPin className="h-3 w-3 text-muted-foreground" />
+                            <span>{trainee.branchName}</span>
+                          </div>
+                        </div>
+                        <div className="flex flex-wrap gap-1.5">
+                          {sportSkills.map((s, i) => (
+                            <span key={i} className="inline-flex items-center gap-1">
+                              <Badge variant="outline" className="font-medium text-xs">{s.sportName}</Badge>
+                              {s.skillLevel && (
+                                <Badge variant="secondary" className={`${getLevelColor(s.skillLevel)} text-xs`}>
+                                  {s.skillLevel}
+                                </Badge>
+                              )}
+                            </span>
+                          ))}
+                          <Badge className={`${getStatusColor(trainee.isSubscribed)} text-xs`}>
+                            {trainee.isSubscribed ? "Subscribed" : "Not Subscribed"}
+                          </Badge>
+                        </div>
+                        <div className="flex items-center justify-between pt-2 border-t border-border">
+                          <div className="flex items-center gap-1 text-sm">
+                            <Users className="h-3 w-3 text-muted-foreground" />
+                            <span>{trainee.coachName}</span>
+                          </div>
+                          <div className="flex items-center gap-1 text-sm">
+                            <Calendar className="h-3 w-3 text-muted-foreground" />
+                            <span>Att: {trainee.attendanceRate}%</span>
+                          </div>
+                        </div>
+                        {trainee.medicalConditions && trainee.medicalConditions.length > 0 && (
+                          <div className="space-y-1">
+                            <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Medical</p>
+                            <div className="flex flex-wrap gap-1">
+                              {trainee.medicalConditions.map((c, idx) => (
+                                <Badge key={idx} variant="outline" className="text-xs">{c}</Badge>
+                              ))}
+                            </div>
+                          </div>
+                        )}
+                        <div className="flex gap-2 pt-2">
+                          <Button
+                            variant="default"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => navigate(`/trainees/${trainee.id}`)}
+                          >
+                            <Eye className="h-3.5 w-3.5 mr-1.5" />
+                            View Profile
+                          </Button>
+                          <Button
+                            variant="outline"
+                            size="sm"
+                            className="flex-1"
+                            onClick={() => navigate(`/attendance?traineeId=${trainee.id}`)}
+                          >
+                            Attendance
+                          </Button>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  );
+                })}
+          </div>
+          {!loading && trainees.length === 0 && (
+            <EmptyState
+              icon={Users}
+              title={term ? `No results for "${term}"` : sportFilter !== "all" ? `No trainees in ${sportFilter}` : "No trainees yet"}
+              description={hasFilters ? "Try adjusting your search or filters." : "Get started by adding your first trainee."}
+              actionLabel={!hasFilters ? "Add Trainee" : undefined}
+              onAction={!hasFilters ? () => setCreateOpen(true) : undefined}
+            />
+          )}
+        </>
       )}
 
       {/* Pagination */}
@@ -461,14 +651,8 @@ export default function Trainees() {
         />
       )}
 
-      {/* Create modal */}
-      <TraineeFormModal
-        open={createOpen}
-        onOpenChange={setCreateOpen}
-        onSuccess={refresh}
-      />
-
-      {/* Edit modal */}
+      {/* Modals */}
+      <TraineeFormModal open={createOpen} onOpenChange={setCreateOpen} onSuccess={refresh} />
       <TraineeEditModal
         open={!!editTrainee}
         onOpenChange={(v) => { if (!v) setEditTrainee(null); }}
@@ -488,8 +672,6 @@ export default function Trainees() {
             : null
         }
       />
-
-      {/* Delete confirm dialog */}
       <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
