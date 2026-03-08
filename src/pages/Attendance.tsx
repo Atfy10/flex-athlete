@@ -350,8 +350,10 @@ const Attendance = () => {
   const todayAbsent   = sessions.reduce((s, r) => s + r.totalAbsent, 0);
   const todayEnrolled = sessions.reduce((s, r) => s + r.totalEnrolled, 0);
 
+type AttendanceSortKey = "sportName" | "coachName" | "branchName" | "startTime" | "durationInMinutes" | "totalPresent" | "totalEnrolled";
+
   // Filter sessions by search term (session-level: sport, coach, branch)
-  const visibleSessions =
+  const filteredSessions =
     searchTerm.trim().length >= 2
       ? sessions.filter(
           (s) =>
@@ -360,6 +362,11 @@ const Attendance = () => {
             s.branchName.toLowerCase().includes(searchTerm.toLowerCase()),
         )
       : sessions;
+
+  const visibleSessions = sortItems(filteredSessions, (s, key) => {
+    const v = (s as unknown as Record<string, unknown>)[key] ?? "";
+    return typeof v === "number" ? v : String(v);
+  });
 
   return (
     <div className="space-y-8">
