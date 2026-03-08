@@ -193,25 +193,25 @@ export default function Sessions() {
 
       {/* ── Stats Cards ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {STATS_META.map((meta, i) => (
-          <Card key={i} className="card-athletic">
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between">
-                <div>
-                  <p className="text-muted-foreground text-sm font-medium">{meta.title}</p>
-                  {statsValues[i] === "—" ? (
-                    <Skeleton className="h-7 w-12 mt-1" />
-                  ) : (
+        {STATS_META.map((meta, i) =>
+          statsValues[i] === "—" ? (
+            <StatCardSkeleton key={i} />
+          ) : (
+            <Card key={i} className="card-athletic">
+              <CardContent className="p-6">
+                <div className="flex items-center justify-between">
+                  <div>
+                    <p className="text-muted-foreground text-sm font-medium">{meta.title}</p>
                     <p className="text-2xl font-bold mt-1">{statsValues[i]}</p>
-                  )}
+                  </div>
+                  <div className="p-3 rounded-xl bg-primary/10">
+                    <meta.icon className="h-5 w-5 text-primary" />
+                  </div>
                 </div>
-                <div className="p-3 rounded-xl bg-primary/10">
-                  <meta.icon className="h-5 w-5 text-primary" />
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+              </CardContent>
+            </Card>
+          )
+        )}
       </div>
 
       {/* ── Search & Date Filter ────────────────────────────────────────── */}
