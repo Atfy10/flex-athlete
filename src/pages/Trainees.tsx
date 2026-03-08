@@ -426,18 +426,22 @@ export default function Trainees() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 bg-muted rounded-full h-1.5 hidden sm:block">
-                            <div
-                              className={`h-1.5 rounded-full ${
-                                trainee.attendanceRate >= 80 ? "bg-success" :
-                                trainee.attendanceRate >= 60 ? "bg-warning" : "bg-destructive"
-                              }`}
-                              style={{ width: `${Math.min(trainee.attendanceRate, 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium">{trainee.attendanceRate}%</span>
-                        </div>
+                        {(() => {
+                          const ac = getAttendanceColor(trainee.attendanceRate);
+                          return (
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 bg-muted rounded-full h-1.5 hidden sm:block">
+                                <div
+                                  className={`h-1.5 rounded-full ${ac.bar}`}
+                                  style={{ width: `${Math.min(trainee.attendanceRate, 100)}%` }}
+                                />
+                              </div>
+                              <span className={`text-sm font-medium ${ac.text}`}>
+                                {trainee.attendanceRate}%
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(trainee.joinDate).getFullYear()}
