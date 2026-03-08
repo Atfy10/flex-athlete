@@ -299,6 +299,7 @@ const Attendance = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [markOpen, setMarkOpen] = useState(false);
   const [markSession, setMarkSession] = useState<SessionOccurrenceDto | null>(null);
+  const [view, setView] = useState<ViewMode>("grid");
 
   // Sessions for selected date
   const [sessions, setSessions] = useState<SessionOccurrenceDto[]>([]);
