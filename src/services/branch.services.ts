@@ -40,3 +40,21 @@ export const deleteBranch = async (id: number | string) => {
   if (isDevSession()) return devMock<boolean>(true);
   return apiFetch<ApiResult<boolean>>(`/api/branch/${id}`, { method: "DELETE" });
 };
+
+export const deactivateBranch = async (id: number | string) => {
+  if (isDevSession()) return devMock<boolean>(true);
+  return apiFetch<ApiResult<boolean>>(`/api/branch/${id}/deactivate`, { method: "PATCH" });
+};
+
+export interface BranchStatsDto {
+  totalTrainees: number;
+  totalCoaches: number;
+  activeGroups: number;
+  activeSessions: number;
+}
+
+export const getBranchStats = async (id: number | string) => {
+  if (isDevSession())
+    return devMock<BranchStatsDto>({ totalTrainees: 0, totalCoaches: 0, activeGroups: 0, activeSessions: 0 });
+  return apiFetch<ApiResult<BranchStatsDto>>(`/api/branch/${id}/stats`);
+};
