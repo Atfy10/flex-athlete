@@ -127,7 +127,12 @@ function ActivityRow({ item }: { item: NotificationDto }) {
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
           {item.message}
         </p>
-        <p className="text-xs text-muted-foreground/70 mt-1">{timeAgo(item.createdAt)}</p>
+        <p
+          className="text-xs text-muted-foreground/70 mt-1"
+          title={timeAgo(item.createdAt).title}
+        >
+          {timeAgo(item.createdAt).label}
+        </p>
       </div>
 
       {/* Arrow hint for clickable rows */}
