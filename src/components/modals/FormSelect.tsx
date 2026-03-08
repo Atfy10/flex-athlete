@@ -6,6 +6,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Loader2 } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 export interface SelectOption {
   value: string;
@@ -22,6 +24,11 @@ interface FormSelectProps {
   required?: boolean;
   error?: string;
   disabled?: boolean;
+  /** Show a spinner inside the trigger while options are being fetched */
+  loading?: boolean;
+  /** Message shown when options array is empty and not loading */
+  emptyMessage?: string;
+  hint?: string;
 }
 
 export function FormSelect({
@@ -30,30 +37,62 @@ export function FormSelect({
   value,
   onChange,
   options,
-  placeholder = "Select...",
+  placeholder = "Select…",
   required = false,
   error,
   disabled = false,
+  loading = false,
+  emptyMessage = "No options available",
+  hint,
 }: FormSelectProps) {
+  const isDisabled = disabled || loading;
+
   return (
     <div className="space-y-1.5">
-      <Label htmlFor={id}>
+      <Label htmlFor={id} className={cn(isDisabled && "opacity-60")}>
         {label}
-        {required && <span className="text-destructive ml-1">*</span>}
+        {required && <span className="text-destructive ml-1" aria-hidden>*</span>}
       </Label>
-      <Select value={value} onValueChange={onChange} disabled={disabled}>
-        <SelectTrigger id={id} className={error ? "border-destructive" : ""}>
-          <SelectValue placeholder={placeholder} />
+
+      <Select value={value} onValueChange={onChange} disabled={isDisabled}>
+        <SelectTrigger
+          id={id}
+          aria-invalid={!!error}
+          aria-describedby={error ? `${id}-error` : hint ? `${id}-hint` : undefined}
+          className={cn(error && "border-destructive focus:ring-destructive")}
+        >
+          {loading ? (
+            <span className="flex items-center gap-2 text-muted-foreground">
+              <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              Loading…
+            </span>
+          ) : (
+            <SelectValue placeholder={placeholder} />
+          )}
         </SelectTrigger>
         <SelectContent>
-          {options.map((opt) => (
-            <SelectItem key={opt.value} value={opt.value}>
-              {opt.label}
-            </SelectItem>
-          ))}
+          {options.length === 0 && !loading ? (
+            <div className="py-3 text-center text-sm text-muted-foreground">
+              {emptyMessage}
+            </div>
+          ) : (
+            options.map((opt) => (
+              <SelectItem key={opt.value} value={opt.value}>
+                {opt.label}
+              </SelectItem>
+            ))
+          )}
         </SelectContent>
       </Select>
-      {error && <p className="text-xs text-destructive">{error}</p>}
+
+      {hint && !error && (
+        <p id={`${id}-hint`} className="text-xs text-muted-foreground">{hint}</p>
+      )}
+      {error && (
+        <p id={`${id}-error`} role="alert" className="text-xs text-destructive flex items-center gap-1">
+          <span aria-hidden>⚠</span> {error}
+        </p>
+      )}
     </div>
   );
 }
