@@ -83,6 +83,7 @@ const App = () => (
                       <Route path="/attendance" element={<Attendance />} />
                       <Route path="/profiles" element={<Profiles />} />
                       <Route path="/users-roles" element={<UsersRoles />} />
+                      <Route path="/notifications" element={<NotificationsPage />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
                     </ErrorBoundary>
