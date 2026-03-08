@@ -299,17 +299,13 @@ const Employees = () => {
           {Array.from({ length: pageSize }).map((_, i) => <EmployeeCardSkeleton key={i} />)}
         </div>
       ) : filteredEmployees.length === 0 ? (
-        <Card className="card-athletic">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <Users className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-1">No employees found</h3>
-            <p className="text-sm text-muted-foreground">
-              {term || statusFilter !== "all" || branchFilter !== "all"
-                ? "Try adjusting your search or filters."
-                : "Add your first employee to get started."}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Users}
+          title="No employees found"
+          description={term || statusFilter !== "all" || branchFilter !== "all" ? "Try adjusting your search or filters." : "Add your first employee to get started."}
+          actionLabel={!term && statusFilter === "all" && branchFilter === "all" ? "Add Employee" : undefined}
+          onAction={!term && statusFilter === "all" && branchFilter === "all" ? () => setModalOpen(true) : undefined}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {filteredEmployees.map((employee) => (
