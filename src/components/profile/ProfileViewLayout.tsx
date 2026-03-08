@@ -22,7 +22,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
-import { MoreHorizontal, Pencil, Trash2, ToggleLeft } from "lucide-react";
+import { ArrowLeft, MoreHorizontal, Pencil, Trash2, ToggleLeft } from "lucide-react";
 
 export interface ProfileField {
   label: string;
@@ -35,6 +35,11 @@ export interface ProfileSection {
   fields: ProfileField[];
 }
 
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
 export interface ProfileViewLayoutProps {
   loading?: boolean;
   error?: string | null;
@@ -45,6 +50,7 @@ export interface ProfileViewLayoutProps {
   statusBadgeClass: string;
   sections: ProfileSection[];
   backPath: string;
+  breadcrumb?: BreadcrumbItem[];
   onEdit?: () => void;
   onDelete?: () => Promise<void>;
   onToggleActive?: () => Promise<void>;
