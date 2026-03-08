@@ -210,6 +210,13 @@ const Enrollments = () => {
     fetchStats();
   }, [refresh, fetchStats]);
 
+  // Client-side status + payment filter
+  const filteredEnrollments = enrollments.filter((e) => {
+    const matchesStatus = statusFilter === "all" || e.status === statusFilter;
+    const matchesPayment = paymentFilter === "all" || e.paymentStatus === paymentFilter;
+    return matchesStatus && matchesPayment;
+  });
+
   const openEdit = (enrollment: EnrollmentCardDto) => {
     setSelectedEnrollment({
       id: enrollment.id,
