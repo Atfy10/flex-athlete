@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FilterBar } from "@/components/FilterBar";
 import { EmptyState } from "@/components/EmptyState";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 import { SortableTableHead } from "@/components/ui/SortableTableHead";
 import { useSortable } from "@/hooks/useSortable";
+import { useTableSelection } from "@/hooks/useTableSelection";
+import { BulkActionsBar } from "@/components/ui/BulkActionsBar";
 import {
   Plus,
   MoreHorizontal,
@@ -25,6 +28,8 @@ import {
   Star,
   Trash2,
   Pencil,
+  UserX,
+  Download,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -208,6 +213,39 @@ export default function Trainees() {
     return "";
   });
 
+  // ── Row selection ─────────────────────────────────────────────────────────
+  const {
+    selectedIds,
+    selectedCount,
+    isSelected,
+    toggle: toggleRow,
+    allSelected,
+    someSelected,
+    toggleAll,
+    clearSelection,
+  } = useTableSelection(trainees);
+
+  // ── Bulk export (CSV) ─────────────────────────────────────────────────────
+  const handleBulkExport = () => {
+    const rows = trainees.filter((t) => selectedIds.has(t.id));
+    const header = ["ID", "First Name", "Last Name", "Email", "Branch", "Attendance %"];
+    const csv = [
+      header.join(","),
+      ...rows.map((t) =>
+        [t.id, t.firstName, t.lastName, t.email, t.branchName, t.attendanceRate].join(",")
+      ),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `trainees-export-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    clearSelection();
+    toast({ title: `Exported ${rows.length} trainee${rows.length === 1 ? "" : "s"}.` });
+  };
+
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
@@ -366,18 +404,27 @@ export default function Trainees() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {/* Select-all checkbox */}
+                  <TableHead className="w-10 pl-4">
+                    <Checkbox
+                      checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                      onCheckedChange={toggleAll}
+                      aria-label="Select all"
+                    />
+                  </TableHead>
                   <SortTH col="name" label="Name" />
                   <TableHead>Sport / Level</TableHead>
                   <SortTH col="branch" label="Branch" />
                   <TableHead>Status</TableHead>
                   <SortTH col="attendance" label="Attendance" />
                   <SortTH col="joined" label="Joined" />
-                      <TableHead className="w-[88px]" />
-                 </TableRow>
-               </TableHeader>
+                  <TableHead className="w-[88px]" />
+                </TableRow>
+              </TableHeader>
               <TableBody>
                 {trainees.map((trainee) => {
                   const fullName = `${trainee.firstName} ${trainee.lastName}`;
+                  const checked = isSelected(trainee.id);
                   const sportSkills =
                     trainee.sportSkills && trainee.sportSkills.length > 0
                       ? trainee.sportSkills
@@ -387,9 +434,17 @@ export default function Trainees() {
                   return (
                     <TableRow
                       key={trainee.id}
-                      className="cursor-pointer hover:bg-muted/40 transition-colors"
+                      className={`cursor-pointer hover:bg-muted/40 transition-colors ${checked ? "bg-primary/5" : ""}`}
                       onClick={() => navigate(`/trainees/${trainee.id}`)}
                     >
+                      {/* Row checkbox */}
+                      <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() => toggleRow(trainee.id)}
+                          aria-label={`Select ${fullName}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2.5 min-w-0">
                           <Avatar className="h-8 w-8 shrink-0">
@@ -664,6 +719,32 @@ export default function Trainees() {
         destructive
         loading={deleteLoading}
         onConfirm={handleConfirmDelete}
+      />
+
+      {/* ── Bulk Actions Bar ──────────────────────────────────────────────── */}
+      <BulkActionsBar
+        selectedCount={selectedCount}
+        onClear={clearSelection}
+        actions={[
+          {
+            label: "Export CSV",
+            icon: <Download className="h-3.5 w-3.5" />,
+            onClick: handleBulkExport,
+            variant: "outline",
+          },
+          {
+            label: `Deactivate ${selectedCount > 1 ? `(${selectedCount})` : ""}`.trim(),
+            icon: <UserX className="h-3.5 w-3.5" />,
+            onClick: () => {
+              toast({
+                title: `${selectedCount} trainee${selectedCount === 1 ? "" : "s"} flagged for deactivation.`,
+                description: "Connect to your backend to apply bulk status changes.",
+              });
+              clearSelection();
+            },
+            variant: "destructive",
+          },
+        ]}
       />
     </div>
   );

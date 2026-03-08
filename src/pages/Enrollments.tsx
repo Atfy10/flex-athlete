@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnrollmentRowSkeleton } from "@/components/ui/TableRowSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { FilterBar } from "@/components/FilterBar";
 import { EmptyState } from "@/components/EmptyState";
@@ -26,6 +27,7 @@ import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import {
   UserPlus, Users, Plus, Calendar, DollarSign, CheckCircle, Clock,
   Eye, MoreHorizontal, Pencil, Trash2, PlayCircle, PauseCircle, CreditCard,
+  Download, XCircle,
 } from "lucide-react";
 import { EnrollmentFormModal } from "@/components/modals/EnrollmentFormModal";
 import { EnrollmentEditModal, EnrollmentEditData } from "@/components/modals/EnrollmentEditModal";
@@ -42,6 +44,8 @@ import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 import { SortableTableHead } from "@/components/ui/SortableTableHead";
 import { useSortable } from "@/hooks/useSortable";
 import { RowActions } from "@/components/ui/RowActions";
+import { useTableSelection } from "@/hooks/useTableSelection";
+import { BulkActionsBar } from "@/components/ui/BulkActionsBar";
 
 const PAGE_SIZE = 10;
 
@@ -121,6 +125,51 @@ const Enrollments = () => {
   const sortedEnrollments = sortItems(filteredEnrollments, (e, key) =>
     (e as unknown as Record<string, unknown>)[key] as string ?? ""
   );
+
+  // ── Row selection ─────────────────────────────────────────────────────────
+  const {
+    selectedIds: enrollmentSelectedIds,
+    selectedCount: enrollmentSelectedCount,
+    isSelected: isEnrollmentSelected,
+    toggle: toggleEnrollmentRow,
+    allSelected: allEnrollmentsSelected,
+    someSelected: someEnrollmentsSelected,
+    toggleAll: toggleAllEnrollments,
+    clearSelection: clearEnrollmentSelection,
+  } = useTableSelection(sortedEnrollments);
+
+  // ── Bulk export ───────────────────────────────────────────────────────────
+  const handleBulkExport = () => {
+    const rows = sortedEnrollments.filter((e) => enrollmentSelectedIds.has(e.id));
+    const header = ["ID", "Trainee", "Email", "Sport", "Branch", "Status", "Payment", "Fee"];
+    const csv = [
+      header.join(","),
+      ...rows.map((e) =>
+        [e.id, e.traineeName, e.traineeEmail ?? "", e.sport, e.branch ?? "", e.status, e.paymentStatus ?? "", e.monthlyFee ?? ""].join(",")
+      ),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `enrollments-export-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    clearEnrollmentSelection();
+    toast({ title: `Exported ${rows.length} enrollment${rows.length === 1 ? "" : "s"}.` });
+  };
+
+  // ── Bulk cancel ───────────────────────────────────────────────────────────
+  const handleBulkCancel = async () => {
+    const ids = [...enrollmentSelectedIds] as number[];
+    let successCount = 0;
+    for (const id of ids) {
+      try { await suspendEnrollment(id); successCount++; } catch { /* continue */ }
+    }
+    toast({ title: `${successCount} enrollment${successCount === 1 ? "" : "s"} suspended.` });
+    clearEnrollmentSelection();
+    handleRefresh();
+  };
 
   const openEdit = (enrollment: EnrollmentCardDto) => {
     setSelectedEnrollment({
@@ -416,6 +465,14 @@ const Enrollments = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {/* Select-all checkbox */}
+                    <TableHead className="w-10 pl-4">
+                      <Checkbox
+                        checked={allEnrollmentsSelected ? true : someEnrollmentsSelected ? "indeterminate" : false}
+                        onCheckedChange={toggleAllEnrollments}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
                     {(
                       [
                         { label: "Trainee", key: "traineeName" },
@@ -432,8 +489,22 @@ const Enrollments = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedEnrollments.map((enrollment) => (
-                    <TableRow key={enrollment.id} className="cursor-pointer" onClick={() => navigate(`/enrollments/${enrollment.id}`)}>
+                  {sortedEnrollments.map((enrollment) => {
+                    const checked = isEnrollmentSelected(enrollment.id);
+                    return (
+                    <TableRow
+                      key={enrollment.id}
+                      className={`cursor-pointer transition-colors ${checked ? "bg-primary/5" : ""}`}
+                      onClick={() => navigate(`/enrollments/${enrollment.id}`)}
+                    >
+                      {/* Row checkbox */}
+                      <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() => toggleEnrollmentRow(enrollment.id)}
+                          aria-label={`Select ${enrollment.traineeName}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-7 w-7 shrink-0">
@@ -488,7 +559,8 @@ const Enrollments = () => {
                         </RowActions>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
@@ -511,6 +583,26 @@ const Enrollments = () => {
         title="Remove Enrollment?"
         description={`This will permanently remove the enrollment for ${deleteTarget?.traineeName}. This action cannot be undone.`}
         confirmLabel="Remove" destructive loading={deleteLoading} onConfirm={handleDelete}
+      />
+
+      {/* ── Bulk Actions Bar ──────────────────────────────────────────────── */}
+      <BulkActionsBar
+        selectedCount={enrollmentSelectedCount}
+        onClear={clearEnrollmentSelection}
+        actions={[
+          {
+            label: "Export CSV",
+            icon: <Download className="h-3.5 w-3.5" />,
+            onClick: handleBulkExport,
+            variant: "outline",
+          },
+          {
+            label: `Suspend ${enrollmentSelectedCount > 1 ? `(${enrollmentSelectedCount})` : ""}`.trim(),
+            icon: <XCircle className="h-3.5 w-3.5" />,
+            onClick: handleBulkCancel,
+            variant: "destructive",
+          },
+        ]}
       />
     </div>
   );
