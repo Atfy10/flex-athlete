@@ -32,7 +32,6 @@ import {
   UserPlus,
   Users,
   Plus,
-  Search,
   Calendar,
   DollarSign,
   CheckCircle,
