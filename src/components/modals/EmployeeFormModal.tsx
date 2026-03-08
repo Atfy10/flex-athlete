@@ -100,6 +100,7 @@ export function EmployeeFormModal({
 
   useEffect(() => {
     if (!open) return;
+    resetDirty();
     setApiErrors([]);
     setFieldErrors({});
     setForm({
