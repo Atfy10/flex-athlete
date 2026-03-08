@@ -228,13 +228,7 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="h-[300px] flex flex-col gap-3 justify-end pb-4">
-                {[40, 55, 70, 60, 80].map((h, i) => (
-                  <Skeleton key={i} className="w-full" style={{ height: `${h}%` }} />
-                ))}
-              </div>
-            ) : (
+            {loading ? <ChartSkeleton type="line" /> : (
               <ChartContainer
                 config={{
                   attendance: {
