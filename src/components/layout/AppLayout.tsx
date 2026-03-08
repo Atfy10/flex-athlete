@@ -97,9 +97,9 @@ function AppLayoutContent({ children }: AppLayoutProps) {
             <div className="flex items-center gap-3 min-w-0">
               {/* Always-visible sidebar toggle */}
               <SidebarTrigger />
-              {/* Dashboard shortcut — only shown when sidebar is collapsed */}
-              {sidebarCollapsed && <FloatingDashboardButton inline />}
-              <div className="text-gradient font-bold text-xl hidden sm:block">
+              {/* Dashboard shortcut — desktop only, when sidebar is collapsed */}
+              {showDashboardButton && <FloatingDashboardButton inline />}
+              <div className="text-gradient font-bold text-xl truncate">
                 AURA Sport Academy
               </div>
             </div>
