@@ -278,7 +278,7 @@ function SessionAttendanceCard({
       {expanded && (
         <CardContent className="pt-0">
           {rosterLoading ? (
-            <RosterSkeleton />
+            <RosterRowSkeleton />
           ) : filteredRoster.length === 0 ? (
             <div className="pt-4 border-t border-border text-center py-8 text-muted-foreground text-sm">
               {roster.length === 0
