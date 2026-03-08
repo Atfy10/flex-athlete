@@ -18,6 +18,10 @@ interface FormDatePickerProps {
   required?: boolean;
   error?: string;
   placeholder?: string;
+  /** Earliest selectable date (inclusive). Defaults to 1950-01-01 for past-only pickers. */
+  minDate?: Date;
+  /** Latest selectable date (inclusive). Defaults to today for past-only pickers. */
+  maxDate?: Date;
 }
 
 export function FormDatePicker({
@@ -28,7 +32,14 @@ export function FormDatePicker({
   required = false,
   error,
   placeholder = "Pick a date",
+  minDate,
+  maxDate,
 }: FormDatePickerProps) {
+  const today = new Date();
+  // If neither bound is provided, default to a past-only picker (birthdate behaviour)
+  const resolvedMin = minDate ?? new Date(1950, 0, 1);
+  const resolvedMax = maxDate ?? today;
+
   return (
     <div className="space-y-1.5">
       <Label htmlFor={id}>
@@ -61,9 +72,9 @@ export function FormDatePicker({
             selected={value}
             onSelect={onChange}
             captionLayout="dropdown"
-            fromYear={1950}
-            toYear={new Date().getFullYear()}
-            disabled={(date) => date > new Date()}
+            fromYear={resolvedMin.getFullYear()}
+            toYear={resolvedMax.getFullYear()}
+            disabled={(date) => date < resolvedMin || date > resolvedMax}
             initialFocus
             className="p-3 pointer-events-auto"
           />
