@@ -6,13 +6,13 @@ import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
-import { Calendar as CalendarIcon } from "lucide-react";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   ClipboardCheck,
   Users,
   Search,
+  Calendar as CalendarIcon,
   CheckCircle,
   XCircle,
   Clock,
@@ -192,16 +192,6 @@ function SessionAttendanceCard({
 }) {
   const [expanded, setExpanded] = useState(false);
   const [roster, setRoster] = useState<AttendanceRecordDto[]>([]);
-function SessionAttendanceCard({
-  onMarkAttendance,
-  session,
-  searchTerm,
-}: {
-  session: SessionOccurrenceDto;
-  searchTerm: string;
-}) {
-  const [expanded, setExpanded] = useState(false);
-  const [roster, setRoster] = useState<AttendanceRecordDto[]>([]);
   const [rosterLoading, setRosterLoading] = useState(false);
   const [rosterLoaded, setRosterLoaded] = useState(false);
 
@@ -278,7 +268,7 @@ function SessionAttendanceCard({
               </div>
             </div>
 
-            {/* Rate + expand */}
+            {/* Rate + actions */}
             <div className="flex flex-col items-end gap-2">
               <Badge
                 className={
@@ -292,19 +282,24 @@ function SessionAttendanceCard({
                 {rate}%
               </Badge>
               <Button
+                variant="default"
+                size="sm"
+                onClick={() => onMarkAttendance?.()}
+                className="flex items-center gap-1.5 text-xs"
+              >
+                <ClipboardList className="h-3.5 w-3.5" />
+                Mark
+              </Button>
+              <Button
                 variant="outline"
                 size="sm"
                 onClick={handleToggle}
                 className="flex items-center gap-1.5 text-xs"
               >
                 {expanded ? (
-                  <>
-                    <ChevronUp className="h-3.5 w-3.5" /> Hide Roster
-                  </>
+                  <><ChevronUp className="h-3.5 w-3.5" /> Hide</>
                 ) : (
-                  <>
-                    <ChevronDown className="h-3.5 w-3.5" /> View Roster
-                  </>
+                  <><ChevronDown className="h-3.5 w-3.5" /> Roster</>
                 )}
               </Button>
             </div>
@@ -364,7 +359,7 @@ const Attendance = () => {
   const [markSession, setMarkSession] = useState<SessionOccurrenceDto | null>(null);
 
   // Sessions for selected date
-  const [sessions, setSessions]       = useState<SessionOccurrenceDto[]>([]);
+  const [sessions, setSessions] = useState<SessionOccurrenceDto[]>([]);
   const [sessionsLoading, setSessionsLoading] = useState(true);
 
   // Stat: overall attendance rate
@@ -402,9 +397,9 @@ const Attendance = () => {
   }, []);
 
   // Derive stat values from loaded sessions
-  const todayTotal   = sessions.length;
-  const todayPresent = sessions.reduce((s, r) => s + r.totalPresent + r.totalLate, 0);
-  const todayAbsent  = sessions.reduce((s, r) => s + r.totalAbsent, 0);
+  const todayTotal    = sessions.length;
+  const todayPresent  = sessions.reduce((s, r) => s + r.totalPresent + r.totalLate, 0);
+  const todayAbsent   = sessions.reduce((s, r) => s + r.totalAbsent, 0);
   const todayEnrolled = sessions.reduce((s, r) => s + r.totalEnrolled, 0);
 
   // Filter sessions by search term (session-level: sport, coach, branch)
@@ -512,7 +507,10 @@ const Attendance = () => {
             {/* Shadcn Popover/Calendar date picker */}
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
-                <Button variant="outline" className="flex items-center gap-2 w-auto min-w-[160px] justify-start font-normal">
+                <Button
+                  variant="outline"
+                  className="flex items-center gap-2 w-auto min-w-[160px] justify-start font-normal"
+                >
                   <CalendarIcon className="h-4 w-4 text-muted-foreground" />
                   {selectedDate
                     ? format(new Date(selectedDate + "T00:00:00"), "MMM d, yyyy")
@@ -590,7 +588,11 @@ const Attendance = () => {
         onOpenChange={setMarkOpen}
         onSuccess={() => loadSessions(selectedDate)}
         sessionOccurrenceId={markSession?.id}
-        sessionLabel={markSession ? `${markSession.sportName} — ${formatTime(markSession.startTime)}` : undefined}
+        sessionLabel={
+          markSession
+            ? `${markSession.sportName} — ${formatTime(markSession.startTime)}`
+            : undefined
+        }
       />
     </div>
   );
