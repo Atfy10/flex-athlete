@@ -301,6 +301,7 @@ const Attendance = () => {
   const [markOpen, setMarkOpen] = useState(false);
   const [markSession, setMarkSession] = useState<SessionOccurrenceDto | null>(null);
   const [view, setView] = useState<ViewMode>("grid");
+  const { sort, toggle: toggleSort, sortItems } = useSortable<"sportName" | "coachName" | "branchName" | "startTime" | "durationInMinutes" | "totalPresent" | "totalEnrolled">();
 
   // Sessions for selected date
   const [sessions, setSessions] = useState<SessionOccurrenceDto[]>([]);
