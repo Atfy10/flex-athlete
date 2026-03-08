@@ -73,9 +73,10 @@ function getConfig(type: string) {
 
 function timeAgo(iso: string) {
   try {
-    return formatDistanceToNow(new Date(iso), { addSuffix: true });
+    const { label, title } = formatSmartDate(iso);
+    return { label, title };
   } catch {
-    return "";
+    return { label: "", title: "" };
   }
 }
 
