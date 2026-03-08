@@ -479,9 +479,14 @@ type AttendanceSortKey = "sportName" | "coachName" | "branchName" | "startTime" 
                   className="flex items-center gap-2 w-auto min-w-[160px] justify-start font-normal"
                 >
                   <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                  {selectedDate
-                    ? format(new Date(selectedDate + "T00:00:00"), "MMM d, yyyy")
-                    : "Pick a date"}
+                  {selectedDate ? (
+                    <>
+                      <span>{formatRelativeDate(selectedDate + "T00:00:00")}</span>
+                      <span className="text-muted-foreground/60 text-xs hidden sm:inline">
+                        — {format(new Date(selectedDate + "T00:00:00"), "MMM d, yyyy")}
+                      </span>
+                    </>
+                  ) : "Pick a date"}
                 </Button>
               </PopoverTrigger>
               <PopoverContent className="w-auto p-0" align="start">
