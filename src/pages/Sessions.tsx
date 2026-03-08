@@ -1,18 +1,19 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  Search, 
-  Plus, 
-  Filter,
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Search,
+  Plus,
   Clock,
   MapPin,
   Users,
   Calendar,
   Trophy,
-  MoreHorizontal
+  MoreHorizontal,
+  Layers,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -22,137 +23,188 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { BasePagination } from "@/components/BasePagination";
+import { useEntitySearch } from "@/hooks/useEntitySearch";
+import {
+  listSessions,
+  searchSessions,
+  getSessionsByDate,
+  countSessions,
+} from "@/services/session.services";
+import { SessionCardDto } from "@/types/SessionCardDto";
 
-const sessions = [
-  {
-    id: 1,
-    title: "Basketball Training - Intermediate",
-    sport: "Basketball",
-    coach: "Mike Johnson",
-    date: "2024-01-15",
-    time: "09:00 AM - 11:00 AM",
-    duration: 120,
-    branch: "Downtown",
-    capacity: 20,
-    enrolled: 18,
-    level: "Intermediate",
-    status: "Upcoming",
-  },
-  {
-    id: 2,
-    title: "Swimming Fundamentals",
-    sport: "Swimming",
-    coach: "Sarah Davis",
-    date: "2024-01-15",
-    time: "10:30 AM - 12:00 PM",
-    duration: 90,
-    branch: "North Side",
-    capacity: 15,
-    enrolled: 12,
-    level: "Beginner",
-    status: "Upcoming",
-  },
-  {
-    id: 3,
-    title: "Tennis Private Lessons",
-    sport: "Tennis",
-    coach: "Carlos Rodriguez",
-    date: "2024-01-15",
-    time: "02:00 PM - 03:30 PM",
-    duration: 90,
-    branch: "East Branch",
-    capacity: 8,
-    enrolled: 6,
-    level: "Advanced",
-    status: "In Progress",
-  },
-  {
-    id: 4,
-    title: "Soccer Team Practice",
-    sport: "Soccer",
-    coach: "Emma Wilson",
-    date: "2024-01-15",
-    time: "04:00 PM - 06:00 PM",
-    duration: 120,
-    branch: "Downtown",
-    capacity: 25,
-    enrolled: 22,
-    level: "Mixed",
-    status: "Upcoming",
-  },
-  {
-    id: 5,
-    title: "Volleyball Skills Workshop",
-    sport: "Volleyball",
-    coach: "Alex Thompson",
-    date: "2024-01-14",
-    time: "03:00 PM - 05:00 PM",
-    duration: 120,
-    branch: "North Side",
-    capacity: 16,
-    enrolled: 14,
-    level: "Intermediate",
-    status: "Completed",
-  },
-];
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function todayIso() {
+  return new Date().toISOString().split("T")[0];
+}
 
-const stats = [
-  { title: "Today's Sessions", value: "24", icon: Calendar },
-  { title: "Active Coaches", value: "18", icon: Users },
-  { title: "Total Capacity", value: "340", icon: Trophy },
-  { title: "Enrollment Rate", value: "87%", icon: Clock },
-];
+function formatTime(time: string) {
+  // "09:00:00" → "09:00"
+  return time.slice(0, 5);
+}
 
-export default function Sessions() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate, setSelectedDate] = useState("2024-01-15");
+function formatDuration(minutes: number) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
 
-  const filteredSessions = sessions.filter(session => 
-    session.title.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    session.sport.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    session.coach.toLowerCase().includes(searchTerm.toLowerCase())
+function getCapacityColor(count: number) {
+  // We don't have capacity in DTO; just show trainee count styled neutrally
+  return count > 0 ? "text-success" : "text-muted-foreground";
+}
+
+// ─── Sub-components ───────────────────────────────────────────────────────────
+function SessionCardSkeleton() {
+  return (
+    <Card className="card-athletic">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between gap-3">
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-5 w-2/3" />
+            <div className="flex gap-2">
+              <Skeleton className="h-5 w-20 rounded-full" />
+              <Skeleton className="h-5 w-16 rounded-full" />
+            </div>
+          </div>
+          <Skeleton className="h-8 w-8 rounded" />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Skeleton className="h-4 w-full" />
+        <Skeleton className="h-4 w-4/5" />
+        <Skeleton className="h-4 w-3/5" />
+        <Skeleton className="h-4 w-2/3" />
+        <div className="pt-3 border-t border-border flex gap-2">
+          <Skeleton className="h-8 flex-1" />
+          <Skeleton className="h-8 flex-1" />
+        </div>
+      </CardContent>
+    </Card>
   );
+}
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Upcoming":
-        return "bg-primary/10 text-primary hover:bg-primary/20";
-      case "In Progress":
-        return "bg-success/10 text-success hover:bg-success/20";
-      case "Completed":
-        return "bg-muted text-muted-foreground hover:bg-muted/80";
-      case "Cancelled":
-        return "bg-destructive/10 text-destructive hover:bg-destructive/20";
-      default:
-        return "bg-muted";
-    }
-  };
+function SessionsEmptyState({ isSearch }: { isSearch: boolean }) {
+  return (
+    <div className="col-span-full flex flex-col items-center justify-center py-20 text-muted-foreground">
+      <Layers className="h-12 w-12 mb-4 opacity-30" />
+      <p className="text-base font-medium">
+        {isSearch ? "No sessions match your search" : "No sessions found"}
+      </p>
+      <p className="text-sm mt-1">
+        {isSearch
+          ? "Try a different search term or clear the filter."
+          : "Sessions will appear here once they are scheduled."}
+      </p>
+    </div>
+  );
+}
 
-  const getLevelColor = (level: string) => {
-    switch (level) {
-      case "Beginner":
-        return "bg-secondary/10 text-secondary hover:bg-secondary/20";
-      case "Intermediate":
-        return "bg-primary/10 text-primary hover:bg-primary/20";
-      case "Advanced":
-        return "bg-success/10 text-success hover:bg-success/20";
-      case "Mixed":
-        return "bg-warning/10 text-warning hover:bg-warning/20";
-      default:
-        return "bg-muted";
-    }
-  };
+// ─── Stats meta ───────────────────────────────────────────────────────────────
+const STATS_META = [
+  { title: "Total Sessions", icon: Calendar },
+  { title: "Today's Groups", icon: Layers },
+  { title: "Active Coaches", icon: Users },
+  { title: "Avg. Duration", icon: Clock },
+] as const;
 
-  const getCapacityColor = (enrolled: number, capacity: number) => {
-    const percentage = (enrolled / capacity) * 100;
-    if (percentage >= 90) return "text-destructive";
-    if (percentage >= 75) return "text-warning";
-    return "text-success";
-  };
+// ─── Main Page ────────────────────────────────────────────────────────────────
+export default function Sessions() {
+  const [selectedDate, setSelectedDate] = useState(todayIso());
+  const [useDate, setUseDate] = useState(false);
+
+  // Stats
+  const [totalSessions, setTotalSessions] = useState<number | null>(null);
+  const [todayGroupCount, setTodayGroupCount] = useState<number | null>(null);
+
+  // Date-filtered mode uses a separate local state
+  const [dateItems, setDateItems]     = useState<SessionCardDto[]>([]);
+  const [dateLoading, setDateLoading] = useState(false);
+  const [datePage, setDatePage]       = useState(1);
+  const [dateTotalPages, setDateTotalPages] = useState(1);
+  const DATE_PAGE_SIZE = 9;
+
+  // ── useEntitySearch — search / list mode ────────────────────────────────
+  const stableListSessions   = useCallback(listSessions,   []);
+  const stableSearchSessions = useCallback(searchSessions, []);
+
+  const {
+    items: searchItems,
+    loading: searchLoading,
+    term,
+    setTerm,
+    page,
+    setPage,
+    totalPages,
+  } = useEntitySearch<SessionCardDto>({
+    listFn:   stableListSessions,
+    searchFn: stableSearchSessions,
+    pageSize: 9,
+  });
+
+  // Derived display values
+  const items   = useDate ? dateItems   : searchItems;
+  const loading = useDate ? dateLoading : searchLoading;
+  const currentPage    = useDate ? datePage    : page;
+  const currentTotal   = useDate ? dateTotalPages : totalPages;
+  const setCurrentPage = useDate ? setDatePage : setPage;
+
+  // ── Stats fetch ──────────────────────────────────────────────────────────
+  useEffect(() => {
+    const loadStats = async () => {
+      const [total, todayRes] = await Promise.allSettled([
+        countSessions(),
+        getSessionsByDate(todayIso(), 1, 1),
+      ]);
+      if (total.status === "fulfilled" && total.value.isSuccess)
+        setTotalSessions(total.value.data);
+      if (todayRes.status === "fulfilled" && todayRes.value.isSuccess)
+        setTodayGroupCount(todayRes.value.data.totalCount);
+    };
+    loadStats();
+  }, []);
+
+  // ── Date-mode fetch ──────────────────────────────────────────────────────
+  useEffect(() => {
+    if (!useDate) return;
+    let active = true;
+    const load = async () => {
+      setDateLoading(true);
+      try {
+        const res = await getSessionsByDate(selectedDate, datePage, DATE_PAGE_SIZE);
+        if (!active) return;
+        if (res.isSuccess) {
+          setDateItems(res.data.items);
+          setDateTotalPages(
+            Math.max(1, Math.ceil(res.data.totalCount / DATE_PAGE_SIZE)),
+          );
+        } else {
+          setDateItems([]);
+          setDateTotalPages(1);
+        }
+      } finally {
+        if (active) setDateLoading(false);
+      }
+    };
+    load();
+    return () => { active = false; };
+  }, [useDate, selectedDate, datePage]);
+
+  // Reset date page when date changes
+  useEffect(() => { setDatePage(1); }, [selectedDate]);
+
+  const statsValues = [
+    totalSessions  != null ? String(totalSessions) : "—",
+    todayGroupCount != null ? String(todayGroupCount) : "—",
+    "—", // no coaches endpoint here
+    "—", // no avg duration endpoint here
+  ];
 
   return (
     <div className="space-y-8">
-      {/* Header */}
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gradient">Sessions Management</h1>
@@ -164,20 +216,24 @@ export default function Sessions() {
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* ── Stats Cards ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {stats.map((stat, index) => (
-          <Card key={index} className="card-athletic">
+        {STATS_META.map((meta, i) => (
+          <Card key={i} className="card-athletic">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
                   <p className="text-muted-foreground text-sm font-medium">
-                    {stat.title}
+                    {meta.title}
                   </p>
-                  <p className="text-2xl font-bold mt-1">{stat.value}</p>
+                  {statsValues[i] === "—" ? (
+                    <Skeleton className="h-7 w-12 mt-1" />
+                  ) : (
+                    <p className="text-2xl font-bold mt-1">{statsValues[i]}</p>
+                  )}
                 </div>
                 <div className="p-3 rounded-xl bg-primary/10">
-                  <stat.icon className="h-5 w-5 text-primary" />
+                  <meta.icon className="h-5 w-5 text-primary" />
                 </div>
               </div>
             </CardContent>
@@ -185,134 +241,161 @@ export default function Sessions() {
         ))}
       </div>
 
-      {/* Search and Filters */}
+      {/* ── Search & Date Filter ────────────────────────────────────────── */}
       <Card className="card-athletic">
         <CardHeader>
           <CardTitle>Search & Filter Sessions</CardTitle>
         </CardHeader>
         <CardContent>
           <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search input — disabled in date mode */}
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder="Search sessions by title, sport, or coach..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
+                placeholder="Search by sport, coach, or branch…"
+                value={term}
+                onChange={(e) => {
+                  setTerm(e.target.value);
+                  if (useDate) setUseDate(false);
+                }}
                 className="pl-10"
+                disabled={useDate}
               />
             </div>
+
+            {/* Date picker */}
             <Input
               type="date"
               value={selectedDate}
-              onChange={(e) => setSelectedDate(e.target.value)}
+              onChange={(e) => {
+                setSelectedDate(e.target.value);
+                setUseDate(true);
+                setTerm("");
+              }}
               className="w-auto"
             />
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Filter by Sport
-            </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Filter by Status
+
+            {/* Toggle date filter */}
+            <Button
+              variant={useDate ? "default" : "outline"}
+              onClick={() => {
+                setUseDate((v) => !v);
+                if (!useDate) setTerm("");
+              }}
+              className="flex items-center gap-2 whitespace-nowrap"
+            >
+              <Calendar className="h-4 w-4" />
+              {useDate ? "Clear Date" : "Filter by Date"}
             </Button>
           </div>
         </CardContent>
       </Card>
 
-      {/* Sessions Grid */}
+      {/* ── Sessions Grid ───────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
-        {filteredSessions.map((session) => (
-          <Card key={session.id} className="card-athletic">
-            <CardHeader className="pb-4">
-              <div className="flex items-start justify-between">
-                <div className="space-y-2">
-                  <CardTitle className="text-lg">{session.title}</CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Badge variant="outline" className="font-medium">
-                      {session.sport}
-                    </Badge>
-                    <Badge className={getLevelColor(session.level)}>
-                      {session.level}
-                    </Badge>
-                  </div>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem>View Details</DropdownMenuItem>
-                    <DropdownMenuItem>Edit Session</DropdownMenuItem>
-                    <DropdownMenuItem>Mark Attendance</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive">
-                      Cancel Session
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              {/* Session Details */}
-              <div className="space-y-3">
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span>{new Date(session.date).toLocaleDateString()}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Clock className="h-4 w-4 text-muted-foreground" />
-                  <span>{session.time} ({session.duration} min)</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Users className="h-4 w-4 text-muted-foreground" />
-                  <span>Coach: {session.coach}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span>{session.branch}</span>
-                </div>
-              </div>
-
-              {/* Capacity and Status */}
-              <div className="space-y-3 pt-3 border-t border-border">
-                <div className="flex items-center justify-between">
-                  <span className="text-sm text-muted-foreground">Enrollment</span>
-                  <span className={`text-sm font-medium ${getCapacityColor(session.enrolled, session.capacity)}`}>
-                    {session.enrolled}/{session.capacity}
-                  </span>
-                </div>
-                <div className="w-full bg-muted rounded-full h-2">
-                  <div 
-                    className="bg-primary h-2 rounded-full transition-all duration-300" 
-                    style={{ width: `${(session.enrolled / session.capacity) * 100}%` }}
-                  ></div>
-                </div>
-                <div className="flex items-center justify-between">
-                  <Badge className={getStatusColor(session.status)}>
-                    {session.status}
-                  </Badge>
-                  <span className="text-xs text-muted-foreground">
-                    {Math.round((session.enrolled / session.capacity) * 100)}% full
-                  </span>
-                </div>
-              </div>
-
-              {/* Action Buttons */}
-              <div className="flex gap-2 pt-2">
-                <Button variant="default" size="sm" className="flex-1">
-                  View Details
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  Attendance
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+        {loading ? (
+          Array.from({ length: 6 }).map((_, i) => <SessionCardSkeleton key={i} />)
+        ) : items.length === 0 ? (
+          <SessionsEmptyState isSearch={term.length >= 2 || useDate} />
+        ) : (
+          items.map((session) => (
+            <SessionCard key={session.id} session={session} />
+          ))
+        )}
       </div>
+
+      {/* ── Pagination ──────────────────────────────────────────────────── */}
+      {!loading && currentTotal > 1 && (
+        <BasePagination
+          page={currentPage}
+          totalPages={currentTotal}
+          pageSize={9}
+          onPageChange={setCurrentPage}
+        />
+      )}
     </div>
+  );
+}
+
+// ─── Session Card ─────────────────────────────────────────────────────────────
+function SessionCard({ session }: { session: SessionCardDto }) {
+  return (
+    <Card className="card-athletic flex flex-col">
+      <CardHeader className="pb-4">
+        <div className="flex items-start justify-between">
+          <div className="space-y-2 flex-1 min-w-0">
+            <CardTitle className="text-base leading-snug">
+              {session.sportName}
+            </CardTitle>
+            <div className="flex items-center gap-2 flex-wrap">
+              <Badge variant="outline" className="font-medium">
+                {session.sportName}
+              </Badge>
+              <Badge
+                variant="secondary"
+                className="bg-primary/10 text-primary hover:bg-primary/20"
+              >
+                {formatDuration(session.durationInMinutes)}
+              </Badge>
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="shrink-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem>View Details</DropdownMenuItem>
+              <DropdownMenuItem>Edit Session</DropdownMenuItem>
+              <DropdownMenuItem>Mark Attendance</DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem className="text-destructive">
+                Cancel Session
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardHeader>
+
+      <CardContent className="space-y-3 flex-1">
+        <div className="space-y-2.5 text-sm">
+          <div className="flex items-center gap-2">
+            <Clock className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span>
+              {formatTime(session.startTime)}
+              <span className="text-muted-foreground ml-1">
+                ({formatDuration(session.durationInMinutes)})
+              </span>
+            </span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Users className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span>Coach: {session.coachName}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <MapPin className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span>{session.branchName}</span>
+          </div>
+          <div className="flex items-center gap-2">
+            <Trophy className="h-4 w-4 text-muted-foreground shrink-0" />
+            <span className={`font-medium ${getCapacityColor(session.traineesCount)}`}>
+              {session.traineesCount} trainees enrolled
+            </span>
+          </div>
+        </div>
+
+        {/* Action Buttons */}
+        <div className="flex gap-2 pt-3 border-t border-border">
+          <Button variant="default" size="sm" className="flex-1">
+            View Details
+          </Button>
+          <Button variant="outline" size="sm" className="flex-1">
+            Attendance
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
