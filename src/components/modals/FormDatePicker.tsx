@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { format } from "date-fns";
 import { CalendarIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -35,8 +36,8 @@ export function FormDatePicker({
   minDate,
   maxDate,
 }: FormDatePickerProps) {
+  const [open, setOpen] = useState(false);
   const today = new Date();
-  // If neither bound is provided, default to a past-only picker (birthdate behaviour)
   const resolvedMin = minDate ?? new Date(1950, 0, 1);
   const resolvedMax = maxDate ?? today;
 
@@ -46,7 +47,7 @@ export function FormDatePicker({
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </Label>
-      <Popover modal={false}>
+      <Popover open={open} onOpenChange={setOpen} modal={false}>
         <PopoverTrigger asChild>
           <Button
             id={id}
@@ -65,12 +66,11 @@ export function FormDatePicker({
         <PopoverContent
           className="w-auto p-0 pointer-events-auto"
           align="start"
-          onInteractOutside={(e) => e.preventDefault()}
         >
           <Calendar
             mode="single"
             selected={value}
-            onSelect={onChange}
+            onSelect={(d) => { onChange(d); setOpen(false); }}
             captionLayout="dropdown"
             fromYear={resolvedMin.getFullYear()}
             toYear={resolvedMax.getFullYear()}
