@@ -439,32 +439,21 @@ export default function Trainees() {
                         {new Date(trainee.joinDate).getFullYear()}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button variant="ghost" size="icon" className="h-7 w-7">
-                              <MoreHorizontal className="h-3.5 w-3.5" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end">
-                            <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                            <DropdownMenuItem onClick={() => navigate(`/trainees/${trainee.id}`)}>
-                              <Eye className="h-4 w-4 mr-2" /> View Profile
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => setTimeout(() => setEditTrainee(trainee), 100)}>
-                              <Pencil className="h-4 w-4 mr-2" /> Edit Details
-                            </DropdownMenuItem>
-                            <DropdownMenuItem onClick={() => navigate(`/attendance?traineeId=${trainee.id}`)}>
-                              <Calendar className="h-4 w-4 mr-2" /> View Attendance
-                            </DropdownMenuItem>
-                            <DropdownMenuSeparator />
-                            <DropdownMenuItem
-                              className="text-destructive"
-                              onClick={() => setTimeout(() => setDeleteTarget(trainee), 100)}
-                            >
-                              <Trash2 className="h-4 w-4 mr-2" /> Remove Trainee
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <RowActions viewHref={`/trainees/${trainee.id}`}>
+                          <DropdownMenuItem onClick={() => setTimeout(() => setEditTrainee(trainee), 100)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Edit Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => navigate(`/attendance?traineeId=${trainee.id}`)}>
+                            <Calendar className="h-4 w-4 mr-2" /> View Attendance
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => setTimeout(() => setDeleteTarget(trainee), 100)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" /> Remove Trainee
+                          </DropdownMenuItem>
+                        </RowActions>
                       </TableCell>
                     </TableRow>
                   );
