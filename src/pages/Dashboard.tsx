@@ -471,6 +471,28 @@ export default function Dashboard() {
         onOpenChange={setOperateOpen}
         onSuccess={() => setOperateOpen(false)}
       />
+
+      {/* ── Recent Activity ──────────────────────────────────────────────── */}
+      <Card className="card-athletic">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Recent Activity
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/notifications")}
+            >
+              View All
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ActivityFeed items={activityItems} loading={activityLoading} limit={10} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
