@@ -14,6 +14,7 @@ import {
 } from "@/components/ui/table";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Trophy, Plus, Eye, Target } from "lucide-react";
+import { RowActions } from "@/components/ui/RowActions";
 import { SportsFormModal } from "@/components/modals/SportsFormModal";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { BasePagination } from "@/components/BasePagination";

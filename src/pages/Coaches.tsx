@@ -33,6 +33,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { RowActions } from "@/components/ui/RowActions";
 import {
   Table,
   TableBody,

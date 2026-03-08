@@ -41,6 +41,7 @@ import { EnrollmentCardDto } from "@/types/EnrollmentCardDto";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 import { SortableTableHead } from "@/components/ui/SortableTableHead";
 import { useSortable } from "@/hooks/useSortable";
+import { RowActions } from "@/components/ui/RowActions";
 
 const PAGE_SIZE = 10;
 

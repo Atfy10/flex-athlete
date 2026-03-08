@@ -20,6 +20,7 @@ import {
   Mail,
   Eye,
 } from "lucide-react";
+import { RowActions } from "@/components/ui/RowActions";
 import { BranchFormModal } from "@/components/modals/BranchFormModal";
 import { BasePagination } from "@/components/BasePagination";
 import { useEntitySearch } from "@/hooks/useEntitySearch";

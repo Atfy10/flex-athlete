@@ -31,6 +31,7 @@ import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 import { SortableTableHead } from "@/components/ui/SortableTableHead";
 import { useSortable } from "@/hooks/useSortable";
+import { RowActions } from "@/components/ui/RowActions";
 
 type SortKey = keyof Pick<ListTraineeGroupDto, "sportName" | "coachName" | "branchName" | "durationInMinutes" | "traineesCount" | "startTime">;
 

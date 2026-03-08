@@ -44,6 +44,7 @@ import { ChevronUp, ChevronDown } from "lucide-react";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 import { SortableTableHead } from "@/components/ui/SortableTableHead";
 import { useSortable } from "@/hooks/useSortable";
+import { RowActions } from "@/components/ui/RowActions";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function todayIso() {
