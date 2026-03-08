@@ -21,7 +21,7 @@ export default function Login() {
   const { login, loginDev } = useAuth();
   const navigate = useNavigate();
 
-  const [email, setEmail]         = useState("");
+  const [email, setEmail]         = useState(isDevLoginEnabled() ? DEV_EMAIL : "");
   const [password, setPassword]   = useState("");
   const [rememberMe, setRememberMe] = useState(false);
   const [errors, setErrors]       = useState<string[]>([]);
