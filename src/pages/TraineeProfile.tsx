@@ -213,6 +213,10 @@ export default function TraineeProfile() {
         }
         sections={sections}
         backPath="/trainees"
+        breadcrumb={[
+          { label: "Trainees", href: "/trainees" },
+          { label: trainee ? `${trainee.firstName} ${trainee.lastName}` : "Profile" },
+        ]}
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
         editModal={

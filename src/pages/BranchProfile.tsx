@@ -270,6 +270,10 @@ export default function BranchProfile() {
         }
         sections={sections}
         backPath="/branches"
+        breadcrumb={[
+          { label: "Branches", href: "/branches" },
+          { label: branch?.name ?? "Branch" },
+        ]}
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
         onToggleActive={isActive ? handleDeactivate : undefined}

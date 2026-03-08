@@ -130,6 +130,10 @@ export default function TraineeGroupProfile() {
         }
         sections={sections}
         backPath="/trainee-groups"
+        breadcrumb={[
+          { label: "Trainee Groups", href: "/trainee-groups" },
+          { label: group ? `${group.sportName} — ${group.branchName}` : "Group" },
+        ]}
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
         dropdownExtra={[

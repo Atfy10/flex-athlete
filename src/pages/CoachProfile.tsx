@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate } from "react-router-dom";
+import { useParams, useNavigate, Link } from "react-router-dom";
 import { ApiError } from "@/lib/api";
 import {
   ArrowLeft,
@@ -15,6 +15,14 @@ import {
   Pencil,
   Trash2,
 } from "lucide-react";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -198,11 +206,24 @@ export default function CoachProfile() {
 
   return (
     <div className="max-w-4xl mx-auto space-y-6">
-      {/* Back */}
-      <Button variant="ghost" size="sm" onClick={() => navigate("/coaches")}>
-        <ArrowLeft className="h-4 w-4 mr-2" />
-        Back to Coaches
-      </Button>
+      {/* Breadcrumb */}
+      <Breadcrumb>
+        <BreadcrumbList>
+          <BreadcrumbItem>
+            <BreadcrumbLink asChild>
+              <Link to="/coaches" className="text-muted-foreground hover:text-foreground transition-colors">
+                Coaches
+              </Link>
+            </BreadcrumbLink>
+          </BreadcrumbItem>
+          <BreadcrumbSeparator />
+          <BreadcrumbItem>
+            <BreadcrumbPage className="font-medium text-foreground">
+              {coach.firstName} {coach.lastName}
+            </BreadcrumbPage>
+          </BreadcrumbItem>
+        </BreadcrumbList>
+      </Breadcrumb>
 
       {/* ── Header Card ─────────────────────────────────────── */}
       <Card className="card-athletic overflow-hidden">

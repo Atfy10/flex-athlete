@@ -109,6 +109,10 @@ export default function EmployeeProfile() {
         statusBadgeClass={employee?.isWork ? "bg-success/10 text-success" : "bg-muted text-muted-foreground"}
         sections={sections}
         backPath="/employees"
+        breadcrumb={[
+          { label: "Employees", href: "/employees" },
+          { label: employee ? `${employee.firstName} ${employee.lastName}` : "Profile" },
+        ]}
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
         editModal={

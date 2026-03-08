@@ -1,10 +1,18 @@
 import { ReactNode, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, Link } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Breadcrumb,
+  BreadcrumbItem,
+  BreadcrumbLink,
+  BreadcrumbList,
+  BreadcrumbPage,
+  BreadcrumbSeparator,
+} from "@/components/ui/breadcrumb";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -27,6 +35,11 @@ export interface ProfileSection {
   fields: ProfileField[];
 }
 
+export interface BreadcrumbItem {
+  label: string;
+  href?: string;
+}
+
 export interface ProfileViewLayoutProps {
   loading?: boolean;
   error?: string | null;
@@ -37,6 +50,7 @@ export interface ProfileViewLayoutProps {
   statusBadgeClass: string;
   sections: ProfileSection[];
   backPath: string;
+  breadcrumb?: BreadcrumbItem[];
   onEdit?: () => void;
   onDelete?: () => Promise<void>;
   onToggleActive?: () => Promise<void>;
@@ -93,6 +107,7 @@ export function ProfileViewLayout({
   statusBadgeClass,
   sections,
   backPath,
+  breadcrumb,
   onEdit,
   onDelete,
   onToggleActive,
@@ -147,16 +162,45 @@ export function ProfileViewLayout({
 
   return (
     <div className="space-y-6 max-w-5xl">
-      {/* Back button */}
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={() => navigate(backPath)}
-        className="text-muted-foreground hover:text-foreground -ml-1 gap-1.5"
-      >
-        <ArrowLeft className="h-4 w-4" />
-        Back
-      </Button>
+      {/* Breadcrumb navigation */}
+      {breadcrumb && breadcrumb.length > 0 ? (
+        <Breadcrumb>
+          <BreadcrumbList>
+            {breadcrumb.map((crumb, idx) => {
+              const isLast = idx === breadcrumb.length - 1;
+              return (
+                <BreadcrumbItem key={idx}>
+                  {!isLast && crumb.href ? (
+                    <>
+                      <BreadcrumbLink asChild>
+                        <Link to={crumb.href} className="text-muted-foreground hover:text-foreground transition-colors">
+                          {crumb.label}
+                        </Link>
+                      </BreadcrumbLink>
+                      <BreadcrumbSeparator />
+                    </>
+                  ) : (
+                    <BreadcrumbPage className="font-medium text-foreground">
+                      {crumb.label}
+                    </BreadcrumbPage>
+                  )}
+                </BreadcrumbItem>
+              );
+            })}
+          </BreadcrumbList>
+        </Breadcrumb>
+      ) : (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => navigate(backPath)}
+          className="text-muted-foreground hover:text-foreground -ml-1 gap-1.5"
+        >
+          <ArrowLeft className="h-4 w-4" />
+          Back
+        </Button>
+      )}
+
 
       {/* ── Profile Header Card ── */}
       <div className="rounded-2xl border border-border bg-card shadow-sm overflow-hidden">
