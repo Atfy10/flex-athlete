@@ -66,7 +66,6 @@ interface CoachesStats {
 }
 
 type SortKey = "name" | "sport" | "branch" | "trainees" | "hired";
-type SortDir = "asc" | "desc";
 
 const STATS_META = [
   { title: "Total Coaches",  change: "+5",   icon: Users  },
@@ -99,20 +98,12 @@ function CoachCardSkeleton() {
   );
 }
 
-function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
-  if (col !== sortKey) return <ChevronsUpDown className="h-3.5 w-3.5 ml-1 text-muted-foreground/50" />;
-  return sortDir === "asc"
-    ? <ChevronUp className="h-3.5 w-3.5 ml-1 text-primary" />
-    : <ChevronDownIcon className="h-3.5 w-3.5 ml-1 text-primary" />;
-}
-
 export default function Coaches() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const { sort, toggle: handleSort, sortItems } = useSortable<SortKey>();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
