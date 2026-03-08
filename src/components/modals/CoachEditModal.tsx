@@ -65,6 +65,7 @@ export function CoachEditModal({ open, onOpenChange, onSuccess, coach }: CoachEd
       }
 
       toast({ title: "Coach updated successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
