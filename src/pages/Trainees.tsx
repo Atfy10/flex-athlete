@@ -349,10 +349,13 @@ export default function Trainees() {
         ) : trainees.length === 0 ? (
           <EmptyState
             icon={Users}
-            title={term ? `No results for "${term}"` : "No trainees yet"}
-            description={hasFilters ? "Try adjusting your search or filters." : "Get started by adding your first trainee."}
-            actionLabel={!hasFilters ? "Add Trainee" : undefined}
-            onAction={!hasFilters ? () => setCreateOpen(true) : undefined}
+            title={hasFilters ? (term ? `No results for "${term}"` : "No trainees match the filters") : "No trainees added yet"}
+            description={hasFilters ? "Try adjusting your search or filters." : "Start building your roster by adding your first trainee."}
+            actions={
+              hasFilters
+                ? [{ label: "Clear Filters", onClick: () => { setTerm(""); setSportFilter("all"); setStatusFilter("all"); setPage(1); }, variant: "outline" }]
+                : [{ label: "Add Trainee", onClick: () => setCreateOpen(true) }]
+            }
           />
         ) : (
           <Card className="card-athletic overflow-hidden">

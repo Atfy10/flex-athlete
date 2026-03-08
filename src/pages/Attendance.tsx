@@ -544,12 +544,23 @@ type AttendanceSortKey = "sportName" | "coachName" | "branchName" | "startTime" 
         )
       ) : visibleSessions.length === 0 ? (
         searchTerm.trim().length >= 2 ? (
-          <EmptyState icon={Search} title={`No sessions match "${searchTerm}"`} description="Try a different search term." />
+          <EmptyState
+            icon={Search}
+            title={`No sessions match "${searchTerm}"`}
+            description="Try a different search term or clear the search."
+            actions={[
+              { label: "Clear Search", onClick: () => setSearchTerm(""), variant: "outline" },
+            ]}
+          />
         ) : (
           <EmptyState
             icon={ClipboardCheck}
             title={`No sessions on ${new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
-            description="Generate sessions for this date using the Sessions page."
+            description="No sessions were recorded for this date. Generate sessions or pick a different date."
+            actions={[
+              { label: "Generate Sessions", onClick: () => window.location.href = "/sessions" },
+              { label: "Go to Today", onClick: () => setSelectedDate(todayIso()), variant: "outline" },
+            ]}
           />
         )
       ) : view === "grid" ? (

@@ -257,13 +257,35 @@ export default function Sessions() {
           Array.from({ length: 6 }).map((_, i) => <SessionCardSkeleton key={i} />)
         ) : items.length === 0 ? (
           <div className="col-span-full">
-            <EmptyState
-              icon={Layers}
-              title={term.length >= 2 || useDate ? "No sessions match your search" : "No sessions scheduled yet"}
-              description={term.length >= 2 || useDate ? "Try a different search term or clear the filter." : "Use \"Operate Group\" to generate sessions from a trainee group's weekly schedule."}
-              actionLabel={!term && !useDate ? "Operate Group" : undefined}
-              onAction={!term && !useDate ? () => setModalOpen(true) : undefined}
-            />
+            {term.length >= 2 ? (
+              <EmptyState
+                icon={Layers}
+                title={`No sessions match "${term}"`}
+                description="Try a different search term or clear the filter."
+                actions={[
+                  { label: "Clear Search", onClick: () => setTerm(""), variant: "outline" },
+                ]}
+              />
+            ) : useDate ? (
+              <EmptyState
+                icon={Calendar}
+                title="No sessions scheduled for this date"
+                description="No sessions were found for the selected date. Generate sessions for this group or try a different date."
+                actions={[
+                  { label: "Generate Sessions", onClick: () => setModalOpen(true) },
+                  { label: "Clear Date Filter", onClick: () => { setUseDate(false); setSelectedDate(todayIso()); }, variant: "outline" },
+                ]}
+              />
+            ) : (
+              <EmptyState
+                icon={Layers}
+                title="No sessions scheduled yet"
+                description="Operate a trainee group to generate sessions from its weekly schedule."
+                actions={[
+                  { label: "Operate Group", onClick: () => setModalOpen(true) },
+                ]}
+              />
+            )}
           </div>
         ) : (
           items.map((session) => (
