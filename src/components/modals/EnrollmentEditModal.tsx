@@ -157,6 +157,8 @@ export function EnrollmentEditModal({
         label="Expiry Date"
         value={form.expiryDate}
         onChange={(d) => { markDirty(); setForm((f) => ({ ...f, expiryDate: d })); }}
+        minDate={new Date(new Date().setHours(0, 0, 0, 0) + 86400000)}
+        maxDate={new Date(new Date().getFullYear() + 10, 11, 31)}
       />
       <FormInput
         id="sessionAllowed"
