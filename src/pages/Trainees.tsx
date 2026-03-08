@@ -1,14 +1,31 @@
-import { useState, useMemo, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   Search,
   Plus,
-  Filter,
   MoreHorizontal,
   Phone,
   Mail,
@@ -29,6 +46,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { TraineeFormModal } from "@/components/modals/TraineeFormModal";
+import { TraineeEditModal } from "@/components/modals/TraineeEditModal";
 import { BasePagination } from "@/components/BasePagination";
 import { useEntitySearch } from "@/hooks/useEntitySearch";
 import {
@@ -37,10 +55,12 @@ import {
   searchTraineesById,
   countTrainees,
   countActiveTrainees,
+  deleteTrainee,
 } from "@/services/trainee.service";
-import { countSports } from "@/services/sport.services";
+import { countSports, getSports } from "@/services/sport.services";
 import { getAverageAttendance } from "@/services/attendance.services";
 import { TraineeCardDto } from "@/types/TraineeCardDto";
+import { useToast } from "@/hooks/use-toast";
 
 interface TraineesStats {
   totalTrainees: number;
@@ -49,11 +69,49 @@ interface TraineesStats {
   averageAttendance: number;
 }
 
-const pageSize = 6;
+const PAGE_SIZE = 6;
+
+function TraineeCardSkeleton() {
+  return (
+    <Card className="card-athletic">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-12 w-12 rounded-full" />
+          <div className="space-y-1.5">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-3">
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-3/4" />
+        <Skeleton className="h-3 w-1/2" />
+        <div className="flex gap-2 pt-2">
+          <Skeleton className="h-9 flex-1" />
+          <Skeleton className="h-9 flex-1" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
 export default function Trainees() {
   const navigate = useNavigate();
-  const [modalOpen, setModalOpen] = useState(false);
+  const { toast } = useToast();
+
+  // ── Modals & dialogs ──────────────────────────────────────────────────────
+  const [createOpen, setCreateOpen] = useState(false);
+  const [editTrainee, setEditTrainee] = useState<TraineeCardDto | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<TraineeCardDto | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // ── Filters ───────────────────────────────────────────────────────────────
+  const [sportFilter, setSportFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [sportOptions, setSportOptions] = useState<{ id: number; name: string }[]>([]);
+
+  // ── Stats ─────────────────────────────────────────────────────────────────
   const [stats, setStats] = useState<TraineesStats>({
     totalTrainees: 0,
     activeTrainees: 0,
@@ -61,35 +119,16 @@ export default function Trainees() {
     averageAttendance: 0,
   });
 
-  const handleSearchTrainees = useCallback(
-    async (searchTerm: string, page: number, pageSize: number) => {
-      const isNumericSearch = /^\d+$/.test(searchTerm.trim());
+  // ── Load sport options for filter ─────────────────────────────────────────
+  useEffect(() => {
+    getSports()
+      .then((res) => { if (res.isSuccess) setSportOptions(res.data); })
+      .catch(() => {});
+  }, []);
 
-      return isNumericSearch
-        ? searchTraineesById(searchTerm, page, pageSize)
-        : searchTrainees(searchTerm, page, pageSize);
-    },
-    [],
-  );
-
-  const {
-    items: trainees,
-    loading,
-    term,
-    setTerm,
-    page,
-    setPage,
-    totalPages,
-  } = useEntitySearch<TraineeCardDto>({
-    listFn: listTrainees,
-    searchFn: handleSearchTrainees,
-    pageSize: pageSize,
-    minLength: 1,
-  });
-
+  // ── Stats fetch ───────────────────────────────────────────────────────────
   useEffect(() => {
     let active = true;
-
     const fetchStats = async () => {
       try {
         const results = await Promise.allSettled([
@@ -98,147 +137,132 @@ export default function Trainees() {
           countSports(),
           getAverageAttendance(),
         ]);
-
         if (!active) return;
-
-        const [countRes, activeTrianees, sportsRes, attendenceAvg] = results;
-
+        const [countRes, activeRes, sportsRes, attendenceAvg] = results;
         setStats({
-          totalTrainees:
-            countRes.status === "fulfilled" && countRes.value?.isSuccess
-              ? countRes.value.data
-              : 0,
-
-          activeTrainees:
-            activeTrianees.status === "fulfilled" &&
-            activeTrianees.value?.isSuccess
-              ? activeTrianees.value.data
-              : 0,
-
-          sportsCount:
-            sportsRes.status === "fulfilled" && sportsRes.value?.isSuccess
-              ? sportsRes.value.data
-              : 0,
-
-          averageAttendance:
-            attendenceAvg.status === "fulfilled" &&
-            attendenceAvg.value?.isSuccess
-              ? attendenceAvg.value.data
-              : 0,
+          totalTrainees: countRes.status === "fulfilled" && countRes.value?.isSuccess ? countRes.value.data : 0,
+          activeTrainees: activeRes.status === "fulfilled" && activeRes.value?.isSuccess ? activeRes.value.data : 0,
+          sportsCount: sportsRes.status === "fulfilled" && sportsRes.value?.isSuccess ? sportsRes.value.data : 0,
+          averageAttendance: attendenceAvg.status === "fulfilled" && attendenceAvg.value?.isSuccess ? attendenceAvg.value.data : 0,
         });
       } catch (err) {
         console.error("Trainees stats error", err);
       }
     };
-
     fetchStats();
-
-    return () => {
-      active = false;
-    };
+    return () => { active = false; };
   }, []);
 
-  const getStatusColor = (isSubscribed: boolean) => {
-    switch (isSubscribed) {
-      case true:
-        return "bg-success/10 text-success hover:bg-success/20";
-      // case false:
-      //   return "bg-warning/10 text-warning hover:bg-warning/20";
-      case false:
-        return "bg-destructive/10 text-destructive hover:bg-destructive/20";
-      default:
-        return "bg-muted";
+  // ── Search hook ───────────────────────────────────────────────────────────
+  const handleSearchFn = useCallback(
+    async (searchTerm: string, page: number, pageSize: number) => {
+      const isNumericSearch = /^\d+$/.test(searchTerm.trim());
+      return isNumericSearch
+        ? searchTraineesById(searchTerm, page, pageSize)
+        : searchTrainees(searchTerm, page, pageSize);
+    },
+    [],
+  );
+
+  const {
+    items: rawTrainees,
+    loading,
+    term,
+    setTerm,
+    page,
+    setPage,
+    totalPages,
+    refresh,
+  } = useEntitySearch<TraineeCardDto>({
+    listFn: listTrainees,
+    searchFn: handleSearchFn,
+    pageSize: PAGE_SIZE,
+    minLength: 1,
+  });
+
+  // ── Client-side sport + status filters ───────────────────────────────────
+  const trainees = rawTrainees.filter((t) => {
+    const sportMatch =
+      sportFilter === "all" ||
+      (t.sportSkills?.some((s) =>
+        s.sportName.toLowerCase() === sportFilter.toLowerCase()
+      )) ||
+      t.sportName?.toLowerCase() === sportFilter.toLowerCase();
+
+    const statusMatch =
+      statusFilter === "all" ||
+      (statusFilter === "active" && t.isSubscribed) ||
+      (statusFilter === "inactive" && !t.isSubscribed);
+
+    return sportMatch && statusMatch;
+  });
+
+  // ── Delete handler ────────────────────────────────────────────────────────
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await deleteTrainee(deleteTarget.id);
+      toast({ title: "Trainee removed successfully." });
+      refresh();
+    } catch {
+      toast({ title: "Failed to remove trainee.", variant: "destructive" });
+    } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
     }
   };
 
+  // ── Helpers ───────────────────────────────────────────────────────────────
+  const getStatusColor = (isSubscribed: boolean) =>
+    isSubscribed
+      ? "bg-success/10 text-success hover:bg-success/20"
+      : "bg-destructive/10 text-destructive hover:bg-destructive/20";
+
   const getLevelColor = (level: string) => {
-    switch (level) {
-      case "beginner":
-        return "bg-secondary/10 text-secondary hover:bg-secondary/20";
-      case "intermediate":
-        return "bg-primary/10 text-primary hover:bg-primary/20";
-      case "advanced":
-        return "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20";
-      case "expert":
-        return "bg-purple-500/10 text-purple-500 hover:bg-purple-500/20";
-      default:
-        return "bg-muted";
+    switch (level?.toLowerCase()) {
+      case "beginner": return "bg-secondary/10 text-secondary hover:bg-secondary/20";
+      case "intermediate": return "bg-primary/10 text-primary hover:bg-primary/20";
+      case "advanced": return "bg-amber-500/10 text-amber-500 hover:bg-amber-500/20";
+      case "expert": return "bg-purple-500/10 text-purple-500 hover:bg-purple-500/20";
+      default: return "bg-muted";
     }
   };
 
   const getInitials = (name: string) =>
-    name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .substring(0, 2);
-
-  // Wrapper function to handle both ID and text search
-
-  const handleRefresh = () => {
-    setPage(1);
-  };
+    name.split(" ").map((n) => n[0]).join("").toUpperCase().substring(0, 2);
 
   const statsCards = [
-    {
-      title: "Total Trainees",
-      value: stats.totalTrainees.toString(),
-      change: "+12%",
-      icon: Users,
-    },
-    {
-      title: "Active Now",
-      value: stats.activeTrainees.toString(),
-      change: "+5%",
-      icon: TrendingUp,
-    },
-    {
-      title: "Sports Covered",
-      value: stats.sportsCount.toString(),
-      change: "+2",
-      icon: Trophy,
-    },
-    {
-      title: "Avg. Attendance",
-      value: `${stats.averageAttendance}%`,
-      change: "+3%",
-      icon: Star,
-    },
+    { title: "Total Trainees", value: stats.totalTrainees.toString(), change: "+12%", icon: Users },
+    { title: "Active Now",     value: stats.activeTrainees.toString(), change: "+5%",  icon: TrendingUp },
+    { title: "Sports Covered", value: stats.sportsCount.toString(),    change: "+2",   icon: Trophy },
+    { title: "Avg. Attendance",value: `${stats.averageAttendance}%`,   change: "+3%",  icon: Star },
   ];
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gradient">
-            Trainees Management
-          </h1>
-          <p className="text-muted-foreground">
-            Manage and track all academy trainees
-          </p>
+          <h1 className="text-3xl font-bold text-gradient">Trainees Management</h1>
+          <p className="text-muted-foreground">Manage and track all academy trainees</p>
         </div>
-        <Button variant="hero" size="lg" onClick={() => setModalOpen(true)}>
+        <Button variant="hero" size="lg" onClick={() => setCreateOpen(true)}>
           <Plus className="h-5 w-5" />
           Add New Trainee
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {statsCards.map((stat, index) => (
           <Card key={index} className="card-athletic">
             <CardContent className="p-6">
               <div className="flex items-center justify-between">
                 <div>
-                  <p className="text-muted-foreground text-sm font-medium">
-                    {stat.title}
-                  </p>
+                  <p className="text-muted-foreground text-sm font-medium">{stat.title}</p>
                   <p className="text-2xl font-bold mt-1">{stat.value}</p>
-                  <Badge
-                    variant="secondary"
-                    className="bg-success/10 text-success hover:bg-success/20 mt-2"
-                  >
+                  <Badge variant="secondary" className="bg-success/10 text-success hover:bg-success/20 mt-2">
                     <TrendingUp className="h-3 w-3 mr-1" />
                     {stat.change}
                   </Badge>
@@ -252,7 +276,7 @@ export default function Trainees() {
         ))}
       </div>
 
-      {/* Search */}
+      {/* Search & Filters */}
       <Card className="card-athletic">
         <CardHeader>
           <CardTitle>Search & Filter</CardTitle>
@@ -264,198 +288,206 @@ export default function Trainees() {
               <Input
                 placeholder="Search trainees by name, email, or ID"
                 value={term}
-                onChange={(e) => setTerm(e.target.value)}
+                onChange={(e) => { setTerm(e.target.value); setPage(1); }}
                 className="pl-10"
               />
             </div>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Filter by Sport
-            </Button>
-            <Button variant="outline" className="flex items-center gap-2">
-              <Filter className="h-4 w-4" />
-              Filter by Status
-            </Button>
+
+            {/* Filter by Sport */}
+            <Select
+              value={sportFilter}
+              onValueChange={(v) => { setSportFilter(v); setPage(1); }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by Sport" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Sports</SelectItem>
+                {sportOptions.map((s) => (
+                  <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+
+            {/* Filter by Status */}
+            <Select
+              value={statusFilter}
+              onValueChange={(v) => { setStatusFilter(v); setPage(1); }}
+            >
+              <SelectTrigger className="w-[180px]">
+                <SelectValue placeholder="Filter by Status" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All Statuses</SelectItem>
+                <SelectItem value="active">Subscribed</SelectItem>
+                <SelectItem value="inactive">Not Subscribed</SelectItem>
+              </SelectContent>
+            </Select>
           </div>
         </CardContent>
       </Card>
 
       {/* Grid */}
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
-        {trainees.map((trainee) => (
-          <Card key={trainee.id} className="card-athletic">
-            <CardHeader className="pb-4">
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <Avatar className="h-12 w-12">
-                    <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                      {getInitials(trainee.firstName + " " + trainee.lastName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <CardTitle className="text-lg">
-                      {trainee.firstName + " " + trainee.lastName}
-                    </CardTitle>
-                    <div className="flex items-center gap-1 mt-1">
-                      <span className="text-sm font-medium">
-                        Age: {trainee.age} • Joined{" "}
-                        {new Date(trainee.joinDate).getFullYear()}
-                      </span>
+        {loading
+          ? Array.from({ length: PAGE_SIZE }).map((_, i) => <TraineeCardSkeleton key={i} />)
+          : trainees.map((trainee) => {
+              const fullName = `${trainee.firstName} ${trainee.lastName}`;
+              const sportSkills =
+                trainee.sportSkills && trainee.sportSkills.length > 0
+                  ? trainee.sportSkills
+                  : trainee.sportName
+                  ? [{ sportName: trainee.sportName, skillLevel: trainee.skillLevel ?? "" }]
+                  : [];
+              return (
+                <Card key={trainee.id} className="card-athletic">
+                  <CardHeader className="pb-4">
+                    <div className="flex items-center justify-between">
+                      <div className="flex items-center gap-3">
+                        <Avatar className="h-12 w-12">
+                          <AvatarFallback className="bg-gradient-primary text-primary-foreground">
+                            {getInitials(fullName)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div>
+                          <CardTitle className="text-lg">{fullName}</CardTitle>
+                          <p className="text-sm text-muted-foreground mt-0.5">
+                            Age: {trainee.age} · Joined {new Date(trainee.joinDate).getFullYear()}
+                          </p>
+                        </div>
+                      </div>
+
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => navigate(`/trainees/${trainee.id}`)}>
+                            View Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => setTimeout(() => setEditTrainee(trainee), 100)}
+                          >
+                            Edit Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => navigate(`/attendance?traineeId=${trainee.id}`)}
+                          >
+                            View Attendance
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive"
+                            onClick={() => setTimeout(() => setDeleteTarget(trainee), 100)}
+                          >
+                            Remove Trainee
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
                     </div>
-                  </div>
-                </div>
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <Button variant="ghost" size="icon">
-                      <MoreHorizontal className="h-4 w-4" />
-                    </Button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end">
-                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                    <DropdownMenuItem
-                      onClick={() => navigate(`/trainees/${trainee.id}`)}
-                    >
-                      View Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem>Edit Details</DropdownMenuItem>
-                    <DropdownMenuItem>View Attendance</DropdownMenuItem>
-                    <DropdownMenuItem>View Payments</DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem className="text-destructive">
-                      Remove Trainee
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
-              </div>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="h-3 w-3 text-muted-foreground" />
-                  <span className="truncate">{trainee.email}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-3 w-3 text-muted-foreground" />
-                  <span>{trainee.phoneNumber}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-3 w-3 text-muted-foreground" />
-                  <span>{trainee.branchName}</span>
-                </div>
-              </div>
+                  </CardHeader>
 
-              <div className="space-y-2">
-                {/* Sport + skill level pairs */}
-                <div className="flex flex-wrap gap-1.5">
-                  {(trainee.sportSkills && trainee.sportSkills.length > 0
-                    ? trainee.sportSkills
-                    : trainee.sportName
-                      ? [
-                          {
-                            sportName: trainee.sportName,
-                            skillLevel: trainee.skillLevel ?? "",
-                          },
-                        ]
-                      : []
-                  ).map((s, i) => (
-                    <span key={i} className="inline-flex items-center gap-1">
-                      <Badge variant="outline" className="font-medium text-xs">
-                        {s.sportName}
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex items-center gap-2 text-sm">
+                        <Mail className="h-3 w-3 text-muted-foreground" />
+                        <span className="truncate">{trainee.email}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <Phone className="h-3 w-3 text-muted-foreground" />
+                        <span>{trainee.phoneNumber}</span>
+                      </div>
+                      <div className="flex items-center gap-2 text-sm">
+                        <MapPin className="h-3 w-3 text-muted-foreground" />
+                        <span>{trainee.branchName}</span>
+                      </div>
+                    </div>
+
+                    {/* Sport + skill badges */}
+                    <div className="flex flex-wrap gap-1.5">
+                      {sportSkills.map((s, i) => (
+                        <span key={i} className="inline-flex items-center gap-1">
+                          <Badge variant="outline" className="font-medium text-xs">{s.sportName}</Badge>
+                          {s.skillLevel && (
+                            <Badge variant="secondary" className={`${getLevelColor(s.skillLevel)} text-xs`}>
+                              {s.skillLevel}
+                            </Badge>
+                          )}
+                        </span>
+                      ))}
+                      <Badge className={`${getStatusColor(trainee.isSubscribed)} text-xs`}>
+                        {trainee.isSubscribed ? "Subscribed" : "Not Subscribed"}
                       </Badge>
-                      {s.skillLevel && (
-                        <Badge
-                          variant="secondary"
-                          className={`${getLevelColor(s.skillLevel)} text-xs`}
-                        >
-                          {s.skillLevel}
-                        </Badge>
-                      )}
-                    </span>
-                  ))}
-                  <Badge
-                    className={`${getStatusColor(trainee.isSubscribed)} text-xs`}
-                  >
-                    {trainee.isSubscribed ? "Subscribed" : "Not Subscribed"}
-                  </Badge>
-                </div>
-              </div>
+                    </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-border">
-                <div className="flex items-center gap-1 text-sm">
-                  <Users className="h-3 w-3 text-muted-foreground" />
-                  <span>Coach: {trainee.coachName}</span>
-                </div>
-                <div className="flex items-center gap-1 text-sm">
-                  <Calendar className="h-3 w-3 text-muted-foreground" />
-                  <span>Att: {trainee.attendanceRate}%</span>
-                </div>
-              </div>
+                    <div className="flex items-center justify-between pt-2 border-t border-border">
+                      <div className="flex items-center gap-1 text-sm">
+                        <Users className="h-3 w-3 text-muted-foreground" />
+                        <span>{trainee.coachName}</span>
+                      </div>
+                      <div className="flex items-center gap-1 text-sm">
+                        <Calendar className="h-3 w-3 text-muted-foreground" />
+                        <span>Att: {trainee.attendanceRate}%</span>
+                      </div>
+                    </div>
 
-              <div className="space-y-2">
-                <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">
-                  Medical Info
-                </p>
-                <div className="flex flex-wrap gap-1">
-                  {trainee.medicalConditions?.map((condition, idx) => (
-                    <Badge key={idx} variant="outline" className="text-xs">
-                      {condition}
-                    </Badge>
-                  ))}
-                  {(!trainee.medicalConditions ||
-                    trainee.medicalConditions.length === 0) && (
-                    <span className="text-xs text-muted-foreground">
-                      No medical conditions
-                    </span>
-                  )}
-                </div>
-              </div>
+                    {trainee.medicalConditions && trainee.medicalConditions.length > 0 && (
+                      <div className="space-y-1">
+                        <p className="text-xs font-medium text-muted-foreground uppercase tracking-wide">Medical</p>
+                        <div className="flex flex-wrap gap-1">
+                          {trainee.medicalConditions.map((c, idx) => (
+                            <Badge key={idx} variant="outline" className="text-xs">{c}</Badge>
+                          ))}
+                        </div>
+                      </div>
+                    )}
 
-              <div className="flex gap-2 pt-2">
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => navigate(`/trainees/${trainee.id}`)}
-                >
-                  <Eye className="h-3.5 w-3.5 mr-1.5" />
-                  View Profile
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  Attendance
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+                    <div className="flex gap-2 pt-2">
+                      <Button
+                        variant="default"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => navigate(`/trainees/${trainee.id}`)}
+                      >
+                        <Eye className="h-3.5 w-3.5 mr-1.5" />
+                        View Profile
+                      </Button>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => navigate(`/attendance?traineeId=${trainee.id}`)}
+                      >
+                        Attendance
+                      </Button>
+                    </div>
+                  </CardContent>
+                </Card>
+              );
+            })}
       </div>
 
-      {/* Loading State */}
-      {loading && (
-        <div className="text-center py-8">
-          <div className="inline-block h-8 w-8 animate-spin rounded-full border-4 border-solid border-primary border-r-transparent"></div>
-          <p className="mt-2 text-muted-foreground">Loading trainees...</p>
-        </div>
-      )}
-
-      {/* Empty State */}
+      {/* Empty state */}
       {!loading && trainees.length === 0 && (
         <Card className="card-athletic">
-          <CardContent className="py-12">
-            <div className="text-center">
-              <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-              <h3 className="text-lg font-semibold mb-2">No trainees found</h3>
-              <p className="text-muted-foreground mb-4">
-                {term
-                  ? `No results for "${term}"`
-                  : "Get started by adding your first trainee"}
-              </p>
-              {!term && (
-                <Button variant="hero" onClick={() => setModalOpen(true)}>
-                  <Plus className="h-4 w-4 mr-2" />
-                  Add Trainee
-                </Button>
-              )}
-            </div>
+          <CardContent className="py-12 text-center">
+            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">No trainees found</h3>
+            <p className="text-muted-foreground mb-4">
+              {term
+                ? `No results for "${term}"`
+                : sportFilter !== "all"
+                ? `No trainees in ${sportFilter}`
+                : "Get started by adding your first trainee"}
+            </p>
+            {!term && sportFilter === "all" && (
+              <Button variant="hero" onClick={() => setCreateOpen(true)}>
+                <Plus className="h-4 w-4 mr-2" />Add Trainee
+              </Button>
+            )}
           </CardContent>
         </Card>
       )}
@@ -465,18 +497,68 @@ export default function Trainees() {
         <BasePagination
           page={page}
           totalPages={totalPages}
-          pageSize={pageSize}
+          pageSize={PAGE_SIZE}
           onPageChange={setPage}
-          onPageSizeChange={(_newSize) => { setPage(1); }}
+          onPageSizeChange={() => setPage(1)}
         />
       )}
 
-      {/* Modal */}
+      {/* Create modal */}
       <TraineeFormModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        onSuccess={handleRefresh}
+        open={createOpen}
+        onOpenChange={setCreateOpen}
+        onSuccess={refresh}
       />
+
+      {/* Edit modal */}
+      <TraineeEditModal
+        open={!!editTrainee}
+        onOpenChange={(v) => { if (!v) setEditTrainee(null); }}
+        onSuccess={() => { setEditTrainee(null); refresh(); }}
+        trainee={
+          editTrainee
+            ? {
+                id: editTrainee.id,
+                firstName: editTrainee.firstName,
+                lastName: editTrainee.lastName,
+                parentNumber: undefined,
+                guardianName: undefined,
+                branchName: editTrainee.branchName,
+                sports: editTrainee.sportSkills?.map((s) => s.sportName) ??
+                  (editTrainee.sportName ? [editTrainee.sportName] : []),
+              }
+            : null
+        }
+      />
+
+      {/* Delete confirm dialog */}
+      <AlertDialog
+        open={!!deleteTarget}
+        onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Remove Trainee?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This will permanently remove{" "}
+              <strong>
+                {deleteTarget?.firstName} {deleteTarget?.lastName}
+              </strong>{" "}
+              from the system. This action cannot be undone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={handleConfirmDelete}
+              disabled={deleteLoading}
+              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+            >
+              {deleteLoading ? "Removing…" : "Remove"}
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }
