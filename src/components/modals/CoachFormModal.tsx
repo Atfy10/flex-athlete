@@ -135,6 +135,7 @@ export function CoachFormModal({
       onSubmit={handleSubmit}
       loading={loading}
       errors={errors}
+      isDirty={isDirty}
     >
       <SearchableSelect
         id="employeeId"
