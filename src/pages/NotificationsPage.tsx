@@ -14,6 +14,7 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
 } from "@/services/notifications.service";
+import { useRealtime } from "@/contexts/RealtimeContext";
 import { Bell, CheckCheck, RefreshCw } from "lucide-react";
 
 const PAGE_SIZE = 20;
