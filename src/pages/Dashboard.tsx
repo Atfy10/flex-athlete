@@ -3,7 +3,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { StatCardSkeleton, ChartSkeleton } from "@/components/ui/CardSkeleton";
 import { SessionListItemSkeleton } from "@/components/ui/TableRowSkeleton";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import {
   Users,
   UserCheck,
@@ -15,6 +15,8 @@ import {
   Trophy,
   Play,
   ArrowRight,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import heroImage from "@/assets/hero-academy.jpg";
 import {
@@ -42,13 +44,14 @@ import {
 } from "@/services/attendance.services";
 import { getTRaineesCountForSpecificDay } from "@/services/trainee.service";
 import { getTraineeGroupsForSpecificDay } from "@/services/traineeGroup.services";
+import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
 
-// ─── Static meta (no mutable state) ───────────────────────────────────────────
+// ─── Static meta ──────────────────────────────────────────────────────────────
 const STATS_META = [
-  { title: "Today's Trainees", icon: GraduationCap, change: "+12%" },
-  { title: "Active Coaches",   icon: UserCheck,     change: "+5%"  },
-  { title: "Today's Sessions", icon: Calendar,      change: "+8%"  },
-  { title: "Attendance Rate",  icon: Activity,      change: "+2%"  },
+  { title: "Today's Trainees", icon: GraduationCap, change: "+12%", href: "/trainees" },
+  { title: "Active Coaches",   icon: UserCheck,     change: "+5%",  href: "/coaches"  },
+  { title: "Today's Sessions", icon: Calendar,      change: "+8%",  href: "/session-occurrences" },
+  { title: "Attendance Rate",  icon: Activity,      change: "+2%",  href: "/attendance" },
 ] as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -56,12 +59,19 @@ function todayIso() {
   return new Date().toISOString().split("T")[0];
 }
 
-function getLastFiveMonths(): { value: number; label: string }[] {
+/** Returns N consecutive months ending at a given offset from current month.
+ *  offset=0 → includes current month as last; offset=-1 → current month is second-to-last, etc.
+ */
+function getMonthWindow(
+  count: number,
+  endOffset: number,
+): { value: number; year: number; label: string }[] {
   const now = new Date();
-  return Array.from({ length: 5 }, (_, i) => {
-    const d = new Date(now.getFullYear(), now.getMonth() - (4 - i), 1);
+  return Array.from({ length: count }, (_, i) => {
+    const d = new Date(now.getFullYear(), now.getMonth() + endOffset - (count - 1 - i), 1);
     return {
       value: d.getMonth() + 1,
+      year: d.getFullYear(),
       label: d.toLocaleString("en", { month: "short" }),
     };
   });
@@ -71,86 +81,115 @@ function getLastFiveMonths(): { value: number; label: string }[] {
 export default function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
+  const [operateOpen, setOperateOpen] = useState(false);
 
-  // Scalar stats — all derived from API
+  // Scalar stats
   const [traineesCount,  setTraineesCount]  = useState(0);
   const [activeCoaches,  setActiveCoaches]  = useState(0);
   const [todayCount,     setTodayCount]     = useState(0);
   const [attendanceRate, setAttendanceRate] = useState(0);
 
-  // Chart data
-  const [sessions,        setSessions]        = useState<SessionVm[]>([]);
-  const [enrollmentData,  setEnrollmentData]  = useState<{ sport: string; enrolled: number }[]>([]);
-  const [attendanceData,  setAttendanceData]  = useState<{ month: string; attendance: number }[]>([]);
+  // Sessions list
+  const [sessions, setSessions] = useState<SessionVm[]>([]);
 
+  // Sport enrollments chart
+  const [enrollmentData,  setEnrollmentData]  = useState<{ sport: string; enrolled: number }[]>([]);
+  const [enrollmentLoading, setEnrollmentLoading] = useState(true);
+
+  // Attendance chart — month window controlled by offset
+  const [attendanceData,    setAttendanceData]    = useState<{ month: string; attendance: number }[]>([]);
+  const [attendanceLoading, setAttendanceLoading] = useState(true);
+  const [monthOffset,       setMonthOffset]       = useState(0); // 0 = ends at current month
+
+  const MONTH_COUNT = 5;
   const page     = 1;
   const pageSize = 4;
 
+  // ── Attendance chart fetch — refires when monthOffset changes ───────────────
+  const loadAttendanceChart = useCallback(async (offset: number) => {
+    setAttendanceLoading(true);
+    try {
+      const months = getMonthWindow(MONTH_COUNT, offset);
+      const data = await Promise.all(
+        months.map(async (m) => {
+          const res = await getAverageAttendanceForMonth(String(m.value));
+          return { month: m.label, attendance: res.data ?? 0 };
+        }),
+      );
+      setAttendanceData(data);
+    } catch {
+      // silently keep previous data on error
+    } finally {
+      setAttendanceLoading(false);
+    }
+  }, []);
+
+  // ── Initial load (all other data) ──────────────────────────────────────────
   useEffect(() => {
     const load = async () => {
       setLoading(true);
       try {
-        const months = getLastFiveMonths();
+        const [sportsRes, sessionsRes, coachesRes, attendanceRes, traineesRes] =
+          await Promise.allSettled([
+            getSports(),
+            getTraineeGroupsForSpecificDay(todayIso(), page, pageSize),
+            getActiveCoachesCount(),
+            getAverageAttendance(),
+            getTRaineesCountForSpecificDay(todayIso()),
+          ]);
 
-        // ── Wave 1: all independent calls in parallel ────────────────────────
-        const [
-          attendanceChart,
-          sportsRes,
-          sessionsRes,
-          coachesRes,
-          attendanceRes,
-          traineesRes,
-        ] = await Promise.all([
-          // attendance chart (inner calls are also parallel)
-          Promise.all(
-            months.map(async (m) => {
-              const res = await getAverageAttendanceForMonth(String(m.value));
-              return { month: m.label, attendance: res.data ?? 0 };
-            }),
-          ),
-          getSports(),
-          getTraineeGroupsForSpecificDay(todayIso(), page, pageSize),
-          getActiveCoachesCount(),
-          getAverageAttendance(),
-          getTRaineesCountForSpecificDay(todayIso()),
-        ]);
-
-        // ── Wave 2: sport enrollments depend on sportsRes ────────────────────
-        if (sportsRes.isSuccess) {
+        if (sportsRes.status === "fulfilled" && sportsRes.value.isSuccess) {
+          setEnrollmentLoading(true);
           const chartData = await Promise.all(
-            sportsRes.data.map(async (sport) => {
+            sportsRes.value.data.map(async (sport) => {
               const res = await getEnrollments(sport.id);
               return { sport: sport.name, enrolled: res.data ?? 0 };
             }),
           );
           setEnrollmentData(chartData);
+          setEnrollmentLoading(false);
+        } else {
+          setEnrollmentLoading(false);
         }
 
-        // ── Apply results ────────────────────────────────────────────────────
-        setAttendanceData(attendanceChart);
-
-        if (sessionsRes.isSuccess) {
-          setSessions(mapSessions(sessionsRes.data.items));
-          setTodayCount(sessionsRes.data.items.length);
+        if (sessionsRes.status === "fulfilled" && sessionsRes.value.isSuccess) {
+          setSessions(mapSessions(sessionsRes.value.data.items));
+          setTodayCount(sessionsRes.value.data.items.length);
         }
-        if (coachesRes.isSuccess)  setActiveCoaches(coachesRes.data);
-        if (attendanceRes.isSuccess) setAttendanceRate(attendanceRes.data);
-        if (traineesRes.isSuccess) setTraineesCount(traineesRes.data);
+        if (coachesRes.status === "fulfilled" && coachesRes.value.isSuccess)
+          setActiveCoaches(coachesRes.value.data);
+        if (attendanceRes.status === "fulfilled" && attendanceRes.value.isSuccess)
+          setAttendanceRate(attendanceRes.value.data);
+        if (traineesRes.status === "fulfilled" && traineesRes.value.isSuccess)
+          setTraineesCount(traineesRes.value.data);
       } finally {
         setLoading(false);
       }
     };
 
     load();
+    loadAttendanceChart(0);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // ── Derive statsData during render — no mutable module-level state ──────────
+  // Re-fetch attendance chart when month window shifts
+  const handleOffsetChange = (delta: number) => {
+    const next = monthOffset + delta;
+    setMonthOffset(next);
+    loadAttendanceChart(next);
+  };
+
+  // ── Derive statsData during render ─────────────────────────────────────────
   const statsData = [
     { ...STATS_META[0], value: traineesCount.toString() },
     { ...STATS_META[1], value: activeCoaches.toString() },
     { ...STATS_META[2], value: todayCount.toString() },
     { ...STATS_META[3], value: `${attendanceRate}%` },
   ] as const;
+
+  // Month range label for chart header
+  const months = getMonthWindow(MONTH_COUNT, monthOffset);
+  const rangeLabel = `${months[0].label} – ${months[MONTH_COUNT - 1].label}`;
 
   return (
     <div className="space-y-8">
@@ -174,12 +213,20 @@ export default function Dashboard() {
               athletic programs in one place.
             </p>
             <div className="flex flex-wrap gap-4">
-              <Button variant="secondary-athletic" size="lg">
+              <Button
+                variant="secondary-athletic"
+                size="lg"
+                onClick={() => setOperateOpen(true)}
+              >
                 <Play className="h-5 w-5" />
                 Operate Group
               </Button>
-              <Button variant="hero" size="lg">
-                View Reports
+              <Button
+                variant="hero"
+                size="lg"
+                onClick={() => navigate("/trainee-groups")}
+              >
+                View Groups
                 <ArrowRight className="h-5 w-5" />
               </Button>
             </div>
@@ -192,7 +239,11 @@ export default function Dashboard() {
         {loading
           ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
           : statsData.map((stat, index) => (
-              <Card key={index} className="card-athletic">
+              <Card
+                key={index}
+                className="card-athletic cursor-pointer hover:shadow-lg hover:border-primary/30 transition-all duration-200 group"
+                onClick={() => navigate(stat.href)}
+              >
                 <CardContent className="p-6">
                   <div className="flex items-center justify-between">
                     <div>
@@ -210,7 +261,7 @@ export default function Dashboard() {
                         </Badge>
                       </div>
                     </div>
-                    <div className="p-3 rounded-xl bg-primary/10">
+                    <div className="p-3 rounded-xl bg-primary/10 group-hover:bg-primary/20 transition-colors">
                       <stat.icon className="h-6 w-6 text-primary" />
                     </div>
                   </div>
@@ -221,16 +272,46 @@ export default function Dashboard() {
 
       {/* ── Charts ───────────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Attendance Trend */}
+        {/* Attendance Trend with month range navigator */}
         <Card className="card-athletic">
           <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Activity className="h-5 w-5 text-primary" />
-              Monthly Attendance Trends
-            </CardTitle>
+            <div className="flex items-center justify-between gap-2 flex-wrap">
+              <CardTitle className="flex items-center gap-2">
+                <Activity className="h-5 w-5 text-primary" />
+                Monthly Attendance Trends
+              </CardTitle>
+              {/* Month range navigator */}
+              <div className="flex items-center gap-1 text-sm">
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleOffsetChange(-1)}
+                  disabled={attendanceLoading}
+                  title="Previous month window"
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="min-w-[110px] text-center text-xs text-muted-foreground font-medium tabular-nums">
+                  {rangeLabel}
+                </span>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="h-7 w-7"
+                  onClick={() => handleOffsetChange(1)}
+                  disabled={attendanceLoading || monthOffset >= 0}
+                  title="Next month window"
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
           </CardHeader>
           <CardContent>
-            {loading ? <ChartSkeleton type="line" /> : (
+            {attendanceLoading ? (
+              <ChartSkeleton type="line" />
+            ) : (
               <ChartContainer
                 config={{
                   attendance: {
@@ -243,7 +324,7 @@ export default function Dashboard() {
                 <ResponsiveContainer width="100%" height="100%">
                   <LineChart data={attendanceData}>
                     <XAxis dataKey="month" />
-                    <YAxis />
+                    <YAxis domain={[0, 100]} tickFormatter={(v) => `${v}%`} />
                     <ChartTooltip content={<ChartTooltipContent />} />
                     <Line
                       type="monotone"
@@ -268,7 +349,9 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? <ChartSkeleton type="bar" /> : (
+            {enrollmentLoading ? (
+              <ChartSkeleton type="bar" />
+            ) : (
               <ChartContainer
                 config={{
                   enrolled: {
@@ -313,16 +396,18 @@ export default function Dashboard() {
               Today's Sessions
             </div>
             <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => navigate(`/session-occurrences?date=${todayIso()}`)}
-              >
-                View All
-              </Button>
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate(`/session-occurrences?date=${todayIso()}`)}
+            >
+              View All
+            </Button>
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? <SessionListItemSkeleton count={4} /> : sessions.length === 0 ? (
+          {loading ? (
+            <SessionListItemSkeleton count={4} />
+          ) : sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Calendar className="h-10 w-10 mb-3 opacity-30" />
               <p className="text-sm font-medium">No sessions scheduled for today</p>
@@ -333,7 +418,9 @@ export default function Dashboard() {
                 <div
                   key={session.id}
                   className="flex items-center justify-between p-4 rounded-lg border border-border hover:bg-muted/50 transition-colors cursor-pointer group"
-                  onClick={() => navigate(`/session-occurrences?date=${todayIso()}`)}
+                  onClick={() =>
+                    navigate(`/session-occurrences?date=${todayIso()}`)
+                  }
                 >
                   <div className="space-y-1">
                     <div className="flex items-center gap-3">
@@ -363,6 +450,13 @@ export default function Dashboard() {
           )}
         </CardContent>
       </Card>
+
+      {/* ── Operate Group Modal ──────────────────────────────────────────── */}
+      <OperateGroupModal
+        open={operateOpen}
+        onOpenChange={setOperateOpen}
+        onSuccess={() => setOperateOpen(false)}
+      />
     </div>
   );
 }
