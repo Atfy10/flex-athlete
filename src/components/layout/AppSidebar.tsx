@@ -9,6 +9,7 @@ import {
   MapPin,
   Trophy,
   Calendar,
+  Layers,
   UserPlus,
   ClipboardCheck,
   User,
