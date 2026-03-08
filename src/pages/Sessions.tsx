@@ -372,8 +372,24 @@ function SessionCard({
         </div>
 
         <div className="flex gap-2 pt-3 border-t border-border">
-          <Button variant="default" size="sm" className="flex-1">View Details</Button>
-          <Button variant="outline" size="sm" className="flex-1">Attendance</Button>
+          <Button
+            variant="default"
+            size="sm"
+            className="flex-1"
+            onClick={() => navigate(`/session-occurrences?date=${new Date().toISOString().split("T")[0]}`)}
+          >
+            View Occurrences
+          </Button>
+          {onMarkAttendance && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => onMarkAttendance(session)}
+            >
+              Attendance
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>
