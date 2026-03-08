@@ -75,9 +75,11 @@ export default function Login() {
 
           {/* Dev-mode badge — tree-shaken in production */}
           {isDevLoginEnabled() && (
-            <div className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-full border border-warning/40 bg-warning/10 text-warning text-xs font-medium w-fit mx-auto">
-              <FlaskConical className="h-3 w-3" />
-              Development mode — use {DEV_EMAIL} for instant access
+            <div className="flex justify-center">
+              <span className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full border border-warning/40 bg-warning/10 text-warning text-xs font-medium">
+                <FlaskConical className="h-3 w-3" />
+                Development Mode
+              </span>
             </div>
           )}
         </CardHeader>
