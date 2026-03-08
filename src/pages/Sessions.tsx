@@ -243,7 +243,15 @@ export default function Sessions() {
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => <SessionCardSkeleton key={i} />)
         ) : items.length === 0 ? (
-          <SessionsEmptyState isSearch={term.length >= 2 || useDate} />
+          <div className="col-span-full">
+            <EmptyState
+              icon={Layers}
+              title={term.length >= 2 || useDate ? "No sessions match your search" : "No sessions scheduled yet"}
+              description={term.length >= 2 || useDate ? "Try a different search term or clear the filter." : "Use \"Operate Group\" to generate sessions from a trainee group's weekly schedule."}
+              actionLabel={!term && !useDate ? "Operate Group" : undefined}
+              onAction={!term && !useDate ? () => setModalOpen(true) : undefined}
+            />
+          </div>
         ) : (
           items.map((session) => (
             <SessionCard key={session.id} session={session} />

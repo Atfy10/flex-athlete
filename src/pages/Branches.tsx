@@ -90,7 +90,15 @@ const Branches = () => {
 
         {/* Empty state */}
         {!loading && branches.length === 0 && (
-          <BranchesEmptyState term={term} onAdd={() => setModalOpen(true)} />
+          <div className="col-span-full">
+            <EmptyState
+              icon={Building}
+              title={term ? `No results for "${term}"` : "No branches yet"}
+              description={term ? "Try a different search term." : "Add your first branch to get started."}
+              actionLabel={!term ? "Add Branch" : undefined}
+              onAction={!term ? () => setModalOpen(true) : undefined}
+            />
+          </div>
         )}
 
         {/* Branch cards */}

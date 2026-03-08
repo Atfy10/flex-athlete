@@ -317,7 +317,13 @@ const Enrollments = () => {
         {loading && Array.from({ length: 5 }).map((_, i) => <EnrollmentRowSkeleton key={i} />)}
 
         {!loading && filteredEnrollments.length === 0 && (
-          <EnrollmentsEmptyState term={term} onAdd={() => setModalOpen(true)} />
+          <EmptyState
+            icon={UserPlus}
+            title={term ? `No results for "${term}"` : "No enrollments yet"}
+            description={term ? "Try a different search term or adjust your filters." : "Create the first enrollment to get started."}
+            actionLabel={!term ? "New Enrollment" : undefined}
+            onAction={!term ? () => setModalOpen(true) : undefined}
+          />
         )}
 
         {!loading &&
