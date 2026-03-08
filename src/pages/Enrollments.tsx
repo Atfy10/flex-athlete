@@ -170,6 +170,8 @@ const Enrollments = () => {
   const [selectedEnrollment, setSelectedEnrollment] = useState<EnrollmentEditData | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [stats, setStats] = useState<EnrollmentStats>({ total: 0, active: 0, pendingPayment: 0 });
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
 
   const {
     items: enrollments,
