@@ -182,6 +182,17 @@ function RosterSkeleton() {
 
 // ─── Session Attendance Card ──────────────────────────────────────────────────
 function SessionAttendanceCard({
+  session,
+  searchTerm,
+  onMarkAttendance,
+}: {
+  session: SessionOccurrenceDto;
+  searchTerm: string;
+  onMarkAttendance?: () => void;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [roster, setRoster] = useState<AttendanceRecordDto[]>([]);
+function SessionAttendanceCard({
   onMarkAttendance,
   session,
   searchTerm,
