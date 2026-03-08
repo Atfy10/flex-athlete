@@ -59,6 +59,7 @@ import { countSports, getSports } from "@/services/sport.services";
 import { getAverageAttendance } from "@/services/attendance.services";
 import { TraineeCardDto } from "@/types/TraineeCardDto";
 import { useToast } from "@/hooks/use-toast";
+import { getAttendanceColor } from "@/lib/attendanceUtils";
 
 interface TraineesStats {
   totalTrainees: number;
@@ -425,18 +426,22 @@ export default function Trainees() {
                         </Badge>
                       </TableCell>
                       <TableCell>
-                        <div className="flex items-center gap-2">
-                          <div className="w-16 bg-muted rounded-full h-1.5 hidden sm:block">
-                            <div
-                              className={`h-1.5 rounded-full ${
-                                trainee.attendanceRate >= 80 ? "bg-success" :
-                                trainee.attendanceRate >= 60 ? "bg-warning" : "bg-destructive"
-                              }`}
-                              style={{ width: `${Math.min(trainee.attendanceRate, 100)}%` }}
-                            />
-                          </div>
-                          <span className="text-sm font-medium">{trainee.attendanceRate}%</span>
-                        </div>
+                        {(() => {
+                          const ac = getAttendanceColor(trainee.attendanceRate);
+                          return (
+                            <div className="flex items-center gap-2">
+                              <div className="w-16 bg-muted rounded-full h-1.5 hidden sm:block">
+                                <div
+                                  className={`h-1.5 rounded-full ${ac.bar}`}
+                                  style={{ width: `${Math.min(trainee.attendanceRate, 100)}%` }}
+                                />
+                              </div>
+                              <span className={`text-sm font-medium ${ac.text}`}>
+                                {trainee.attendanceRate}%
+                              </span>
+                            </div>
+                          );
+                        })()}
                       </TableCell>
                       <TableCell className="text-sm text-muted-foreground">
                         {new Date(trainee.joinDate).getFullYear()}
@@ -559,9 +564,11 @@ export default function Trainees() {
                             <Users className="h-3 w-3 text-muted-foreground" />
                             <span>{trainee.coachName}</span>
                           </div>
-                          <div className="flex items-center gap-1 text-sm">
-                            <Calendar className="h-3 w-3 text-muted-foreground" />
-                            <span>Att: {trainee.attendanceRate}%</span>
+                          <div className="flex items-center gap-1.5 text-sm">
+                            <TrendingUp className={`h-3 w-3 ${getAttendanceColor(trainee.attendanceRate).text}`} />
+                            <span className={`font-medium ${getAttendanceColor(trainee.attendanceRate).text}`}>
+                              {trainee.attendanceRate}%
+                            </span>
                           </div>
                         </div>
                         {trainee.medicalConditions && trainee.medicalConditions.length > 0 && (
