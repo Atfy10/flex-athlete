@@ -116,7 +116,6 @@ export default function Trainees() {
   const [createOpen, setCreateOpen] = useState(false);
   const [editTrainee, setEditTrainee] = useState<TraineeCardDto | null>(null);
   const [deleteTarget, setDeleteTarget] = useState<TraineeCardDto | null>(null);
-  const [bulkDeactivateOpen, setBulkDeactivateOpen] = useState(false);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
   // ── Filters — seed from URL query param ───────────────────────────────────
