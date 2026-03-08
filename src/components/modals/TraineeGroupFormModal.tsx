@@ -36,6 +36,7 @@ interface TraineeGroupFormModalProps {
 
 export function TraineeGroupFormModal({ open, onOpenChange, onSuccess }: TraineeGroupFormModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [apiErrors, setApiErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
