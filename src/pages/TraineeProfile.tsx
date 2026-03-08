@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ApiError } from "@/lib/api";
-import { ApiResult } from "@/types/api";
 import {
   ProfileViewLayout,
   ProfileSection,
