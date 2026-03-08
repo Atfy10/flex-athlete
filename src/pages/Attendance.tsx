@@ -4,7 +4,8 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { AttendanceSessionSkeleton, StatCardSkeleton } from "@/components/ui/CardSkeleton";
+import { RosterRowSkeleton } from "@/components/ui/TableRowSkeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
@@ -94,26 +95,7 @@ const STATUS_CONFIG: Record<
   },
 };
 
-// ─── Skeleton ─────────────────────────────────────────────────────────────────
-function SessionCardSkeleton() {
-  return (
-    <Card className="card-athletic">
-      <CardHeader>
-        <div className="flex items-start justify-between gap-4">
-          <div className="flex-1 space-y-2">
-            <Skeleton className="h-5 w-1/2" />
-            <Skeleton className="h-4 w-2/3" />
-          </div>
-          <div className="grid grid-cols-4 gap-3">
-            {[0, 1, 2, 3].map((i) => (
-              <Skeleton key={i} className="h-14 w-16 rounded-lg" />
-            ))}
-          </div>
-        </div>
-      </CardHeader>
-    </Card>
-  );
-}
+// (SessionCardSkeleton and RosterSkeleton are now imported from CardSkeleton/TableRowSkeleton)
 
 // ─── Empty state ──────────────────────────────────────────────────────────────
 function AttendanceEmptyState({ date }: { date: string }) {
@@ -163,22 +145,7 @@ function AttendeeRow({ record }: { record: AttendanceRecordDto }) {
 }
 
 // ─── Roster skeleton ─────────────────────────────────────────────────────────
-function RosterSkeleton() {
-  return (
-    <div className="space-y-2 pt-4 border-t border-border">
-      {Array.from({ length: 4 }).map((_, i) => (
-        <div key={i} className="flex items-center gap-3 p-3">
-          <Skeleton className="h-8 w-8 rounded-full" />
-          <div className="flex-1 space-y-1.5">
-            <Skeleton className="h-3.5 w-1/3" />
-            <Skeleton className="h-3 w-1/4" />
-          </div>
-          <Skeleton className="h-6 w-16 rounded-full" />
-        </div>
-      ))}
-    </div>
-  );
-}
+// RosterSkeleton → now imported as RosterRowSkeleton from TableRowSkeleton
 
 // ─── Session Attendance Card ──────────────────────────────────────────────────
 function SessionAttendanceCard({
@@ -311,7 +278,7 @@ function SessionAttendanceCard({
       {expanded && (
         <CardContent className="pt-0">
           {rosterLoading ? (
-            <RosterSkeleton />
+            <RosterRowSkeleton />
           ) : filteredRoster.length === 0 ? (
             <div className="pt-4 border-t border-border text-center py-8 text-muted-foreground text-sm">
               {roster.length === 0
@@ -334,21 +301,7 @@ function SessionAttendanceCard({
   );
 }
 
-// ─── Stat card skeleton ───────────────────────────────────────────────────────
-function StatSkeleton() {
-  return (
-    <Card className="card-athletic">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <Skeleton className="h-4 w-28" />
-        <Skeleton className="h-4 w-4 rounded" />
-      </CardHeader>
-      <CardContent>
-        <Skeleton className="h-7 w-12 mb-1" />
-        <Skeleton className="h-3 w-24" />
-      </CardContent>
-    </Card>
-  );
-}
+// StatSkeleton → now imported as StatCardSkeleton from CardSkeleton
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const Attendance = () => {
@@ -436,7 +389,7 @@ const Attendance = () => {
       {/* ── Stats Cards ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {statsLoading || sessionsLoading ? (
-          Array.from({ length: 4 }).map((_, i) => <StatSkeleton key={i} />)
+          Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
         ) : (
           <>
             <Card className="card-athletic">
@@ -557,7 +510,7 @@ const Attendance = () => {
       {/* ── Session Cards ───────────────────────────────────────────────── */}
       <div className="space-y-4">
         {sessionsLoading ? (
-          Array.from({ length: 3 }).map((_, i) => <SessionCardSkeleton key={i} />)
+          Array.from({ length: 3 }).map((_, i) => <AttendanceSessionSkeleton key={i} />)
         ) : visibleSessions.length === 0 ? (
           searchTerm.trim().length >= 2 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">

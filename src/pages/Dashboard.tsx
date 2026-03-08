@@ -1,7 +1,8 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { StatCardSkeleton, ChartSkeleton } from "@/components/ui/CardSkeleton";
+import { SessionListItemSkeleton } from "@/components/ui/TableRowSkeleton";
 import { useEffect, useState } from "react";
 import {
   Users,
@@ -186,40 +187,34 @@ export default function Dashboard() {
 
       {/* ── Stats Grid ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsData.map((stat, index) => (
-          <Card key={index} className="card-athletic">
-            <CardContent className="p-6">
-              {loading ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-8 w-16" />
-                  <Skeleton className="h-5 w-14" />
-                </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm font-medium">
-                      {stat.title}
-                    </p>
-                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
-                    <div className="flex items-center mt-2">
-                      <Badge
-                        variant="secondary"
-                        className="bg-success/10 text-success hover:bg-success/20"
-                      >
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        {stat.change}
-                      </Badge>
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+          : statsData.map((stat, index) => (
+              <Card key={index} className="card-athletic">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-muted-foreground text-sm font-medium">
+                        {stat.title}
+                      </p>
+                      <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                      <div className="flex items-center mt-2">
+                        <Badge
+                          variant="secondary"
+                          className="bg-success/10 text-success hover:bg-success/20"
+                        >
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          {stat.change}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-primary/10">
+                      <stat.icon className="h-6 w-6 text-primary" />
                     </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-primary/10">
-                    <stat.icon className="h-6 w-6 text-primary" />
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                </CardContent>
+              </Card>
+            ))}
       </div>
 
       {/* ── Charts ───────────────────────────────────────────────────────── */}
@@ -233,13 +228,7 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="h-[300px] flex flex-col gap-3 justify-end pb-4">
-                {[40, 55, 70, 60, 80].map((h, i) => (
-                  <Skeleton key={i} className="w-full" style={{ height: `${h}%` }} />
-                ))}
-              </div>
-            ) : (
+            {loading ? <ChartSkeleton type="line" /> : (
               <ChartContainer
                 config={{
                   attendance: {
@@ -277,13 +266,7 @@ export default function Dashboard() {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            {loading ? (
-              <div className="h-[300px] flex items-end gap-3 pb-4 px-2">
-                {[60, 90, 50, 75, 40].map((h, i) => (
-                  <Skeleton key={i} className="flex-1 rounded-t" style={{ height: `${h}%` }} />
-                ))}
-              </div>
-            ) : (
+            {loading ? <ChartSkeleton type="bar" /> : (
               <ChartContainer
                 config={{
                   enrolled: {
@@ -333,20 +316,7 @@ export default function Dashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 rounded-lg border border-border">
-                  <Skeleton className="h-6 w-20 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-48" />
-                  </div>
-                  <Skeleton className="h-8 w-8 rounded" />
-                </div>
-              ))}
-            </div>
-          ) : sessions.length === 0 ? (
+          {loading ? <SessionListItemSkeleton count={4} /> : sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Calendar className="h-10 w-10 mb-3 opacity-30" />
               <p className="text-sm font-medium">No sessions scheduled for today</p>

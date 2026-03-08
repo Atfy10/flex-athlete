@@ -3,7 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Skeleton } from "@/components/ui/skeleton";
+import { EntityCardSkeleton } from "@/components/ui/CardSkeleton";
 import { FilterBar } from "@/components/FilterBar";
 import {
   MapPin,
@@ -21,31 +21,7 @@ import { BranchCardDto } from "@/types/BranchCardDto";
 
 const PAGE_SIZE = 9;
 
-// ── Skeleton card shown during initial / page loads ──────────────────────────
-function BranchCardSkeleton() {
-  return (
-    <Card className="card-athletic">
-      <CardContent className="p-6 space-y-4">
-        <div className="flex items-start justify-between">
-          <div className="flex items-center gap-3">
-            <Skeleton className="w-12 h-12 rounded-lg" />
-            <div className="space-y-2">
-              <Skeleton className="h-4 w-32" />
-              <Skeleton className="h-3 w-24" />
-            </div>
-          </div>
-          <Skeleton className="h-5 w-16 rounded-full" />
-        </div>
-        <div className="space-y-2">
-          <Skeleton className="h-3 w-48" />
-          <Skeleton className="h-3 w-36" />
-          <Skeleton className="h-3 w-40" />
-        </div>
-        <Skeleton className="h-8 w-full rounded-md" />
-      </CardContent>
-    </Card>
-  );
-}
+// (BranchCardSkeleton replaced by EntityCardSkeleton from CardSkeleton)
 
 // ── Empty state ───────────────────────────────────────────────────────────────
 function BranchesEmptyState({
@@ -144,7 +120,7 @@ const Branches = () => {
         {/* Loading skeletons */}
         {loading &&
           Array.from({ length: PAGE_SIZE }).map((_, i) => (
-            <BranchCardSkeleton key={i} />
+            <EntityCardSkeleton key={i} />
           ))}
 
         {/* Empty state */}
