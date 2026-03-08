@@ -327,22 +327,47 @@ const Enrollments = () => {
         </Card>
       </div>
 
-      {/* Search */}
+      {/* Search & Filters */}
       <Card className="card-athletic">
         <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search enrollments by trainee name or sport…"
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <FilterBar
+            searchValue={term}
+            onSearchChange={(v) => { setTerm(v); setPage(1); }}
+            searchPlaceholder="Search enrollments by trainee name or sport…"
+            filters={{ status: statusFilter, payment: paymentFilter }}
+            onFilterChange={(key, val) => {
+              if (key === "status") setStatusFilter(val);
+              if (key === "payment") setPaymentFilter(val);
+              setPage(1);
+            }}
+            filterConfigs={[
+              {
+                key: "status",
+                placeholder: "All Statuses",
+                options: [
+                  { value: "Active", label: "Active" },
+                  { value: "Pending", label: "Pending" },
+                  { value: "Suspended", label: "Suspended" },
+                  { value: "Completed", label: "Completed" },
+                ],
+              },
+              {
+                key: "payment",
+                placeholder: "All Payments",
+                options: [
+                  { value: "Paid", label: "Paid" },
+                  { value: "Pending", label: "Pending" },
+                  { value: "Overdue", label: "Overdue" },
+                ],
+              },
+            ]}
+            onReset={() => { setTerm(""); setStatusFilter("all"); setPaymentFilter("all"); setPage(1); }}
+          />
         </CardContent>
       </Card>
 
       {/* List */}
+
       <div className="space-y-4">
         {loading && Array.from({ length: 5 }).map((_, i) => <EnrollmentRowSkeleton key={i} />)}
 
