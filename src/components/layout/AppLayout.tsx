@@ -13,12 +13,19 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 import { Bell, Search, User, KeyRound, LogOut, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { RealtimeProvider, useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
 import { FloatingDashboardButton } from "@/components/navigation/FloatingDashboardButton";
+import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
 
 interface AppLayoutProps {
   children: React.ReactNode;
