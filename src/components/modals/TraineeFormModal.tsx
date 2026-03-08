@@ -132,6 +132,7 @@ export function TraineeFormModal({
 
   // Helper: set a single form field and clear its error
   const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
     setFieldErrors((fe) => ({ ...fe, [key]: undefined }));
   };
