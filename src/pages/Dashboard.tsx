@@ -536,6 +536,23 @@ export default function Dashboard() {
         onSuccess={() => setOperateOpen(false)}
       />
 
+      {/* ── Quick Action Modals ───────────────────────────────────────────── */}
+      <TraineeFormModal
+        open={traineeOpen}
+        onOpenChange={setTraineeOpen}
+        onSuccess={() => setTraineeOpen(false)}
+      />
+      <EnrollmentFormModal
+        open={enrollmentOpen}
+        onOpenChange={setEnrollmentOpen}
+        onSuccess={() => setEnrollmentOpen(false)}
+      />
+      <CoachFormModal
+        open={coachOpen}
+        onOpenChange={setCoachOpen}
+        onSuccess={() => setCoachOpen(false)}
+      />
+
       {/* ── Recent Activity ──────────────────────────────────────────────── */}
       <Card className="card-athletic">
         <CardHeader>
