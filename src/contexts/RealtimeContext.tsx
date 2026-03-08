@@ -5,6 +5,7 @@ import { useSignalREvent } from "@/realtime/useSignalREvent";
 import { REALTIME_EVENTS, NotificationPayload } from "@/realtime/realtimeEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { getUnreadCount } from "@/services/notifications.service";
 
 interface RealtimeContextValue {
   unreadCount: number;

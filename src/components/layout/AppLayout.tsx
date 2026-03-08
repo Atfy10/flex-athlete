@@ -26,6 +26,7 @@ import { RealtimeProvider, useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
 import { FloatingDashboardButton } from "@/components/navigation/FloatingDashboardButton";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
+import { useEffect } from "react";
 
 interface AppLayoutProps {
   children: React.ReactNode;
