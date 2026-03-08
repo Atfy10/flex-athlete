@@ -5,7 +5,7 @@ import { apiFetch, ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
 
-const branchSchema = z.object({
+const branchEditSchema = z.object({
   name: z.string().trim().min(1, "Branch name is required").max(100, "Name too long"),
   city: z.string().trim().min(1, "City is required").max(100, "City too long"),
   country: z.string().trim().min(1, "Country is required").max(100, "Country too long"),
@@ -15,13 +15,25 @@ const branchSchema = z.object({
   coY: z.string().refine((v) => v === "" || !isNaN(Number(v)), { message: "Must be a valid number" }),
 });
 
-interface BranchFormModalProps {
+export interface BranchEditData {
+  id: number;
+  name: string;
+  city: string;
+  country: string;
+  phoneNumber?: string;
+  email?: string;
+  coX?: number;
+  coY?: number;
+}
+
+interface BranchEditModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   onSuccess: () => void;
+  branch: BranchEditData | null;
 }
 
-export function BranchFormModal({ open, onOpenChange, onSuccess }: BranchFormModalProps) {
+export function BranchEditModal({ open, onOpenChange, onSuccess, branch }: BranchEditModalProps) {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
@@ -32,11 +44,19 @@ export function BranchFormModal({ open, onOpenChange, onSuccess }: BranchFormMod
   });
 
   useEffect(() => {
-    if (!open) return;
+    if (!open || !branch) return;
     setErrors([]);
     setFieldErrors({});
-    setForm({ name: "", city: "", country: "", phoneNumber: "", email: "", coX: "", coY: "" });
-  }, [open]);
+    setForm({
+      name: branch.name ?? "",
+      city: branch.city ?? "",
+      country: branch.country ?? "",
+      phoneNumber: branch.phoneNumber ?? "",
+      email: branch.email ?? "",
+      coX: branch.coX != null ? String(branch.coX) : "",
+      coY: branch.coY != null ? String(branch.coY) : "",
+    });
+  }, [open, branch]);
 
   const set = (key: keyof typeof form) => (val: string) => {
     setForm((f) => ({ ...f, [key]: val }));
@@ -45,10 +65,11 @@ export function BranchFormModal({ open, onOpenChange, onSuccess }: BranchFormMod
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!branch) return;
     setErrors([]);
     setFieldErrors({});
 
-    const parsed = branchSchema.safeParse(form);
+    const parsed = branchEditSchema.safeParse(form);
     if (!parsed.success) {
       const fe: Record<string, string> = {};
       for (const issue of parsed.error.issues) {
@@ -61,8 +82,8 @@ export function BranchFormModal({ open, onOpenChange, onSuccess }: BranchFormMod
 
     setLoading(true);
     try {
-      await apiFetch("/api/Branch/create", {
-        method: "POST",
+      const result = await apiFetch(`/api/Branch/${branch.id}`, {
+        method: "PUT",
         body: JSON.stringify({
           name: form.name.trim(),
           city: form.city.trim(),
@@ -72,20 +93,34 @@ export function BranchFormModal({ open, onOpenChange, onSuccess }: BranchFormMod
           coX: form.coX !== "" ? Number(form.coX) : null,
           coY: form.coY !== "" ? Number(form.coY) : null,
         }),
-      });
-      toast({ title: "Branch created successfully" });
+      }) as { isSuccess: boolean; message?: string; statusCode: number };
+
+      if (!result.isSuccess) {
+        throw new ApiError(result.statusCode, { message: result.message || "Failed to update branch." });
+      }
+
+      toast({ title: "Branch updated successfully" });
       onSuccess();
       onOpenChange(false);
     } catch (err) {
       if (err instanceof ApiError) setErrors(err.getValidationErrors());
-      else setErrors(["Failed to create branch."]);
+      else setErrors(["Failed to update branch."]);
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <BaseModal open={open} onOpenChange={onOpenChange} title="Add Branch" description="Add a new academy branch" onSubmit={handleSubmit} loading={loading} errors={errors}>
+    <BaseModal
+      open={open}
+      onOpenChange={onOpenChange}
+      title="Edit Branch"
+      description="Update branch details"
+      onSubmit={handleSubmit}
+      loading={loading}
+      errors={errors}
+      submitLabel="Save Changes"
+    >
       <FormInput id="name" label="Name" value={form.name} onChange={set("name")} required error={fieldErrors.name} />
       <div className="grid grid-cols-2 gap-3">
         <FormInput id="city" label="City" value={form.city} onChange={set("city")} required error={fieldErrors.city} />
