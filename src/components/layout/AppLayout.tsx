@@ -26,6 +26,7 @@ import { RealtimeProvider, useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
 import { FloatingDashboardButton } from "@/components/navigation/FloatingDashboardButton";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
+import { useEffect } from "react";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -56,6 +57,13 @@ function AppLayoutContent({ children }: AppLayoutProps) {
 
   // Register global keyboard shortcuts (Alt+D / Ctrl+Shift+D → Dashboard)
   useGlobalShortcuts();
+
+  // ── Update browser tab title with unread count ──────────────────────────
+  useEffect(() => {
+    const base = "AURA Sport Academy";
+    document.title = unreadCount > 0 ? `(${unreadCount}) ${base}` : base;
+    return () => { document.title = base; };
+  }, [unreadCount]);
 
   const handleLogout = () => {
     logout();

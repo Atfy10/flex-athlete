@@ -5,6 +5,7 @@ import { useSignalREvent } from "@/realtime/useSignalREvent";
 import { REALTIME_EVENTS, NotificationPayload } from "@/realtime/realtimeEvents";
 import { useAuth } from "@/contexts/AuthContext";
 import { toast } from "@/hooks/use-toast";
+import { getUnreadCount } from "@/services/notifications.service";
 
 interface RealtimeContextValue {
   unreadCount: number;
@@ -37,6 +38,14 @@ export function RealtimeProvider({ children, initialUnreadCount = 0 }: RealtimeP
   const queryClient = useQueryClient();
   const [unreadCount, setUnreadCount] = useState(initialUnreadCount);
   const startedRef = useRef(false);
+
+  // ── Hydrate unread count from API on mount ────────────────────────────
+  useEffect(() => {
+    if (!isAuthenticated) return;
+    getUnreadCount().then((res) => {
+      if (res.isSuccess) setUnreadCount(res.data);
+    }).catch(() => {/* silent */});
+  }, [isAuthenticated]);
 
   // ── Connect on auth, disconnect on logout ──────────────────────────────
   useEffect(() => {
