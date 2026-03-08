@@ -73,6 +73,17 @@ export default function Sessions() {
   const [useDate, setUseDate]           = useState(false);
   const [modalOpen, setModalOpen]       = useState(false);
 
+  // Activate date filter from URL query param (e.g. ?date=today)
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const dateParam = searchParams.get("date");
+    if (dateParam) {
+      setSelectedDate(dateParam === "today" ? todayIso() : dateParam);
+      setUseDate(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
   // Stats
   const [totalSessions,  setTotalSessions]  = useState<number | null>(null);
   const [todayGroupCount, setTodayGroupCount] = useState<number | null>(null);
