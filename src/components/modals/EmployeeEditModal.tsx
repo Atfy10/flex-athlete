@@ -121,6 +121,7 @@ export function EmployeeEditModal({ open, onOpenChange, onSuccess, employee }: E
       loading={loading}
       errors={errors}
       submitLabel="Save Changes"
+      isDirty={isDirty}
     >
       {/* Read-only display */}
       <div className="rounded-lg bg-muted/40 border border-border px-4 py-3 space-y-1">
