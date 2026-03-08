@@ -465,7 +465,27 @@ const Enrollments = () => {
                         {enrollment.monthlyFee != null ? `$${enrollment.monthlyFee}/mo` : "—"}
                       </TableCell>
                       <TableCell onClick={(e) => e.stopPropagation()}>
-                        <ActionMenu enrollment={enrollment} />
+                        <RowActions viewHref={`/enrollments/${enrollment.id}`}>
+                          <DropdownMenuItem onClick={() => openEdit(enrollment)} className="gap-2 cursor-pointer">
+                            <Pencil className="h-3.5 w-3.5" />Edit Details
+                          </DropdownMenuItem>
+                          {enrollment.status === "Active" ? (
+                            <DropdownMenuItem onClick={() => handleSuspend(enrollment.id)} className="gap-2 cursor-pointer">
+                              <PauseCircle className="h-3.5 w-3.5" />Suspend
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem onClick={() => handleActivate(enrollment.id)} className="gap-2 cursor-pointer">
+                              <PlayCircle className="h-3.5 w-3.5" />Activate
+                            </DropdownMenuItem>
+                          )}
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            onSelect={(e) => { e.preventDefault(); setTimeout(() => setDeleteTarget({ id: enrollment.id, traineeName: enrollment.traineeName }), 0); }}
+                            className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                          >
+                            <Trash2 className="h-3.5 w-3.5" />Remove
+                          </DropdownMenuItem>
+                        </RowActions>
                       </TableCell>
                     </TableRow>
                   ))}
