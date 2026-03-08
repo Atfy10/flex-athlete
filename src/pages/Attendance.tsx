@@ -560,7 +560,7 @@ type AttendanceSortKey = "sportName" | "coachName" | "branchName" | "startTime" 
             title={`No sessions on ${new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
             description="No sessions were recorded for this date. Generate sessions or pick a different date."
             actions={[
-              { label: "Generate Sessions", onClick: () => window.location.href = "/sessions" },
+              { label: "Generate Sessions", onClick: () => navigate("/sessions") },
               { label: "Go to Today", onClick: () => setSelectedDate(todayIso()), variant: "outline" },
             ]}
           />
