@@ -182,6 +182,7 @@ function RosterSkeleton() {
 
 // ─── Session Attendance Card ──────────────────────────────────────────────────
 function SessionAttendanceCard({
+  onMarkAttendance,
   session,
   searchTerm,
 }: {
