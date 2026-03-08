@@ -42,8 +42,10 @@ function AppLayoutContent({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const { logout, devUser, token } = useAuth();
   const { unreadCount } = useRealtime();
-  const { state } = useSidebar();
-  const sidebarCollapsed = state === "collapsed";
+  const { state, isMobile } = useSidebar();
+  // Only show Dashboard shortcut on desktop when sidebar is collapsed.
+  // On mobile the sidebar uses a sheet overlay — state stays "expanded".
+  const showDashboardButton = !isMobile && state === "collapsed";
 
   const handleLogout = () => {
     logout();
@@ -95,9 +97,9 @@ function AppLayoutContent({ children }: AppLayoutProps) {
             <div className="flex items-center gap-3 min-w-0">
               {/* Always-visible sidebar toggle */}
               <SidebarTrigger />
-              {/* Dashboard shortcut — only shown when sidebar is collapsed */}
-              {sidebarCollapsed && <FloatingDashboardButton inline />}
-              <div className="text-gradient font-bold text-xl hidden sm:block">
+              {/* Dashboard shortcut — desktop only, when sidebar is collapsed */}
+              {showDashboardButton && <FloatingDashboardButton inline />}
+              <div className="text-gradient font-bold text-xl truncate">
                 AURA Sport Academy
               </div>
             </div>
