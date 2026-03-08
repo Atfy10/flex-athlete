@@ -51,9 +51,10 @@ const App = () => (
             <Route
               path="/*"
               element={
-                <ProtectedRoute>
+              <ProtectedRoute>
                   <AppLayout>
-                    <Routes>
+                    <ErrorBoundary>
+                      <Routes>
                       <Route path="/" element={<Dashboard />} />
                       <Route path="/my-profile" element={<MyProfile />} />
                       <Route path="/employees" element={<Employees />} />

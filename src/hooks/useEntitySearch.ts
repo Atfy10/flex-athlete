@@ -101,6 +101,7 @@ export function useEntitySearch<T>({
   return {
     items,
     loading,
+    error,
     term,
     setTerm,
     page,
