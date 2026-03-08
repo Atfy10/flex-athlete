@@ -42,8 +42,10 @@ function AppLayoutContent({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const { logout, devUser, token } = useAuth();
   const { unreadCount } = useRealtime();
-  const { state } = useSidebar();
-  const sidebarCollapsed = state === "collapsed";
+  const { state, isMobile } = useSidebar();
+  // Only show Dashboard shortcut on desktop when sidebar is collapsed.
+  // On mobile the sidebar uses a sheet overlay — state stays "expanded".
+  const showDashboardButton = !isMobile && state === "collapsed";
 
   const handleLogout = () => {
     logout();
