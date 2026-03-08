@@ -213,6 +213,39 @@ export default function Trainees() {
     return "";
   });
 
+  // ── Row selection ─────────────────────────────────────────────────────────
+  const {
+    selectedIds,
+    selectedCount,
+    isSelected,
+    toggle: toggleRow,
+    allSelected,
+    someSelected,
+    toggleAll,
+    clearSelection,
+  } = useTableSelection(trainees);
+
+  // ── Bulk export (CSV) ─────────────────────────────────────────────────────
+  const handleBulkExport = () => {
+    const rows = trainees.filter((t) => selectedIds.has(t.id));
+    const header = ["ID", "First Name", "Last Name", "Email", "Branch", "Attendance %"];
+    const csv = [
+      header.join(","),
+      ...rows.map((t) =>
+        [t.id, t.firstName, t.lastName, t.email, t.branchName, t.attendanceRate].join(",")
+      ),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `trainees-export-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    clearSelection();
+    toast({ title: `Exported ${rows.length} trainee${rows.length === 1 ? "" : "s"}.` });
+  };
+
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleConfirmDelete = async () => {
     if (!deleteTarget) return;
