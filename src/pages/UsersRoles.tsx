@@ -27,7 +27,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { apiFetch, ApiError } from "@/lib/api";
+import { ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { BaseModal } from "@/components/modals/BaseModal";
 import { FormInput } from "@/components/modals/FormInput";
@@ -35,14 +35,13 @@ import { FormMultiSelect, MultiSelectOption } from "@/components/modals/FormMult
 import { FormToggle } from "@/components/modals/FormToggle";
 import { useClientPagination } from "@/hooks/useClientPagination";
 import { BasePagination } from "@/components/BasePagination";
-
-interface AppUser {
-  id: string;
-  userName: string;
-  email: string;
-  roles: string[];
-  isActive: boolean;
-}
+import {
+  getUsers,
+  getRoles,
+  toggleUserActive,
+  createUser,
+  AppUser,
+} from "@/services/auth.services";
 
 export default function UsersRoles() {
   const { toast } = useToast();
@@ -66,7 +65,7 @@ export default function UsersRoles() {
 
   const fetchUsers = useCallback(async () => {
     try {
-      const res = await apiFetch<{ data: AppUser[]; isSuccess: boolean }>("/api/auth/users");
+      const res = await getUsers();
       if (res.isSuccess) setUsers(res.data);
     } catch {
       // silent
@@ -75,7 +74,7 @@ export default function UsersRoles() {
 
   const fetchRoles = useCallback(async () => {
     try {
-      const res = await apiFetch<{ data: string[]; isSuccess: boolean }>("/api/auth/roles");
+      const res = await getRoles();
       if (res.isSuccess) setRolesOptions(res.data.map((r) => ({ value: r, label: r })));
     } catch {
       // silent
@@ -100,7 +99,7 @@ export default function UsersRoles() {
   const handleToggleActive = async (user: AppUser) => {
     setTogglingId(user.id);
     try {
-      await apiFetch(`/api/auth/users/${user.id}/toggle-active`, { method: "POST" });
+      await toggleUserActive(user.id);
       toast({ title: `User ${user.isActive ? "deactivated" : "activated"}` });
       fetchUsers();
     } catch {
@@ -125,15 +124,12 @@ export default function UsersRoles() {
     }
     setLoading(true);
     try {
-      await apiFetch("/api/auth/users/create", {
-        method: "POST",
-        body: JSON.stringify({
-          userName: form.userName,
-          email: form.email,
-          password: form.password,
-          roles: form.roles,
-          isActive: form.isActive,
-        }),
+      await createUser({
+        userName: form.userName,
+        email: form.email,
+        password: form.password,
+        roles: form.roles,
+        isActive: form.isActive,
       });
       toast({ title: "User created successfully" });
       fetchUsers();
