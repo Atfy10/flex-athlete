@@ -41,6 +41,7 @@ import {
 } from "@/types/AttendanceDto";
 import { MarkAttendanceModal } from "@/components/modals/MarkAttendanceModal";
 import { ChevronUp, ChevronDown } from "lucide-react";
+import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 import { SortableTableHead } from "@/components/ui/SortableTableHead";
 import { useSortable } from "@/hooks/useSortable";
 
