@@ -240,6 +240,9 @@ function AppLayoutContent({ children }: AppLayoutProps) {
         {/* Main Content */}
         <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>
+
+      {/* Global Command Palette */}
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   );
 }
