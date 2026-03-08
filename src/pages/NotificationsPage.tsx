@@ -14,12 +14,14 @@ import {
   markNotificationRead,
   markAllNotificationsRead,
 } from "@/services/notifications.service";
+import { useRealtime } from "@/contexts/RealtimeContext";
 import { Bell, CheckCheck, RefreshCw } from "lucide-react";
 
 const PAGE_SIZE = 20;
 
 export default function NotificationsPage() {
   const { toast } = useToast();
+  const { decrementUnread, resetUnread, setUnreadCount: setGlobalUnreadCount } = useRealtime();
 
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
@@ -113,11 +115,16 @@ export default function NotificationsPage() {
   // ── Actions ────────────────────────────────────────────────────────────────
   const handleMarkRead = useCallback(
     async (id: string) => {
+      // Only decrement if the notification was unread
+      const wasUnread = notifications.find((n) => n.id === id)?.isRead === false;
       // Optimistic update
       setNotifications((prev) =>
         prev.map((n) => (n.id === id ? { ...n, isRead: true } : n)),
       );
-      setUnreadCount((c) => Math.max(0, c - 1));
+      if (wasUnread) {
+        setUnreadCount((c) => Math.max(0, c - 1));
+        decrementUnread(); // sync global header badge
+      }
       try {
         await markNotificationRead(id);
       } catch {
@@ -125,11 +132,14 @@ export default function NotificationsPage() {
         setNotifications((prev) =>
           prev.map((n) => (n.id === id ? { ...n, isRead: false } : n)),
         );
-        setUnreadCount((c) => c + 1);
+        if (wasUnread) {
+          setUnreadCount((c) => c + 1);
+          setGlobalUnreadCount(unreadCount + 1);
+        }
         toast({ title: "Failed to mark notification as read.", variant: "destructive" });
       }
     },
-    [toast],
+    [toast, notifications, unreadCount, decrementUnread, setGlobalUnreadCount],
   );
 
   const handleMarkAllRead = useCallback(async () => {
@@ -141,17 +151,19 @@ export default function NotificationsPage() {
     // Optimistic update
     setNotifications((prev) => prev.map((n) => ({ ...n, isRead: true })));
     setUnreadCount(0);
+    resetUnread(); // sync global header badge
     try {
       await markAllNotificationsRead();
     } catch {
       // Rollback
       setNotifications(prevNotifs);
       setUnreadCount(prevCount);
+      setGlobalUnreadCount(prevCount);
       toast({ title: "Failed to mark all as read.", variant: "destructive" });
     } finally {
       setMarking(false);
     }
-  }, [marking, notifications, unreadCount, toast]);
+  }, [marking, notifications, unreadCount, toast, resetUnread, setGlobalUnreadCount]);
 
   const loadMore = () => {
     const nextPage = page + 1;
