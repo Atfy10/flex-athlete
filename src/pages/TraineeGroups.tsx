@@ -2,9 +2,9 @@ import { useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FilterBar } from "@/components/FilterBar";
 import {
   Search, Plus, Users, Calendar, Play, MoreHorizontal,
   Clock, MapPin, Trophy, Eye, AlertCircle, Layers, Shield,
@@ -165,15 +165,12 @@ export default function TraineeGroups() {
       {/* Search */}
       <Card className="card-athletic">
         <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-            <Input
-              placeholder="Search groups by sport, coach, or branch..."
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <FilterBar
+            searchValue={term}
+            onSearchChange={(v) => { setTerm(v); setPage(1); }}
+            searchPlaceholder="Search groups by sport, coach, or branch…"
+            onReset={() => { setTerm(""); setPage(1); }}
+          />
         </CardContent>
       </Card>
 

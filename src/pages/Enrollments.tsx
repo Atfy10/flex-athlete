@@ -2,10 +2,10 @@ import { useState, useEffect, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { FilterBar } from "@/components/FilterBar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -32,7 +32,6 @@ import {
   UserPlus,
   Users,
   Plus,
-  Search,
   Calendar,
   DollarSign,
   CheckCircle,
@@ -171,6 +170,8 @@ const Enrollments = () => {
   const [selectedEnrollment, setSelectedEnrollment] = useState<EnrollmentEditData | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
   const [stats, setStats] = useState<EnrollmentStats>({ total: 0, active: 0, pendingPayment: 0 });
+  const [statusFilter, setStatusFilter] = useState("all");
+  const [paymentFilter, setPaymentFilter] = useState("all");
 
   const {
     items: enrollments,
@@ -208,6 +209,13 @@ const Enrollments = () => {
     refresh?.();
     fetchStats();
   }, [refresh, fetchStats]);
+
+  // Client-side status + payment filter
+  const filteredEnrollments = enrollments.filter((e) => {
+    const matchesStatus = statusFilter === "all" || e.status === statusFilter;
+    const matchesPayment = paymentFilter === "all" || e.paymentStatus === paymentFilter;
+    return matchesStatus && matchesPayment;
+  });
 
   const openEdit = (enrollment: EnrollmentCardDto) => {
     setSelectedEnrollment({
@@ -326,31 +334,56 @@ const Enrollments = () => {
         </Card>
       </div>
 
-      {/* Search */}
+      {/* Search & Filters */}
       <Card className="card-athletic">
         <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search enrollments by trainee name or sport…"
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <FilterBar
+            searchValue={term}
+            onSearchChange={(v) => { setTerm(v); setPage(1); }}
+            searchPlaceholder="Search enrollments by trainee name or sport…"
+            filters={{ status: statusFilter, payment: paymentFilter }}
+            onFilterChange={(key, val) => {
+              if (key === "status") setStatusFilter(val);
+              if (key === "payment") setPaymentFilter(val);
+              setPage(1);
+            }}
+            filterConfigs={[
+              {
+                key: "status",
+                placeholder: "All Statuses",
+                options: [
+                  { value: "Active", label: "Active" },
+                  { value: "Pending", label: "Pending" },
+                  { value: "Suspended", label: "Suspended" },
+                  { value: "Completed", label: "Completed" },
+                ],
+              },
+              {
+                key: "payment",
+                placeholder: "All Payments",
+                options: [
+                  { value: "Paid", label: "Paid" },
+                  { value: "Pending", label: "Pending" },
+                  { value: "Overdue", label: "Overdue" },
+                ],
+              },
+            ]}
+            onReset={() => { setTerm(""); setStatusFilter("all"); setPaymentFilter("all"); setPage(1); }}
+          />
         </CardContent>
       </Card>
 
       {/* List */}
+
       <div className="space-y-4">
         {loading && Array.from({ length: 5 }).map((_, i) => <EnrollmentRowSkeleton key={i} />)}
 
-        {!loading && enrollments.length === 0 && (
+        {!loading && filteredEnrollments.length === 0 && (
           <EnrollmentsEmptyState term={term} onAdd={() => setModalOpen(true)} />
         )}
 
         {!loading &&
-          enrollments.map((enrollment) => {
+          filteredEnrollments.map((enrollment) => {
             const pct = progressPct(enrollment.sessionsCompleted, enrollment.totalSessions);
             const isLoading = actionLoadingId === enrollment.id;
             const isActive = enrollment.status === "Active";

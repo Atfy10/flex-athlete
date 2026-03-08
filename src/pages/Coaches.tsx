@@ -2,17 +2,10 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FilterBar } from "@/components/FilterBar";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -24,7 +17,6 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import {
-  Search,
   Plus,
   MoreHorizontal,
   Phone,
@@ -270,39 +262,30 @@ export default function Coaches() {
           <CardTitle>Search & Filter</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search coaches by name..."
-                value={term}
-                onChange={(e) => { setTerm(e.target.value); setPage(1); }}
-                className="pl-10"
-              />
-            </div>
-            <Select value={sportFilter} onValueChange={(v) => { setSportFilter(v); setPage(1); }}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Filter by Sport" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sports</SelectItem>
-                {sports.map((s) => (
-                  <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-            <Select value={branchFilter} onValueChange={(v) => { setBranchFilter(v); setPage(1); }}>
-              <SelectTrigger className="w-full sm:w-48">
-                <SelectValue placeholder="Filter by Branch" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Branches</SelectItem>
-                {branches.map((b) => (
-                  <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <FilterBar
+            searchValue={term}
+            onSearchChange={(v) => { setTerm(v); setPage(1); }}
+            searchPlaceholder="Search coaches by name…"
+            filters={{ sport: sportFilter, branch: branchFilter }}
+            onFilterChange={(key, val) => {
+              if (key === "sport") setSportFilter(val);
+              if (key === "branch") setBranchFilter(val);
+              setPage(1);
+            }}
+            filterConfigs={[
+              {
+                key: "sport",
+                placeholder: "All Sports",
+                options: sports.map((s) => ({ value: s.name, label: s.name })),
+              },
+              {
+                key: "branch",
+                placeholder: "All Branches",
+                options: branches.map((b) => ({ value: b.name, label: b.name })),
+              },
+            ]}
+            onReset={() => { setTerm(""); setSportFilter("all"); setBranchFilter("all"); setPage(1); }}
+          />
         </CardContent>
       </Card>
 

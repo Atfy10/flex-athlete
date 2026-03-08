@@ -2,14 +2,13 @@ import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FilterBar } from "@/components/FilterBar";
 import {
   MapPin,
   Building,
   Plus,
-  Search,
   Phone,
   Mail,
   Eye,
@@ -131,15 +130,12 @@ const Branches = () => {
       {/* Search */}
       <Card className="card-athletic">
         <CardContent className="p-6">
-          <div className="relative">
-            <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              placeholder="Search branches by name or city…"
-              value={term}
-              onChange={(e) => setTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
+          <FilterBar
+            searchValue={term}
+            onSearchChange={(v) => { setTerm(v); setPage(1); }}
+            searchPlaceholder="Search branches by name or city…"
+            onReset={() => { setTerm(""); setPage(1); }}
+          />
         </CardContent>
       </Card>
 

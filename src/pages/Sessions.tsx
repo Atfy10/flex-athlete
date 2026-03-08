@@ -1,11 +1,10 @@
 import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { FilterBar } from "@/components/FilterBar";
 import {
-  Search,
   Plus,
   Clock,
   MapPin,
@@ -249,47 +248,36 @@ export default function Sessions() {
           <CardTitle>Search & Filter Sessions</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search input — disabled in date mode */}
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search by sport, coach, or branch…"
-                value={term}
+          <FilterBar
+            searchValue={term}
+            onSearchChange={(v) => {
+              setTerm(v);
+              if (useDate) setUseDate(false);
+            }}
+            searchPlaceholder="Search by sport, coach, or branch…"
+            extra={
+              <input
+                type="date"
+                value={selectedDate}
                 onChange={(e) => {
-                  setTerm(e.target.value);
-                  if (useDate) setUseDate(false);
+                  setSelectedDate(e.target.value);
+                  setUseDate(true);
+                  setTerm("");
                 }}
-                className="pl-10"
-                disabled={useDate}
+                className="flex h-10 rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 w-auto"
               />
-            </div>
-
-            {/* Date picker */}
-            <Input
-              type="date"
-              value={selectedDate}
-              onChange={(e) => {
-                setSelectedDate(e.target.value);
-                setUseDate(true);
-                setTerm("");
-              }}
-              className="w-auto"
-            />
-
-            {/* Toggle date filter */}
-            <Button
-              variant={useDate ? "default" : "outline"}
-              onClick={() => {
-                setUseDate((v) => !v);
-                if (!useDate) setTerm("");
-              }}
-              className="flex items-center gap-2 whitespace-nowrap"
-            >
-              <Calendar className="h-4 w-4" />
-              {useDate ? "Clear Date" : "Filter by Date"}
-            </Button>
-          </div>
+            }
+            onReset={() => {
+              setTerm("");
+              setUseDate(false);
+            }}
+            hasActiveFilters={term !== "" || useDate}
+          />
+          {useDate && (
+            <p className="mt-2 text-xs text-muted-foreground">
+              Showing sessions for <span className="font-medium">{selectedDate}</span>. Search is disabled in date mode.
+            </p>
+          )}
         </CardContent>
       </Card>
 

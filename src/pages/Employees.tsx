@@ -2,16 +2,9 @@ import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
+import { FilterBar } from "@/components/FilterBar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -34,7 +27,6 @@ import {
   Users,
   UserCheck,
   Plus,
-  Search,
   Phone,
   Mail,
   Calendar,
@@ -270,38 +262,33 @@ const Employees = () => {
       {/* Search and Filters */}
       <Card className="card-athletic">
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search employees by name or email..."
-                value={term}
-                onChange={(e) => { setTerm(e.target.value); setPage(1); }}
-                className="pl-10"
-              />
-            </div>
-            <Select value={statusFilter} onValueChange={(v) => { setStatusFilter(v); setPage(1); }}>
-              <SelectTrigger className="w-full md:w-44">
-                <SelectValue placeholder="Filter by Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Status</SelectItem>
-                <SelectItem value="active">Active</SelectItem>
-                <SelectItem value="inactive">Inactive</SelectItem>
-              </SelectContent>
-            </Select>
-            <Select value={branchFilter} onValueChange={(v) => { setBranchFilter(v); setPage(1); }}>
-              <SelectTrigger className="w-full md:w-48">
-                <SelectValue placeholder="Filter by Branch" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Branches</SelectItem>
-                {branches.map((b) => (
-                  <SelectItem key={b.id} value={b.name}>{b.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-          </div>
+          <FilterBar
+            searchValue={term}
+            onSearchChange={(v) => { setTerm(v); setPage(1); }}
+            searchPlaceholder="Search employees by name or email…"
+            filters={{ status: statusFilter, branch: branchFilter }}
+            onFilterChange={(key, val) => {
+              if (key === "status") setStatusFilter(val);
+              if (key === "branch") setBranchFilter(val);
+              setPage(1);
+            }}
+            filterConfigs={[
+              {
+                key: "status",
+                placeholder: "All Statuses",
+                options: [
+                  { value: "active", label: "Active" },
+                  { value: "inactive", label: "Inactive" },
+                ],
+              },
+              {
+                key: "branch",
+                placeholder: "All Branches",
+                options: branches.map((b) => ({ value: b.name, label: b.name })),
+              },
+            ]}
+            onReset={() => { setTerm(""); setStatusFilter("all"); setBranchFilter("all"); setPage(1); }}
+          />
         </CardContent>
       </Card>
 
