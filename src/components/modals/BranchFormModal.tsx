@@ -78,6 +78,7 @@ export function BranchFormModal({ open, onOpenChange, onSuccess }: BranchFormMod
         }),
       });
       toast({ title: "Branch created successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
