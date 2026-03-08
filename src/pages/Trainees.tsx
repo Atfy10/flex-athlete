@@ -5,12 +5,15 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { FilterBar } from "@/components/FilterBar";
 import { EmptyState } from "@/components/EmptyState";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 import { SortableTableHead } from "@/components/ui/SortableTableHead";
 import { useSortable } from "@/hooks/useSortable";
+import { useTableSelection } from "@/hooks/useTableSelection";
+import { BulkActionsBar } from "@/components/ui/BulkActionsBar";
 import {
   Plus,
   MoreHorizontal,
@@ -25,6 +28,8 @@ import {
   Star,
   Trash2,
   Pencil,
+  UserX,
+  Download,
 } from "lucide-react";
 import {
   DropdownMenu,
