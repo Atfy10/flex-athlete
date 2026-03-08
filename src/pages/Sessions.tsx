@@ -1,4 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -33,6 +34,7 @@ import {
 } from "@/services/session.services";
 import { SessionCardDto } from "@/types/SessionCardDto";
 import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
+import { MarkAttendanceModal } from "@/components/modals/MarkAttendanceModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function todayIso() {
@@ -155,6 +157,17 @@ export default function Sessions() {
     loadStats();
   }, [refresh, loadStats]);
 
+  // Mark attendance state for sessions page
+  const [markOpen, setMarkOpen] = useState(false);
+  const [markSessionId, setMarkSessionId] = useState<number | undefined>(undefined);
+  const [markSessionLabel, setMarkSessionLabel] = useState<string | undefined>(undefined);
+
+  const openMarkAttendance = useCallback((session: SessionCardDto) => {
+    setMarkSessionId(session.id);
+    setMarkSessionLabel(`${session.sportName} — ${formatTime(session.startTime)}`);
+    setMarkOpen(true);
+  }, []);
+
   const statsValues = [
     totalSessions   != null ? String(totalSessions)   : "—",
     todayGroupCount != null ? String(todayGroupCount) : "—",
@@ -254,7 +267,7 @@ export default function Sessions() {
           </div>
         ) : (
           items.map((session) => (
-            <SessionCard key={session.id} session={session} />
+            <SessionCard key={session.id} session={session} onMarkAttendance={openMarkAttendance} />
           ))
         )}
       </div>
@@ -275,12 +288,26 @@ export default function Sessions() {
         onOpenChange={setModalOpen}
         onSuccess={handleGenerateSuccess}
       />
+      <MarkAttendanceModal
+        open={markOpen}
+        onOpenChange={setMarkOpen}
+        onSuccess={() => { refresh(); loadStats(); }}
+        sessionOccurrenceId={markSessionId}
+        sessionLabel={markSessionLabel}
+      />
     </div>
   );
 }
 
 // ─── Session Card ─────────────────────────────────────────────────────────────
-function SessionCard({ session }: { session: SessionCardDto }) {
+function SessionCard({
+  session,
+  onMarkAttendance,
+}: {
+  session: SessionCardDto;
+  onMarkAttendance?: (session: SessionCardDto) => void;
+}) {
+  const navigate = useNavigate();
   return (
     <Card className="card-athletic flex flex-col">
       <CardHeader className="pb-4">
@@ -304,11 +331,14 @@ function SessionCard({ session }: { session: SessionCardDto }) {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem>View Details</DropdownMenuItem>
-              <DropdownMenuItem>Edit Session</DropdownMenuItem>
-              <DropdownMenuItem>Mark Attendance</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">Cancel Session</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate(`/session-occurrences?date=${new Date().toISOString().split("T")[0]}`)}>
+                View Occurrences
+              </DropdownMenuItem>
+              {onMarkAttendance && (
+                <DropdownMenuItem onClick={() => onMarkAttendance(session)}>
+                  Mark Attendance
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
@@ -342,8 +372,24 @@ function SessionCard({ session }: { session: SessionCardDto }) {
         </div>
 
         <div className="flex gap-2 pt-3 border-t border-border">
-          <Button variant="default" size="sm" className="flex-1">View Details</Button>
-          <Button variant="outline" size="sm" className="flex-1">Attendance</Button>
+          <Button
+            variant="default"
+            size="sm"
+            className="flex-1"
+            onClick={() => navigate(`/session-occurrences?date=${new Date().toISOString().split("T")[0]}`)}
+          >
+            View Occurrences
+          </Button>
+          {onMarkAttendance && (
+            <Button
+              variant="outline"
+              size="sm"
+              className="flex-1"
+              onClick={() => onMarkAttendance(session)}
+            >
+              Attendance
+            </Button>
+          )}
         </div>
       </CardContent>
     </Card>

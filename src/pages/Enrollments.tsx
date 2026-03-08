@@ -18,17 +18,7 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import {
   UserPlus,
   Users,
@@ -108,6 +98,8 @@ const Enrollments = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [selectedEnrollment, setSelectedEnrollment] = useState<EnrollmentEditData | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; traineeName: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [stats, setStats] = useState<EnrollmentStats>({ total: 0, active: 0, pendingPayment: 0 });
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
@@ -208,16 +200,18 @@ const Enrollments = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    setActionLoadingId(id);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
     try {
-      await deleteEnrollment(id);
+      await deleteEnrollment(deleteTarget.id);
       toast({ title: "Enrollment removed." });
       handleRefresh();
     } catch {
       toast({ title: "Failed to remove enrollment.", variant: "destructive" });
     } finally {
-      setActionLoadingId(null);
+      setDeleteLoading(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -483,36 +477,16 @@ const Enrollments = () => {
 
                             <DropdownMenuSeparator />
 
-                            {/* Delete with confirm */}
-                            <AlertDialog>
-                              <AlertDialogTrigger asChild>
-                                <DropdownMenuItem
-                                  onSelect={(e) => e.preventDefault()}
-                                  className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
-                                >
-                                  <Trash2 className="h-3.5 w-3.5" />
-                                  Remove Enrollment
-                                </DropdownMenuItem>
-                              </AlertDialogTrigger>
-                              <AlertDialogContent>
-                                <AlertDialogHeader>
-                                  <AlertDialogTitle>Remove Enrollment?</AlertDialogTitle>
-                                  <AlertDialogDescription>
-                                    This will permanently remove the enrollment for{" "}
-                                    <strong>{enrollment.traineeName}</strong>. This action cannot be undone.
-                                  </AlertDialogDescription>
-                                </AlertDialogHeader>
-                                <AlertDialogFooter>
-                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                  <AlertDialogAction
-                                    onClick={() => handleDelete(enrollment.id)}
-                                    className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                                  >
-                                    Remove
-                                  </AlertDialogAction>
-                                </AlertDialogFooter>
-                              </AlertDialogContent>
-                            </AlertDialog>
+                            <DropdownMenuItem
+                              onSelect={(e) => {
+                                e.preventDefault();
+                                setTimeout(() => setDeleteTarget({ id: enrollment.id, traineeName: enrollment.traineeName }), 0);
+                              }}
+                              className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                            >
+                              <Trash2 className="h-3.5 w-3.5" />
+                              Remove Enrollment
+                            </DropdownMenuItem>
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>
@@ -546,6 +520,17 @@ const Enrollments = () => {
         onOpenChange={setEditOpen}
         enrollment={selectedEnrollment}
         onSuccess={handleRefresh}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Remove Enrollment?"
+        description={`This will permanently remove the enrollment for ${deleteTarget?.traineeName}. This action cannot be undone.`}
+        confirmLabel="Remove"
+        destructive
+        loading={deleteLoading}
+        onConfirm={handleDelete}
       />
     </div>
   );

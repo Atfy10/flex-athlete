@@ -1,10 +1,11 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FilterBar } from "@/components/FilterBar";
+import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import {
   Search, Plus, Users, Calendar, Play, MoreHorizontal,
   Clock, MapPin, Trophy, Eye, AlertCircle, Layers, Shield,
@@ -22,7 +23,6 @@ import {
   deleteTraineeGroup,
 } from "@/services/traineeGroup.services";
 import { ListTraineeGroupDto } from "@/types/listTraineeGroup";
-import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
 
@@ -55,6 +55,8 @@ export default function TraineeGroups() {
   const { toast } = useToast();
   const [createOpen, setCreateOpen] = useState(false);
   const [operateOpen, setOperateOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ListTraineeGroupDto | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const listFn = useCallback(
     (page: number, pageSize: number) => getTraineeGroups(page, pageSize),
@@ -77,13 +79,18 @@ export default function TraineeGroups() {
     refresh,
   } = useEntitySearch<ListTraineeGroupDto>({ listFn, searchFn, pageSize: 9 });
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
     try {
-      await deleteTraineeGroup(id);
+      await deleteTraineeGroup(deleteTarget.id);
       toast({ title: "Group deleted" });
       refresh();
     } catch {
       toast({ title: "Failed to delete group", variant: "destructive" });
+    } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
     }
   };
 
@@ -232,7 +239,7 @@ export default function TraineeGroups() {
                       <DropdownMenuItem
                         className="text-destructive"
                         onClick={() =>
-                          setTimeout(() => handleDelete(group.id), 100)
+                          setTimeout(() => setDeleteTarget(group), 0)
                         }
                       >
                         Delete
@@ -314,6 +321,16 @@ export default function TraineeGroups() {
         open={operateOpen}
         onOpenChange={setOperateOpen}
         onSuccess={refresh}
+      />
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Group"
+        description={`Are you sure you want to delete the ${deleteTarget?.sportName} group? This action cannot be undone.`}
+        confirmLabel="Delete"
+        destructive
+        loading={deleteLoading}
+        onConfirm={handleDelete}
       />
     </div>
   );

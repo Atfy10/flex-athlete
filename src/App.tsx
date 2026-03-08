@@ -30,8 +30,8 @@ import Profiles from "./pages/Profiles";
 import UsersRoles from "./pages/UsersRoles";
 import Login from "./pages/Login";
 import Register from "./pages/Register";
+import Sessions from "./pages/Sessions";
 import NotFound from "./pages/NotFound";
-
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -77,6 +77,7 @@ const App = () => (
                       />
                       <Route path="/branches" element={<Branches />} />
                       <Route path="/sports" element={<Sports />} />
+                      <Route path="/sessions" element={<Sessions />} />
                       <Route path="/enrollments" element={<Enrollments />} />
                       <Route path="/attendance" element={<Attendance />} />
                       <Route path="/profiles" element={<Profiles />} />

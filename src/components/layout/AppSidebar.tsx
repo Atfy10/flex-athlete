@@ -9,6 +9,7 @@ import {
   MapPin,
   Trophy,
   Calendar,
+  Layers,
   UserPlus,
   ClipboardCheck,
   User,
@@ -47,6 +48,7 @@ const managementItems = [
 
 const operationsItems = [
   { title: "Trainee Groups", url: "/trainee-groups", icon: Users },
+  { title: "Sessions", url: "/sessions", icon: Layers },
   { title: "Session Occurrences", url: "/session-occurrences", icon: Calendar },
   { title: "Enrollments", url: "/enrollments", icon: UserPlus },
   { title: "Attendance", url: "/attendance", icon: ClipboardCheck },
