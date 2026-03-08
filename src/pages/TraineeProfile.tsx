@@ -8,6 +8,7 @@ import {
 } from "@/components/profile/ProfileViewLayout";
 import { TraineeEditModal } from "@/components/modals/TraineeEditModal";
 import { useToast } from "@/hooks/use-toast";
+import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Mail,

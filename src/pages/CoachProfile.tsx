@@ -27,16 +27,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
 import { getCoachById, deleteCoach } from "@/services/coaches.service";
 import { CoachDetailsDto } from "@/types/CoachDetailDto";
@@ -253,8 +244,11 @@ export default function CoachProfile() {
                     </DropdownMenuItem>
                     <DropdownMenuSeparator />
                     <DropdownMenuItem
-                      className="text-destructive"
-                      onClick={() => setDeleteOpen(true)}
+                      className="text-destructive focus:text-destructive focus:bg-destructive/10"
+                      onSelect={(e) => {
+                        e.preventDefault();
+                        setTimeout(() => setDeleteOpen(true), 0);
+                      }}
                     >
                       <Trash2 className="h-4 w-4 mr-2" />
                       Remove Coach
@@ -397,26 +391,16 @@ export default function CoachProfile() {
       />
 
       {/* ── Delete Confirm ───────────────────────────────────── */}
-      <AlertDialog open={deleteOpen} onOpenChange={setDeleteOpen}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Coach</AlertDialogTitle>
-            <AlertDialogDescription>
-              Are you sure you want to remove {coach.firstName} {coach.lastName} as a coach? This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleDelete}
-              disabled={deleting}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleting ? "Removing..." : "Remove"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+      <ConfirmDialog
+        open={deleteOpen}
+        onOpenChange={setDeleteOpen}
+        title="Remove Coach"
+        description={`Are you sure you want to remove ${coach.firstName} ${coach.lastName} as a coach? This action cannot be undone.`}
+        confirmLabel="Remove"
+        destructive
+        loading={deleting}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }

@@ -1,4 +1,4 @@
-import { ReactNode } from "react";
+import { ReactNode, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -13,17 +13,7 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
+import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { ArrowLeft, MoreHorizontal, Pencil, Trash2, ToggleLeft } from "lucide-react";
 
 export interface ProfileField {
@@ -112,6 +102,8 @@ export function ProfileViewLayout({
   dropdownExtra = [],
 }: ProfileViewLayoutProps) {
   const navigate = useNavigate();
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const getInitials = (name: string) =>
     name
@@ -120,6 +112,17 @@ export function ProfileViewLayout({
       .join("")
       .toUpperCase()
       .slice(0, 2);
+
+  const handleConfirmDelete = async () => {
+    if (!onDelete) return;
+    setDeleteLoading(true);
+    try {
+      await onDelete();
+    } finally {
+      setDeleteLoading(false);
+      setDeleteOpen(false);
+    }
+  };
 
   if (loading) return <ProfileSkeleton />;
 
@@ -225,35 +228,16 @@ export function ProfileViewLayout({
                   {onDelete && (
                     <>
                       <DropdownMenuSeparator />
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <DropdownMenuItem
-                            onSelect={(e) => e.preventDefault()}
-                            className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
-                          >
-                            <Trash2 className="h-3.5 w-3.5" />
-                            Delete
-                          </DropdownMenuItem>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>Delete {roleBadge}?</AlertDialogTitle>
-                            <AlertDialogDescription>
-                              This will permanently delete <strong>{fullName}</strong>. This action
-                              cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>Cancel</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={onDelete}
-                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-                            >
-                              Delete
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
+                      <DropdownMenuItem
+                        onSelect={(e) => {
+                          e.preventDefault();
+                          setTimeout(() => setDeleteOpen(true), 0);
+                        }}
+                        className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                        Delete
+                      </DropdownMenuItem>
                     </>
                   )}
                 </DropdownMenuContent>
@@ -305,6 +289,20 @@ export function ProfileViewLayout({
 
       {/* Injected edit modal */}
       {editModal}
+
+      {/* Centralized delete confirm */}
+      {onDelete && (
+        <ConfirmDialog
+          open={deleteOpen}
+          onOpenChange={setDeleteOpen}
+          title={`Delete ${roleBadge}?`}
+          description={`This will permanently delete ${fullName}. This action cannot be undone.`}
+          confirmLabel="Delete"
+          destructive
+          loading={deleteLoading}
+          onConfirm={handleConfirmDelete}
+        />
+      )}
     </div>
   );
 }
