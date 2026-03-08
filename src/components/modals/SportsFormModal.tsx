@@ -6,6 +6,7 @@ import { FormSelect } from "./FormSelect";
 import { FormToggle } from "./FormToggle";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useFormDirty } from "@/hooks/useFormDirty";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
 const sportSchema = z.object({
