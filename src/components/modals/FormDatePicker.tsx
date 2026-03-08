@@ -47,7 +47,7 @@ export function FormDatePicker({
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </Label>
-      <Popover open={open} onOpenChange={setOpen} modal={false}>
+      <Popover open={open} onOpenChange={setOpen} modal={true}>
         <PopoverTrigger asChild>
           <Button
             id={id}
