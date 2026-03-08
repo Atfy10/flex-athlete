@@ -720,6 +720,32 @@ export default function Trainees() {
         loading={deleteLoading}
         onConfirm={handleConfirmDelete}
       />
+
+      {/* ── Bulk Actions Bar ──────────────────────────────────────────────── */}
+      <BulkActionsBar
+        selectedCount={selectedCount}
+        onClear={clearSelection}
+        actions={[
+          {
+            label: "Export CSV",
+            icon: <Download className="h-3.5 w-3.5" />,
+            onClick: handleBulkExport,
+            variant: "outline",
+          },
+          {
+            label: `Deactivate ${selectedCount > 1 ? `(${selectedCount})` : ""}`.trim(),
+            icon: <UserX className="h-3.5 w-3.5" />,
+            onClick: () => {
+              toast({
+                title: `${selectedCount} trainee${selectedCount === 1 ? "" : "s"} flagged for deactivation.`,
+                description: "Connect to your backend to apply bulk status changes.",
+              });
+              clearSelection();
+            },
+            variant: "destructive",
+          },
+        ]}
+      />
     </div>
   );
 }
