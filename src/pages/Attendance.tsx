@@ -346,7 +346,10 @@ function StatSkeleton() {
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const Attendance = () => {
   const [selectedDate, setSelectedDate] = useState(todayIso());
+  const [calendarOpen, setCalendarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
+  const [markOpen, setMarkOpen] = useState(false);
+  const [markSession, setMarkSession] = useState<SessionOccurrenceDto | null>(null);
 
   // Sessions for selected date
   const [sessions, setSessions]       = useState<SessionOccurrenceDto[]>([]);
