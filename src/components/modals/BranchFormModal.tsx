@@ -90,7 +90,7 @@ export function BranchFormModal({ open, onOpenChange, onSuccess }: BranchFormMod
   };
 
   return (
-    <BaseModal open={open} onOpenChange={onOpenChange} title="Add Branch" description="Add a new academy branch" onSubmit={handleSubmit} loading={loading} errors={errors}>
+    <BaseModal open={open} onOpenChange={onOpenChange} title="Add Branch" description="Add a new academy branch" onSubmit={handleSubmit} loading={loading} errors={errors} isDirty={isDirty}>
       <FormInput id="name" label="Name" value={form.name} onChange={set("name")} required error={fieldErrors.name} />
       <div className="grid grid-cols-2 gap-3">
         <FormInput id="city" label="City" value={form.city} onChange={set("city")} required error={fieldErrors.city} />
