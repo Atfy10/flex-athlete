@@ -45,6 +45,8 @@ import {
 import { getTRaineesCountForSpecificDay } from "@/services/trainee.service";
 import { getTraineeGroupsForSpecificDay } from "@/services/traineeGroup.services";
 import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
+import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+import { getNotifications, NotificationDto } from "@/services/notifications.service";
 
 // ─── Static meta ──────────────────────────────────────────────────────────────
 const STATS_META = [
