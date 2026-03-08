@@ -490,33 +490,16 @@ export default function Trainees() {
       />
 
       {/* Delete confirm dialog */}
-      <AlertDialog
+      <ConfirmDialog
         open={!!deleteTarget}
         onOpenChange={(v) => { if (!v) setDeleteTarget(null); }}
-      >
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>Remove Trainee?</AlertDialogTitle>
-            <AlertDialogDescription>
-              This will permanently remove{" "}
-              <strong>
-                {deleteTarget?.firstName} {deleteTarget?.lastName}
-              </strong>{" "}
-              from the system. This action cannot be undone.
-            </AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel disabled={deleteLoading}>Cancel</AlertDialogCancel>
-            <AlertDialogAction
-              onClick={handleConfirmDelete}
-              disabled={deleteLoading}
-              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
-            >
-              {deleteLoading ? "Removing…" : "Remove"}
-            </AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
+        title="Remove Trainee?"
+        description={`This will permanently remove ${deleteTarget?.firstName} ${deleteTarget?.lastName} from the system. This action cannot be undone.`}
+        confirmLabel="Remove"
+        destructive
+        loading={deleteLoading}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
 }
