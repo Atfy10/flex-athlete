@@ -564,9 +564,11 @@ export default function Trainees() {
                             <Users className="h-3 w-3 text-muted-foreground" />
                             <span>{trainee.coachName}</span>
                           </div>
-                          <div className="flex items-center gap-1 text-sm">
-                            <Calendar className="h-3 w-3 text-muted-foreground" />
-                            <span>Att: {trainee.attendanceRate}%</span>
+                          <div className="flex items-center gap-1.5 text-sm">
+                            <TrendingUp className={`h-3 w-3 ${getAttendanceColor(trainee.attendanceRate).text}`} />
+                            <span className={`font-medium ${getAttendanceColor(trainee.attendanceRate).text}`}>
+                              {trainee.attendanceRate}%
+                            </span>
                           </div>
                         </div>
                         {trainee.medicalConditions && trainee.medicalConditions.length > 0 && (
