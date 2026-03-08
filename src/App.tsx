@@ -77,6 +77,7 @@ const App = () => (
                       />
                       <Route path="/branches" element={<Branches />} />
                       <Route path="/sports" element={<Sports />} />
+                      <Route path="/sessions" element={<Sessions />} />
                       <Route path="/enrollments" element={<Enrollments />} />
                       <Route path="/attendance" element={<Attendance />} />
                       <Route path="/profiles" element={<Profiles />} />
