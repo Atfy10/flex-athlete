@@ -15,7 +15,7 @@
  * ⚠️  NEVER import this module in production-only code paths.
  */
 
-export const DEV_EMAIL = "admin@aura.com" as const;
+export const DEV_EMAIL = "developer@aura.com" as const;
 
 /** localStorage key that stores the mock session flag */
 export const DEV_SESSION_KEY = "__dev_session__" as const;
