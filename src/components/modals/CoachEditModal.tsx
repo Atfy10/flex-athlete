@@ -22,6 +22,7 @@ interface CoachEditModalProps {
 
 export function CoachEditModal({ open, onOpenChange, onSuccess, coach }: CoachEditModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [sports, setSports] = useState<SelectOption[]>([]);
@@ -30,6 +31,7 @@ export function CoachEditModal({ open, onOpenChange, onSuccess, coach }: CoachEd
 
   useEffect(() => {
     if (!open || !coach) return;
+    resetDirty();
     setErrors([]);
     setForm({ sportId: "", skillLevel: coach.skillLevel ?? "" });
     apiFetch<{ data: { id: number; name: string }[]; isSuccess: boolean }>("/api/Sports/get-all")
