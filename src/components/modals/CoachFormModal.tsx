@@ -34,6 +34,7 @@ export function CoachFormModal({
   onSuccess,
 }: CoachFormModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
@@ -46,6 +47,7 @@ export function CoachFormModal({
 
   useEffect(() => {
     if (!open) return;
+    resetDirty();
     setErrors([]);
     setSelectedEmployee(null);
     setSelectedSport(null);
