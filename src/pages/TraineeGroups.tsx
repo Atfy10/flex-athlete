@@ -79,13 +79,18 @@ export default function TraineeGroups() {
     refresh,
   } = useEntitySearch<ListTraineeGroupDto>({ listFn, searchFn, pageSize: 9 });
 
-  const handleDelete = async (id: number) => {
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
     try {
-      await deleteTraineeGroup(id);
+      await deleteTraineeGroup(deleteTarget.id);
       toast({ title: "Group deleted" });
       refresh();
     } catch {
       toast({ title: "Failed to delete group", variant: "destructive" });
+    } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
     }
   };
 
