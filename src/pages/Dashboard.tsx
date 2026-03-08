@@ -45,6 +45,8 @@ import {
 import { getTRaineesCountForSpecificDay } from "@/services/trainee.service";
 import { getTraineeGroupsForSpecificDay } from "@/services/traineeGroup.services";
 import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
+import { ActivityFeed } from "@/components/dashboard/ActivityFeed";
+import { getNotifications, NotificationDto } from "@/services/notifications.service";
 
 // ─── Static meta ──────────────────────────────────────────────────────────────
 const STATS_META = [
@@ -91,6 +93,10 @@ export default function Dashboard() {
 
   // Sessions list
   const [sessions, setSessions] = useState<SessionVm[]>([]);
+
+  // Activity feed
+  const [activityItems,   setActivityItems]   = useState<NotificationDto[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
 
   // Sport enrollments chart
   const [enrollmentData,  setEnrollmentData]  = useState<{ sport: string; enrolled: number }[]>([]);
@@ -169,6 +175,14 @@ export default function Dashboard() {
 
     load();
     loadAttendanceChart(0);
+
+    // ── Activity feed — load latest notifications ──────────────────────────
+    getNotifications(1, 10)
+      .then((res) => {
+        if (res.isSuccess) setActivityItems(res.data.items);
+      })
+      .catch(() => {})
+      .finally(() => setActivityLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
@@ -457,6 +471,28 @@ export default function Dashboard() {
         onOpenChange={setOperateOpen}
         onSuccess={() => setOperateOpen(false)}
       />
+
+      {/* ── Recent Activity ──────────────────────────────────────────────── */}
+      <Card className="card-athletic">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Activity className="h-5 w-5 text-primary" />
+              Recent Activity
+            </div>
+            <Button
+              variant="ghost"
+              size="sm"
+              onClick={() => navigate("/notifications")}
+            >
+              View All
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ActivityFeed items={activityItems} loading={activityLoading} limit={10} />
+        </CardContent>
+      </Card>
     </div>
   );
 }
