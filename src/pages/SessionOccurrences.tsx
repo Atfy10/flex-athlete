@@ -246,8 +246,8 @@ export default function SessionOccurrences() {
 
   const sortedItems = sort
     ? [...items].sort((a, b) => {
-        const av = (a as Record<string, unknown>)[sort.key] ?? "";
-        const bv = (b as Record<string, unknown>)[sort.key] ?? "";
+        const av = (a as unknown as Record<string, unknown>)[sort.key] ?? "";
+        const bv = (b as unknown as Record<string, unknown>)[sort.key] ?? "";
         const cmp = typeof av === "number" && typeof bv === "number"
           ? av - bv : String(av).localeCompare(String(bv));
         return sort.dir === "asc" ? cmp : -cmp;

@@ -129,8 +129,8 @@ const Enrollments = () => {
 
   const sortedEnrollments = sort
     ? [...filteredEnrollments].sort((a, b) => {
-        const av = (a as Record<string, unknown>)[sort.key] ?? "";
-        const bv = (b as Record<string, unknown>)[sort.key] ?? "";
+        const av = (a as unknown as Record<string, unknown>)[sort.key] ?? "";
+        const bv = (b as unknown as Record<string, unknown>)[sort.key] ?? "";
         const cmp = String(av).localeCompare(String(bv));
         return sort.dir === "asc" ? cmp : -cmp;
       })
