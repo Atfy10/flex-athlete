@@ -31,6 +31,7 @@ interface EmployeeEditModalProps {
 
 export function EmployeeEditModal({ open, onOpenChange, onSuccess, employee }: EmployeeEditModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [branches, setBranches] = useState<SelectOption[]>([]);
@@ -48,6 +49,7 @@ export function EmployeeEditModal({ open, onOpenChange, onSuccess, employee }: E
 
   useEffect(() => {
     if (!open || !employee) return;
+    resetDirty();
     setErrors([]);
     setForm({
       phoneNumber: employee.phoneNumber ?? "",
