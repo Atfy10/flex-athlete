@@ -175,6 +175,14 @@ export default function Dashboard() {
 
     load();
     loadAttendanceChart(0);
+
+    // ── Activity feed — load latest notifications ──────────────────────────
+    getNotifications(1, 10)
+      .then((res) => {
+        if (res.isSuccess) setActivityItems(res.data.items);
+      })
+      .catch(() => {})
+      .finally(() => setActivityLoading(false));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
