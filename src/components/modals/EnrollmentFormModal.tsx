@@ -62,6 +62,7 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
 
   useEffect(() => {
     if (!open) return;
+    resetDirty();
     setApiErrors([]);
     setFieldErrors({});
     setForm({
