@@ -1,10 +1,11 @@
-import { useCallback } from "react";
+import { useCallback, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FilterBar } from "@/components/FilterBar";
+import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import {
   Search, Plus, Users, Calendar, Play, MoreHorizontal,
   Clock, MapPin, Trophy, Eye, AlertCircle, Layers, Shield,
