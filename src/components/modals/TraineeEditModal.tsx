@@ -124,6 +124,7 @@ export function TraineeEditModal({
       }
 
       toast({ title: "Trainee updated successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
