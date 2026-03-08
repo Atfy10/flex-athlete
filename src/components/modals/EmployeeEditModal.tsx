@@ -70,8 +70,10 @@ export function EmployeeEditModal({ open, onOpenChange, onSuccess, employee }: E
       .catch(() => {});
   }, [open, employee]);
 
-  const set = (key: keyof typeof form) => (val: string) =>
+  const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
