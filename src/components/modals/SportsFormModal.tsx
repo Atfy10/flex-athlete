@@ -102,6 +102,7 @@ export function SportsFormModal({ open, onOpenChange, onSuccess }: SportsFormMod
       title="Add Sport"
       description="Create a new sport discipline. Fields marked with * are required."
       onSubmit={handleSubmit} loading={loading} errors={apiErrors}
+      isDirty={isDirty}
     >
       <FormInput
         id="name" label="Sport Name"
