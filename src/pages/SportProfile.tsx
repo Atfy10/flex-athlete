@@ -176,6 +176,10 @@ export default function SportProfile() {
         }
         sections={sections}
         backPath="/sports"
+        breadcrumb={[
+          { label: "Sports", href: "/sports" },
+          { label: sport?.name ?? "Sport" },
+        ]}
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
         extraActions={undefined}

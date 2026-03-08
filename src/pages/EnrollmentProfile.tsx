@@ -279,6 +279,10 @@ export default function EnrollmentProfile() {
         }
         sections={sections}
         backPath="/enrollments"
+        breadcrumb={[
+          { label: "Enrollments", href: "/enrollments" },
+          { label: enrollment?.traineeName ?? `Enrollment #${id}` },
+        ]}
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
         onToggleActive={isActive ? handleSuspend : handleActivate}
