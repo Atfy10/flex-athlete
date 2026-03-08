@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { BaseModal } from "./BaseModal";
 import { FormInput } from "./FormInput";
-import { FormSelect, SelectOption } from "./FormSelect";
+import { FormSelect } from "./FormSelect";
 import { FormMultiSelect, MultiSelectOption } from "./FormMultiSelect";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
@@ -9,6 +9,7 @@ import { getBranches } from "@/services/branch.services";
 import { getSports } from "@/services/sport.services";
 import { updateTrainee } from "@/services/trainee.service";
 import { UpdateTraineeCommand } from "@/types/commands/updateTraineeCommand";
+import { useFormDirty } from "@/hooks/useFormDirty";
 
 interface TraineeEditData {
   id: number;
