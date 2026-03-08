@@ -331,11 +331,14 @@ function SessionCard({
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuLabel>Actions</DropdownMenuLabel>
-              <DropdownMenuItem>View Details</DropdownMenuItem>
-              <DropdownMenuItem>Edit Session</DropdownMenuItem>
-              <DropdownMenuItem>Mark Attendance</DropdownMenuItem>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem className="text-destructive">Cancel Session</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => navigate(`/session-occurrences?date=${new Date().toISOString().split("T")[0]}`)}>
+                View Occurrences
+              </DropdownMenuItem>
+              {onMarkAttendance && (
+                <DropdownMenuItem onClick={() => onMarkAttendance(session)}>
+                  Mark Attendance
+                </DropdownMenuItem>
+              )}
             </DropdownMenuContent>
           </DropdownMenu>
         </div>
