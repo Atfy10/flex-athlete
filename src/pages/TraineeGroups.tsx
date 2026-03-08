@@ -338,25 +338,15 @@ export default function TraineeGroups() {
                       <Badge variant="outline">{group.traineesCount ?? 0}</Badge>
                     </TableCell>
                     <TableCell onClick={(e) => e.stopPropagation()}>
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <Button variant="ghost" size="icon" className="h-8 w-8">
-                            <MoreHorizontal className="h-4 w-4" />
-                          </Button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => navigate(`/trainee-groups/${group.id}`)}>
-                            View Details
-                          </DropdownMenuItem>
-                          <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            className="text-destructive"
-                            onClick={() => setTimeout(() => setDeleteTarget(group), 0)}
-                          >
-                            Delete
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
+                      <RowActions viewHref={`/trainee-groups/${group.id}`}>
+                        <DropdownMenuSeparator />
+                        <DropdownMenuItem
+                          className="text-destructive focus:text-destructive"
+                          onClick={() => setTimeout(() => setDeleteTarget(group), 0)}
+                        >
+                          Delete
+                        </DropdownMenuItem>
+                      </RowActions>
                     </TableCell>
                   </TableRow>
                 ))}
