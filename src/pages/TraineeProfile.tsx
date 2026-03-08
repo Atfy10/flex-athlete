@@ -31,6 +31,8 @@ export default function TraineeProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [deleteOpen, setDeleteOpen] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const fetchTrainee = async () => {
     if (!id) return;
@@ -57,12 +59,16 @@ export default function TraineeProfile() {
   }, [id]);
 
   const handleDelete = async () => {
+    setDeleting(true);
     try {
       await deleteTrainee(trainee!.id);
       toast({ title: "Trainee removed successfully." });
       navigate("/trainees");
     } catch {
       toast({ title: "Failed to delete trainee.", variant: "destructive" });
+    } finally {
+      setDeleting(false);
+      setDeleteOpen(false);
     }
   };
 
