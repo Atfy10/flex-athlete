@@ -67,7 +67,6 @@ interface TraineesStats {
 }
 
 type SortKey = "name" | "branch" | "attendance" | "joined";
-type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 6;
 
