@@ -34,13 +34,6 @@ import { useSortable } from "@/hooks/useSortable";
 
 type SortKey = keyof Pick<ListTraineeGroupDto, "sportName" | "coachName" | "branchName" | "durationInMinutes" | "traineesCount" | "startTime">;
 
-function SortIcon({ col, sort }: { col: SortKey; sort: { key: SortKey; dir: "asc" | "desc" } | null }) {
-  if (sort?.key !== col) return <ChevronUp className="h-3 w-3 opacity-20" />;
-  return sort.dir === "asc"
-    ? <ChevronUp className="h-3 w-3 text-primary" />
-    : <ChevronDown className="h-3 w-3 text-primary" />;
-}
-
 function GroupCardSkeleton() {
   return (
     <Card className="card-athletic">

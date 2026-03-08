@@ -232,15 +232,7 @@ export default function Coaches() {
   const hasFilters = term !== "" || sportFilter !== "all" || branchFilter !== "all";
 
   const SortTH = ({ col, label }: { col: SortKey; label: string }) => (
-    <TableHead
-      className="cursor-pointer select-none whitespace-nowrap group"
-      onClick={() => handleSort(col)}
-    >
-      <span className="inline-flex items-center gap-0.5 group-hover:text-foreground transition-colors">
-        {label}
-        <SortIcon col={col} sortKey={sortKey} sortDir={sortDir} />
-      </span>
-    </TableHead>
+    <SortableTableHead col={col} label={label} sort={sort} onSort={handleSort} />
   );
 
   return (

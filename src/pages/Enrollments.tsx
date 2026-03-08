@@ -48,11 +48,6 @@ interface EnrollmentStats { total: number; active: number; pendingPayment: numbe
 
 type SortKey = "traineeName" | "sport" | "branch" | "status" | "paymentStatus" | "enrollmentDate";
 
-function SortIcon({ col, sort }: { col: SortKey; sort: { key: SortKey; dir: "asc" | "desc" } | null }) {
-  if (sort?.key !== col) return <ChevronUp className="h-3 w-3 opacity-20" />;
-  return sort.dir === "asc" ? <ChevronUp className="h-3 w-3 text-primary" /> : <ChevronDown className="h-3 w-3 text-primary" />;
-}
-
 const getStatusColor = (status: string) => {
   switch (status) {
     case "Active": return "bg-success text-success-foreground";

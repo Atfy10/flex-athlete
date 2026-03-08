@@ -52,11 +52,6 @@ function attendanceRate(present: number, late: number, total: number) {
 
 type SortKey = "sportName" | "coachName" | "branchName" | "date" | "startTime" | "durationInMinutes" | "totalEnrolled";
 
-function SortIcon({ col, sort }: { col: SortKey; sort: { key: SortKey; dir: "asc" | "desc" } | null }) {
-  if (sort?.key !== col) return <ChevronUp className="h-3 w-3 opacity-20" />;
-  return sort.dir === "asc" ? <ChevronUp className="h-3 w-3 text-primary" /> : <ChevronDown className="h-3 w-3 text-primary" />;
-}
-
 // ─── Card Skeleton ─────────────────────────────────────────────────────────────
 function OccurrenceCardSkeleton() {
   return (
