@@ -1,15 +1,15 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiFetch, ApiError } from "@/lib/api";
-import { ApiResult } from "@/types/api";
+import { ApiError } from "@/lib/api";
 import { EmployeeCardDto } from "@/types/EmployeeCardDto";
 import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
 import { EmployeeEditModal } from "@/components/modals/EmployeeEditModal";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import {
-  Mail, Phone, MapPin, Calendar, Briefcase, DollarSign, CreditCard, Globe, Building2
+  Mail, Phone, MapPin, Calendar, Briefcase, Building2
 } from "lucide-react";
+import { getEmployeeById, deleteEmployee } from "@/services/employees.service";
 
 export default function EmployeeProfile() {
   const { id } = useParams<{ id: string }>();
@@ -26,7 +26,7 @@ export default function EmployeeProfile() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch<ApiResult<EmployeeCardDto>>(`/api/employee/${id}`);
+      const res = await getEmployeeById(id);
       if (res.isSuccess && res.data) {
         setEmployee(res.data);
       } else {
@@ -45,7 +45,7 @@ export default function EmployeeProfile() {
 
   const handleDelete = async () => {
     try {
-      await apiFetch(`/api/employee/${id}`, { method: "DELETE" });
+      await deleteEmployee(id!);
       toast({ title: "Employee deleted successfully." });
       navigate("/employees");
     } catch {

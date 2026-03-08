@@ -1,23 +1,14 @@
 import { useEffect, useState } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { apiFetch, ApiError } from "@/lib/api";
-import { ApiResult } from "@/types/api";
+import { ApiError } from "@/lib/api";
 import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
 import { useToast } from "@/hooks/use-toast";
 import { BaseModal } from "@/components/modals/BaseModal";
 import { FormInput } from "@/components/modals/FormInput";
 import { Badge } from "@/components/ui/badge";
 import { Mail, Phone, Shield, User, Calendar } from "lucide-react";
-
-interface MyProfileDto {
-  id: string;
-  userName: string;
-  email: string;
-  phoneNumber?: string;
-  roles?: string[];
-  createdAt?: string;
-}
+import { getMyProfile, changePassword, MyProfileDto } from "@/services/auth.services";
 
 export default function MyProfile() {
   const { token } = useAuth();
@@ -54,9 +45,10 @@ export default function MyProfile() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch<ApiResult<MyProfileDto>>("/api/user/me");
+      const res = await getMyProfile();
       if (res.isSuccess && res.data) {
         setProfile(res.data);
+        setLoading(false);
         return;
       }
     } catch {
@@ -107,13 +99,7 @@ export default function MyProfile() {
     }
     setPwLoading(true);
     try {
-      await apiFetch("/api/auth/change-password", {
-        method: "POST",
-        body: JSON.stringify({
-          currentPassword: pwForm.currentPassword,
-          newPassword: pwForm.newPassword,
-        }),
-      });
+      await changePassword(pwForm.currentPassword, pwForm.newPassword);
       toast({ title: "Password changed successfully." });
       setPwOpen(false);
       setPwForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
@@ -176,14 +162,6 @@ export default function MyProfile() {
           : []),
       ]
     : [];
-
-  const getInitials = (name: string) =>
-    name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase()
-      .slice(0, 2);
 
   return (
     <>

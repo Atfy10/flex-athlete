@@ -1,12 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { apiFetch, ApiError } from "@/lib/api";
-import { ApiResult } from "@/types/api";
+import { ApiError } from "@/lib/api";
 import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { TraineeGroupFormModal } from "@/components/modals/TraineeGroupFormModal";
 import { useEffect, useState } from "react";
 import { Users, MapPin, Trophy, Clock, Calendar, Layers } from "lucide-react";
+import { getTraineeGroupById, deleteTraineeGroup } from "@/services/traineeGroup.services";
 
 interface GroupScheduleDto {
   id: number;
@@ -49,7 +49,7 @@ export default function TraineeGroupProfile() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch<ApiResult<TraineeGroupDetailDto>>(`/api/trainee-group/${id}`);
+      const res = await getTraineeGroupById(id) as { isSuccess: boolean; data: TraineeGroupDetailDto; message: string };
       if (res.isSuccess && res.data) {
         setGroup(res.data);
       } else {
@@ -68,7 +68,7 @@ export default function TraineeGroupProfile() {
 
   const handleDelete = async () => {
     try {
-      await apiFetch(`/api/trainee-group/${id}`, { method: "DELETE" });
+      await deleteTraineeGroup(id!);
       toast({ title: "Group deleted successfully." });
       navigate("/trainee-groups");
     } catch {

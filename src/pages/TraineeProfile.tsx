@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
-import { apiFetch, ApiError } from "@/lib/api";
+import { ApiError } from "@/lib/api";
 import { ApiResult } from "@/types/api";
 import {
   ProfileViewLayout,
@@ -19,7 +19,7 @@ import {
   TrendingUp,
 } from "lucide-react";
 import { TraineeDetailsDto } from "@/types/TraineeDetailsDto";
-import { deleteTrainee } from "@/services/trainee.service";
+import { getTraineeById, deleteTrainee } from "@/services/trainee.service";
 
 export default function TraineeProfile() {
   const { id } = useParams<{ id: string }>();
@@ -36,9 +36,7 @@ export default function TraineeProfile() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch<ApiResult<TraineeDetailsDto>>(
-        `/api/trainee/${id}`,
-      );
+      const res = await getTraineeById(id);
       if (res.isSuccess && res.data) {
         setTrainee(res.data);
       } else {
@@ -59,7 +57,7 @@ export default function TraineeProfile() {
 
   const handleDelete = async () => {
     try {
-      const result = await deleteTrainee(trainee!.id);
+      await deleteTrainee(trainee!.id);
       toast({ title: "Trainee removed successfully." });
       navigate("/trainees");
     } catch {

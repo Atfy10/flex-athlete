@@ -38,8 +38,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useToast } from "@/hooks/use-toast";
-import { getCoachById } from "@/services/coaches.service";
-import { apiFetch } from "@/lib/api";
+import { getCoachById, deleteCoach } from "@/services/coaches.service";
 import { CoachDetailsDto } from "@/types/CoachDetailDto";
 import { CoachEditModal } from "@/components/modals/CoachEditModal";
 
@@ -156,7 +155,7 @@ export default function CoachProfile() {
   const handleDelete = async () => {
     setDeleting(true);
     try {
-      await apiFetch(`/api/coaches/${id}`, { method: "DELETE" });
+      await deleteCoach(Number(id));
       toast({ title: "Coach removed successfully." });
       navigate("/coaches");
     } catch {
