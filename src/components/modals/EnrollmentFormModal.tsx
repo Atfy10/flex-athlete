@@ -261,6 +261,8 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
             setFieldErrors((fe) => ({ ...fe, expiryDate: undefined }));
           }}
           required error={fieldErrors.expiryDate}
+          minDate={new Date(new Date().setHours(0, 0, 0, 0) + 86400000)}
+          maxDate={new Date(new Date().getFullYear() + 10, 11, 31)}
         />
       </div>
 
