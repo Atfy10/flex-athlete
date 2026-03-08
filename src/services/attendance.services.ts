@@ -7,6 +7,43 @@ import {
   SessionOccurrenceDto,
 } from "@/types/AttendanceDto";
 
+// ── Session occurrences list (paginated) ──────────────────────────────────────
+
+/** List all session occurrences paginated, optionally filtered by date */
+export const listSessionOccurrences = async (
+  page: number,
+  pageSize: number,
+): Promise<ApiResult<PagedData<SessionOccurrenceDto>>> => {
+  if (isDevSession())
+    return devMock<PagedData<SessionOccurrenceDto>>({
+      items: [],
+      totalCount: 0,
+      page,
+      pageSize,
+    });
+  return apiFetch<ApiResult<PagedData<SessionOccurrenceDto>>>(
+    `/api/SessionOccurrence?page=${page}&pageSize=${pageSize}`,
+  );
+};
+
+/** Search session occurrences by sport, coach, or branch name */
+export const searchSessionOccurrences = async (
+  term: string,
+  page: number,
+  pageSize: number,
+): Promise<ApiResult<PagedData<SessionOccurrenceDto>>> => {
+  if (isDevSession())
+    return devMock<PagedData<SessionOccurrenceDto>>({
+      items: [],
+      totalCount: 0,
+      page,
+      pageSize,
+    });
+  return apiFetch<ApiResult<PagedData<SessionOccurrenceDto>>>(
+    `/api/SessionOccurrence/search?searchTerm=${encodeURIComponent(term)}&page=${page}&pageSize=${pageSize}`,
+  );
+};
+
 // ── Aggregate stats ───────────────────────────────────────────────────────────
 
 /** Overall attendance rate (0–100) */

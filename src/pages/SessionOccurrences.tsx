@@ -1,98 +1,403 @@
-import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { useCallback, useState } from "react";
+import { useNavigate } from "react-router-dom";
+import { format } from "date-fns";
+import { Card, CardContent } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Calendar, Clock, MapPin, Users, ClipboardCheck, Search } from "lucide-react";
-import { useClientPagination } from "@/hooks/useClientPagination";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import {
+  Calendar as CalendarIcon,
+  Clock,
+  MapPin,
+  Users,
+  ClipboardCheck,
+  Search,
+  Trophy,
+  X,
+  AlertCircle,
+} from "lucide-react";
 import { BasePagination } from "@/components/BasePagination";
+import { useEntitySearch } from "@/hooks/useEntitySearch";
+import {
+  listSessionOccurrences,
+  searchSessionOccurrences,
+  getSessionOccurrencesByDate,
+} from "@/services/attendance.services";
+import { SessionOccurrenceDto } from "@/types/AttendanceDto";
+import { MarkAttendanceModal } from "@/components/modals/MarkAttendanceModal";
 
-interface SessionOccurrence {
-  id: number; groupName: string; sport: string; coach: string; branch: string; date: string; startTime: string; endTime: string; status: "Scheduled" | "Completed" | "Cancelled"; expectedTrainees: number; attendedTrainees: number | null;
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function formatTime(t: string) {
+  return t?.slice(0, 5) ?? "";
 }
 
-const mockOccurrences: SessionOccurrence[] = [
-  { id: 1, groupName: "Basketball Juniors A", sport: "Basketball", coach: "Mike Johnson", branch: "Downtown", date: "2026-02-16", startTime: "09:00", endTime: "11:00", status: "Scheduled", expectedTrainees: 18, attendedTrainees: null },
-  { id: 2, groupName: "Swimming Advanced", sport: "Swimming", coach: "Sarah Davis", branch: "North Side", date: "2026-02-16", startTime: "10:30", endTime: "12:00", status: "Scheduled", expectedTrainees: 12, attendedTrainees: null },
-  { id: 3, groupName: "Soccer Youth B", sport: "Soccer", coach: "Emma Wilson", branch: "Downtown", date: "2026-02-16", startTime: "16:00", endTime: "18:00", status: "Scheduled", expectedTrainees: 22, attendedTrainees: null },
-  { id: 4, groupName: "Basketball Juniors A", sport: "Basketball", coach: "Mike Johnson", branch: "Downtown", date: "2026-02-15", startTime: "09:00", endTime: "11:00", status: "Completed", expectedTrainees: 18, attendedTrainees: 16 },
-  { id: 5, groupName: "Volleyball Mixed", sport: "Volleyball", coach: "Alex Thompson", branch: "North Side", date: "2026-02-15", startTime: "15:00", endTime: "17:00", status: "Completed", expectedTrainees: 14, attendedTrainees: 13 },
-  { id: 6, groupName: "Tennis Elite", sport: "Tennis", coach: "Carlos Rodriguez", branch: "East Branch", date: "2026-02-14", startTime: "14:00", endTime: "15:30", status: "Cancelled", expectedTrainees: 8, attendedTrainees: null },
-];
+function formatDuration(minutes: number) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
 
-const getStatusColor = (status: string) => {
-  switch (status) { case "Scheduled": return "bg-primary/10 text-primary hover:bg-primary/20"; case "Completed": return "bg-success/10 text-success hover:bg-success/20"; case "Cancelled": return "bg-destructive/10 text-destructive hover:bg-destructive/20"; default: return "bg-muted"; }
-};
+function attendanceRate(present: number, late: number, total: number) {
+  if (!total) return null;
+  return Math.round(((present + late) / total) * 100);
+}
 
+// ─── Card Skeleton ─────────────────────────────────────────────────────────────
+function OccurrenceCardSkeleton() {
+  return (
+    <Card className="card-athletic">
+      <CardContent className="p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="space-y-2 flex-1">
+            <div className="flex gap-3 items-center">
+              <Skeleton className="h-5 w-32" />
+              <Skeleton className="h-5 w-20" />
+              <Skeleton className="h-5 w-16" />
+            </div>
+            <div className="flex gap-4">
+              <Skeleton className="h-4 w-24" />
+              <Skeleton className="h-4 w-20" />
+              <Skeleton className="h-4 w-28" />
+            </div>
+          </div>
+          <Skeleton className="h-9 w-32" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Occurrence Row Card ───────────────────────────────────────────────────────
+function OccurrenceCard({
+  occ,
+  onMark,
+}: {
+  occ: SessionOccurrenceDto;
+  onMark: (occ: SessionOccurrenceDto) => void;
+}) {
+  const rate = attendanceRate(occ.totalPresent, occ.totalLate, occ.totalEnrolled);
+  const hasAttendance = occ.totalPresent + occ.totalLate + occ.totalAbsent > 0;
+
+  const rateColor =
+    rate === null
+      ? ""
+      : rate >= 80
+      ? "bg-success/10 text-success border-success/20"
+      : rate >= 60
+      ? "bg-warning/10 text-warning border-warning/20"
+      : "bg-destructive/10 text-destructive border-destructive/20";
+
+  return (
+    <Card className="card-athletic">
+      <CardContent className="p-6">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          {/* Info */}
+          <div className="space-y-2 flex-1 min-w-0">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="font-semibold text-base">{occ.sportName}</h3>
+              <Badge variant="outline" className="text-xs">{occ.sportName}</Badge>
+              {hasAttendance && rate !== null && (
+                <Badge className={`${rateColor} text-xs`}>{rate}% attended</Badge>
+              )}
+            </div>
+            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <CalendarIcon className="h-3.5 w-3.5" />
+                {new Date(occ.date + "T00:00:00").toLocaleDateString("en-US", {
+                  weekday: "short",
+                  month: "short",
+                  day: "numeric",
+                })}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                {formatTime(occ.startTime)} · {formatDuration(occ.durationInMinutes)}
+              </span>
+              <span className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5" />
+                {occ.coachName}
+              </span>
+              <span className="flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" />
+                {occ.branchName}
+              </span>
+            </div>
+            {/* Attendance mini-summary */}
+            {hasAttendance && (
+              <div className="flex items-center gap-3 text-xs pt-1">
+                <span className="text-success font-medium">{occ.totalPresent} present</span>
+                <span className="text-warning font-medium">{occ.totalLate} late</span>
+                <span className="text-destructive font-medium">{occ.totalAbsent} absent</span>
+                <span className="text-muted-foreground">/ {occ.totalEnrolled} enrolled</span>
+              </div>
+            )}
+          </div>
+
+          {/* Actions */}
+          <div className="flex items-center gap-2 shrink-0">
+            {occ.totalEnrolled > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => onMark(occ)}
+                className="flex items-center gap-1.5"
+              >
+                <ClipboardCheck className="h-4 w-4" />
+                {hasAttendance ? "Update Attendance" : "Mark Attendance"}
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Main Page ─────────────────────────────────────────────────────────────────
 export default function SessionOccurrences() {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [dateFilter, setDateFilter] = useState("2026-02-16");
+  const [calendarOpen, setCalendarOpen] = useState(false);
+  const [dateFilter, setDateFilter] = useState<string>("");
+  const [markOpen, setMarkOpen] = useState(false);
+  const [markSession, setMarkSession] = useState<SessionOccurrenceDto | null>(null);
 
-  const filtered = useMemo(() => mockOccurrences.filter((o) => {
-    const matchesSearch = o.groupName.toLowerCase().includes(searchTerm.toLowerCase()) || o.sport.toLowerCase().includes(searchTerm.toLowerCase()) || o.coach.toLowerCase().includes(searchTerm.toLowerCase());
-    const matchesDate = !dateFilter || o.date === dateFilter;
-    return matchesSearch && matchesDate;
-  }), [searchTerm, dateFilter]);
+  // ── Date-mode: fetch by specific date, bypassing search ──────────────────
+  const [dateSessions, setDateSessions] = useState<SessionOccurrenceDto[]>([]);
+  const [dateLoading, setDateLoading] = useState(false);
+  const [datePage, setDatePage] = useState(1);
+  const [dateTotalPages, setDateTotalPages] = useState(1);
+  const [dateTotalCount, setDateTotalCount] = useState(0);
+  const DATE_PAGE_SIZE = 10;
 
-  const { paginatedData, page, setPage, pageSize, setPageSize, totalPages, totalCount } = useClientPagination({ data: filtered, initialPageSize: 10 });
+  const loadByDate = useCallback(async (date: string, page: number) => {
+    setDateLoading(true);
+    try {
+      const res = await getSessionOccurrencesByDate(date, page, DATE_PAGE_SIZE);
+      if (res.isSuccess) {
+        setDateSessions(res.data.items);
+        setDateTotalCount(res.data.totalCount);
+        setDateTotalPages(Math.max(1, Math.ceil(res.data.totalCount / DATE_PAGE_SIZE)));
+      } else {
+        setDateSessions([]);
+      }
+    } catch {
+      setDateSessions([]);
+    } finally {
+      setDateLoading(false);
+    }
+  }, []);
+
+  // When date filter changes, fetch by date
+  const handleDateSelect = (date: Date | undefined) => {
+    if (!date) return;
+    const iso = format(date, "yyyy-MM-dd");
+    setDateFilter(iso);
+    setDatePage(1);
+    setCalendarOpen(false);
+    loadByDate(iso, 1);
+  };
+
+  const clearDateFilter = () => {
+    setDateFilter("");
+    setDateSessions([]);
+  };
+
+  // ── Search/list mode (no date filter) ────────────────────────────────────
+  const listFn = useCallback(
+    (page: number, pageSize: number) => listSessionOccurrences(page, pageSize),
+    [],
+  );
+  const searchFn = useCallback(
+    (term: string, page: number, pageSize: number) =>
+      searchSessionOccurrences(term, page, pageSize),
+    [],
+  );
+
+  const {
+    items: searchResults,
+    loading: searchLoading,
+    term,
+    setTerm,
+    page: searchPage,
+    setPage: setSearchPage,
+    totalPages: searchTotalPages,
+    refresh,
+  } = useEntitySearch<SessionOccurrenceDto>({
+    listFn,
+    searchFn,
+    pageSize: 10,
+  });
+
+  // ── Determine active mode ─────────────────────────────────────────────────
+  const isDateMode = Boolean(dateFilter);
+  const items = isDateMode ? dateSessions : searchResults;
+  const loading = isDateMode ? dateLoading : searchLoading;
+  const page = isDateMode ? datePage : searchPage;
+  const totalPages = isDateMode ? dateTotalPages : searchTotalPages;
+  const totalCount = isDateMode ? dateTotalCount : items.length;
+
+  const handlePageChange = (p: number) => {
+    if (isDateMode) {
+      setDatePage(p);
+      loadByDate(dateFilter, p);
+    } else {
+      setSearchPage(p);
+    }
+  };
 
   return (
     <div className="space-y-8">
+      {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gradient">Session Occurrences</h1>
-        <p className="text-muted-foreground">System-generated training sessions — read-only view</p>
+        <p className="text-muted-foreground">
+          System-generated training sessions — read-only view
+        </p>
       </div>
 
+      {/* Filters */}
       <Card className="card-athletic">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-4">
+            {/* Search — disabled in date mode */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input placeholder="Search by group, sport, or coach..." value={searchTerm} onChange={(e) => setSearchTerm(e.target.value)} className="pl-10" />
+              <Input
+                placeholder={
+                  isDateMode
+                    ? "Clear date filter to search…"
+                    : "Search by sport, coach, or branch…"
+                }
+                value={isDateMode ? "" : term}
+                onChange={(e) => !isDateMode && setTerm(e.target.value)}
+                disabled={isDateMode}
+                className="pl-10"
+              />
             </div>
-            <Input type="date" value={dateFilter} onChange={(e) => setDateFilter(e.target.value)} className="w-auto" />
+
+            {/* Popover Calendar date picker */}
+            <div className="flex items-center gap-2">
+              <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className="flex items-center gap-2 min-w-[160px] justify-start font-normal"
+                  >
+                    <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                    {dateFilter
+                      ? format(new Date(dateFilter + "T00:00:00"), "MMM d, yyyy")
+                      : "Filter by date"}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="end">
+                  <Calendar
+                    mode="single"
+                    selected={
+                      dateFilter
+                        ? new Date(dateFilter + "T00:00:00")
+                        : undefined
+                    }
+                    onSelect={handleDateSelect}
+                    initialFocus
+                  />
+                </PopoverContent>
+              </Popover>
+
+              {isDateMode && (
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={clearDateFilter}
+                  className="text-muted-foreground hover:text-foreground"
+                  title="Clear date filter"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+
+            {/* Active filter chip */}
+            {isDateMode && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium whitespace-nowrap">
+                <CalendarIcon className="h-4 w-4" />
+                {format(new Date(dateFilter + "T00:00:00"), "EEEE, MMM d")}
+                {!loading && (
+                  <span className="text-xs opacity-70">· {totalCount} session{totalCount !== 1 ? "s" : ""}</span>
+                )}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
+      {/* Session list */}
       <div className="space-y-4">
-        {paginatedData.length === 0 && (
+        {loading ? (
+          Array.from({ length: 5 }).map((_, i) => (
+            <OccurrenceCardSkeleton key={i} />
+          ))
+        ) : items.length === 0 ? (
           <Card className="card-athletic">
-            <CardContent className="p-12 text-center text-muted-foreground">No occurrences found for the selected filters.</CardContent>
-          </Card>
-        )}
-        {paginatedData.map((occ) => (
-          <Card key={occ.id} className="card-athletic">
-            <CardContent className="p-6">
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-                <div className="space-y-2">
-                  <div className="flex items-center gap-3">
-                    <h3 className="font-semibold text-lg">{occ.groupName}</h3>
-                    <Badge variant="outline">{occ.sport}</Badge>
-                    <Badge className={getStatusColor(occ.status)}>{occ.status}</Badge>
-                  </div>
-                  <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground">
-                    <span className="flex items-center gap-1"><Calendar className="h-3.5 w-3.5" />{new Date(occ.date).toLocaleDateString()}</span>
-                    <span className="flex items-center gap-1"><Clock className="h-3.5 w-3.5" />{occ.startTime} – {occ.endTime}</span>
-                    <span className="flex items-center gap-1"><Users className="h-3.5 w-3.5" />Coach: {occ.coach}</span>
-                    <span className="flex items-center gap-1"><MapPin className="h-3.5 w-3.5" />{occ.branch}</span>
-                  </div>
-                </div>
-                <div className="flex items-center gap-3">
-                  {occ.status === "Completed" && occ.attendedTrainees !== null && (
-                    <span className="text-sm font-medium text-success">{occ.attendedTrainees}/{occ.expectedTrainees} attended</span>
-                  )}
-                  {occ.status === "Scheduled" && (
-                    <Button variant="outline" size="sm"><ClipboardCheck className="h-4 w-4 mr-1" />Open Attendance</Button>
-                  )}
-                </div>
-              </div>
+            <CardContent className="p-12 flex flex-col items-center gap-3 text-center text-muted-foreground">
+              <AlertCircle className="h-10 w-10 opacity-40" />
+              <p className="text-base font-medium">No session occurrences found</p>
+              <p className="text-sm">
+                {isDateMode
+                  ? `No sessions were scheduled for ${format(
+                      new Date(dateFilter + "T00:00:00"),
+                      "EEEE, MMMM d",
+                    )}.`
+                  : term
+                  ? `No results for "${term}".`
+                  : "No sessions have been generated yet. Use Operate Group to generate sessions."}
+              </p>
             </CardContent>
           </Card>
-        ))}
+        ) : (
+          items.map((occ) => (
+            <OccurrenceCard
+              key={occ.id}
+              occ={occ}
+              onMark={(s) => {
+                setMarkSession(s);
+                setMarkOpen(true);
+              }}
+            />
+          ))
+        )}
       </div>
 
-      <BasePagination page={page} totalPages={totalPages} pageSize={pageSize} totalCount={totalCount} onPageChange={setPage} onPageSizeChange={setPageSize} />
+      <BasePagination
+        page={page}
+        totalPages={totalPages}
+        pageSize={10}
+        totalCount={totalCount}
+        onPageChange={handlePageChange}
+        onPageSizeChange={() => {}}
+      />
+
+      {/* Mark Attendance Modal */}
+      <MarkAttendanceModal
+        open={markOpen}
+        onOpenChange={setMarkOpen}
+        onSuccess={() => {
+          if (isDateMode) loadByDate(dateFilter, datePage);
+          else refresh();
+        }}
+        sessionOccurrenceId={markSession?.id}
+        sessionLabel={
+          markSession
+            ? `${markSession.sportName} — ${format(
+                new Date(markSession.date + "T00:00:00"),
+                "MMM d",
+              )} ${formatTime(markSession.startTime)}`
+            : undefined
+        }
+      />
     </div>
   );
 }
