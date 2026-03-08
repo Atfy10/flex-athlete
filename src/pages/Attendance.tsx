@@ -1,15 +1,18 @@
 import { useCallback, useEffect, useState } from "react";
+import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Calendar as CalendarIcon } from "lucide-react";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
   ClipboardCheck,
   Users,
   Search,
-  Calendar,
   CheckCircle,
   XCircle,
   Clock,
@@ -19,6 +22,7 @@ import {
   MapPin,
   Trophy,
   RefreshCw,
+  ClipboardList,
 } from "lucide-react";
 import {
   getSessionOccurrencesByDate,
@@ -30,6 +34,7 @@ import {
   AttendanceRecordDto,
   AttendanceStatus,
 } from "@/types/AttendanceDto";
+import { MarkAttendanceModal } from "@/components/modals/MarkAttendanceModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function todayIso() {
