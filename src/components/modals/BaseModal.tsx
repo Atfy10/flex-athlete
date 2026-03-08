@@ -1,3 +1,4 @@
+import { useRef } from "react";
 import {
   Dialog,
   DialogContent,
@@ -33,16 +34,38 @@ export function BaseModal({
   submitLabel = "Save",
   errors = [],
 }: BaseModalProps) {
+  const formRef = useRef<HTMLFormElement>(null);
+
+  /** Auto-focus the first interactive field when the dialog finishes opening */
+  const handleAnimationEnd = () => {
+    if (!open) return;
+    const first = formRef.current?.querySelector<HTMLElement>(
+      "input:not([type='hidden']):not([disabled]):not([readonly]), select:not([disabled]), textarea:not([disabled]):not([readonly])"
+    );
+    first?.focus();
+  };
+
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+      {/* Escape key is handled natively by Radix Dialog */}
+      <DialogContent
+        className="max-w-lg max-h-[90vh] overflow-y-auto"
+        aria-modal="true"
+        onAnimationEnd={handleAnimationEnd}
+      >
         <DialogHeader>
           <DialogTitle>{title}</DialogTitle>
           {description && <DialogDescription>{description}</DialogDescription>}
         </DialogHeader>
-        <form onSubmit={onSubmit} className="space-y-4">
+
+        <form
+          ref={formRef}
+          onSubmit={onSubmit}
+          className="space-y-4"
+          noValidate
+        >
           {errors.length > 0 && (
-            <Alert variant="destructive">
+            <Alert variant="destructive" role="alert" aria-live="assertive">
               <AlertDescription>
                 <ul className="list-disc pl-4 space-y-1">
                   {errors.map((e, i) => (
@@ -52,7 +75,9 @@ export function BaseModal({
               </AlertDescription>
             </Alert>
           )}
+
           {children}
+
           <DialogFooter>
             <Button
               type="button"
@@ -62,8 +87,8 @@ export function BaseModal({
             >
               Cancel
             </Button>
-            <Button type="submit" disabled={loading}>
-              {loading && <Loader2 className="h-4 w-4 animate-spin" />}
+            <Button type="submit" disabled={loading} aria-busy={loading}>
+              {loading && <Loader2 className="h-4 w-4 animate-spin" aria-hidden />}
               {submitLabel}
             </Button>
           </DialogFooter>
@@ -72,3 +97,4 @@ export function BaseModal({
     </Dialog>
   );
 }
+
