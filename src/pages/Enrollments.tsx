@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { EnrollmentRowSkeleton } from "@/components/ui/TableRowSkeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { FilterBar } from "@/components/FilterBar";
+import { EmptyState } from "@/components/EmptyState";
 import {
   DropdownMenu,
   DropdownMenuContent,
