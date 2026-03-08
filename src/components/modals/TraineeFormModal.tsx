@@ -195,6 +195,7 @@ export function TraineeFormModal({
       }
 
       toast({ title: "Trainee created successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
