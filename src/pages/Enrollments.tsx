@@ -126,6 +126,51 @@ const Enrollments = () => {
     (e as unknown as Record<string, unknown>)[key] as string ?? ""
   );
 
+  // ── Row selection ─────────────────────────────────────────────────────────
+  const {
+    selectedIds: enrollmentSelectedIds,
+    selectedCount: enrollmentSelectedCount,
+    isSelected: isEnrollmentSelected,
+    toggle: toggleEnrollmentRow,
+    allSelected: allEnrollmentsSelected,
+    someSelected: someEnrollmentsSelected,
+    toggleAll: toggleAllEnrollments,
+    clearSelection: clearEnrollmentSelection,
+  } = useTableSelection(sortedEnrollments);
+
+  // ── Bulk export ───────────────────────────────────────────────────────────
+  const handleBulkExport = () => {
+    const rows = sortedEnrollments.filter((e) => enrollmentSelectedIds.has(e.id));
+    const header = ["ID", "Trainee", "Email", "Sport", "Branch", "Status", "Payment", "Fee"];
+    const csv = [
+      header.join(","),
+      ...rows.map((e) =>
+        [e.id, e.traineeName, e.traineeEmail ?? "", e.sport, e.branch ?? "", e.status, e.paymentStatus ?? "", e.monthlyFee ?? ""].join(",")
+      ),
+    ].join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `enrollments-export-${Date.now()}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+    clearEnrollmentSelection();
+    toast({ title: `Exported ${rows.length} enrollment${rows.length === 1 ? "" : "s"}.` });
+  };
+
+  // ── Bulk cancel ───────────────────────────────────────────────────────────
+  const handleBulkCancel = async () => {
+    const ids = [...enrollmentSelectedIds] as number[];
+    let successCount = 0;
+    for (const id of ids) {
+      try { await suspendEnrollment(id); successCount++; } catch { /* continue */ }
+    }
+    toast({ title: `${successCount} enrollment${successCount === 1 ? "" : "s"} suspended.` });
+    clearEnrollmentSelection();
+    handleRefresh();
+  };
+
   const openEdit = (enrollment: EnrollmentCardDto) => {
     setSelectedEnrollment({
       id: enrollment.id, traineeName: enrollment.traineeName,
