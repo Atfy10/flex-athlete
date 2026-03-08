@@ -153,7 +153,7 @@ export default function SessionOccurrences() {
   const [searchParams] = useSearchParams();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [view, setView] = useState<ViewMode>("grid");
-  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
+  const { sort, toggle: toggleSort, sortItems } = useSortable<SortKey>();
 
   const [dateFilter, setDateFilter] = useState<string>(() => {
     const param = searchParams.get("date");

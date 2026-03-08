@@ -87,7 +87,7 @@ const Enrollments = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [view, setView] = useState<ViewMode>("grid");
-  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
+  const { sort, toggle: toggleSort, sortItems } = useSortable<SortKey>();
 
   const {
     items: enrollments, loading, term, setTerm, page, setPage, totalPages, refresh,
