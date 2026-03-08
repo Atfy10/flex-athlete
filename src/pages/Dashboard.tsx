@@ -48,10 +48,10 @@ import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
 
 // ─── Static meta ──────────────────────────────────────────────────────────────
 const STATS_META = [
-  { title: "Today's Trainees", icon: GraduationCap, change: "+12%", href: "/trainees" },
-  { title: "Active Coaches",   icon: UserCheck,     change: "+5%",  href: "/coaches"  },
-  { title: "Today's Sessions", icon: Calendar,      change: "+8%",  href: "/session-occurrences" },
-  { title: "Attendance Rate",  icon: Activity,      change: "+2%",  href: "/attendance" },
+  { title: "Today's Trainees", icon: GraduationCap, change: "+12%", href: "/trainees?date=today" },
+  { title: "Active Coaches",   icon: UserCheck,     change: "+5%",  href: "/coaches"              },
+  { title: "Today's Sessions", icon: Calendar,      change: "+8%",  href: "/sessions?date=today"  },
+  { title: "Attendance Rate",  icon: Activity,      change: "+2%",  href: "/attendance?date=today" },
 ] as const;
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────

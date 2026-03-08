@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { format } from "date-fns";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -298,7 +298,16 @@ function SessionAttendanceCard({
 const Attendance = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
-  const [selectedDate, setSelectedDate] = useState(todayIso());
+  const [searchParams] = useSearchParams();
+
+  // Seed date from URL query param (e.g. ?date=today from dashboard)
+  const initialDate = (() => {
+    const p = searchParams.get("date");
+    if (!p) return todayIso();
+    return p === "today" ? todayIso() : p;
+  })();
+
+  const [selectedDate, setSelectedDate] = useState(initialDate);
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
   const [markOpen, setMarkOpen] = useState(false);

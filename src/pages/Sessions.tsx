@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useState } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -72,6 +72,17 @@ export default function Sessions() {
   const [selectedDate, setSelectedDate] = useState(todayIso());
   const [useDate, setUseDate]           = useState(false);
   const [modalOpen, setModalOpen]       = useState(false);
+
+  // Activate date filter from URL query param (e.g. ?date=today)
+  const [searchParams] = useSearchParams();
+  useEffect(() => {
+    const dateParam = searchParams.get("date");
+    if (dateParam) {
+      setSelectedDate(dateParam === "today" ? todayIso() : dateParam);
+      setUseDate(true);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   // Stats
   const [totalSessions,  setTotalSessions]  = useState<number | null>(null);
