@@ -100,6 +100,7 @@ export function TraineeFormModal({
   // Clear state and load options on open
   useEffect(() => {
     if (!open) return;
+    resetDirty();
     setApiErrors([]);
     setFieldErrors({});
     setForm({
