@@ -1,4 +1,8 @@
-import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
+import {
+  SidebarProvider,
+  SidebarTrigger,
+  useSidebar,
+} from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { Toaster } from "@/components/ui/toaster";
 import { Button } from "@/components/ui/button";
@@ -6,16 +10,15 @@ import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
-  DropdownMenuLabel,
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { Bell, Search, User, KeyRound, LogOut, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
-import { RealtimeProvider } from "@/contexts/RealtimeContext";
-import { useRealtime } from "@/contexts/RealtimeContext";
+import { RealtimeProvider, useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
+import { FloatingDashboardButton } from "@/components/navigation/FloatingDashboardButton";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -34,11 +37,13 @@ function getInitials(nameOrEmail: string): string {
   return base.slice(0, 2).toUpperCase();
 }
 
-/** Inner layout that can access RealtimeContext */
-function AppLayoutInner({ children }: AppLayoutProps) {
+/** Inner content — lives inside SidebarProvider so useSidebar is available */
+function AppLayoutContent({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const { logout, devUser, token } = useAuth();
   const { unreadCount } = useRealtime();
+  const { state } = useSidebar();
+  const sidebarCollapsed = state === "collapsed";
 
   const handleLogout = () => {
     logout();
@@ -80,109 +85,119 @@ function AppLayoutInner({ children }: AppLayoutProps) {
   const initials = getInitials(displayName);
 
   return (
-    <SidebarProvider>
-      <div className="min-h-screen flex w-full bg-background overflow-hidden">
-        <AppSidebar />
+    <div className="min-h-screen flex w-full bg-background overflow-hidden">
+      <AppSidebar />
 
-        <div className="flex-1 flex flex-col min-w-0">
-          {/* Header */}
-          <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40 flex-shrink-0">
-            <div className="flex items-center justify-between h-full px-6">
-              <div className="flex items-center gap-4 min-w-0">
-                <SidebarTrigger className="lg:hidden" />
-                <div className="text-gradient font-bold text-xl">
-                  AURA Sport Academy
-                </div>
-              </div>
+      {/* Floating Dashboard button — visible only when sidebar is collapsed */}
+      {sidebarCollapsed && <FloatingDashboardButton />}
 
-              <div className="flex items-center gap-2 flex-shrink-0">
-                <Button variant="ghost" size="icon">
-                  <Search className="h-5 w-5" />
-                </Button>
-
-                {/* Notification bell */}
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  className="relative"
-                  onClick={() => navigate("/notifications")}
-                  title="Notifications"
-                >
-                  <Bell className="h-5 w-5" />
-                  {unreadCount > 0 && (
-                    <span
-                      className={cn(
-                        "absolute top-1 right-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground font-bold leading-none",
-                        unreadCount > 99
-                          ? "h-4 w-5 text-[9px]"
-                          : "h-4 w-4 text-[10px]",
-                      )}
-                    >
-                      {unreadCount > 99 ? "99+" : unreadCount}
-                    </span>
-                  )}
-                </Button>
-
-                {/* Profile avatar dropdown */}
-                <DropdownMenu>
-                  <DropdownMenuTrigger asChild>
-                    <button className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center ring-2 ring-primary/20 hover:ring-primary/40 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
-                      <span className="text-xs font-bold text-primary-foreground">
-                        {initials}
-                      </span>
-                    </button>
-                  </DropdownMenuTrigger>
-                  <DropdownMenuContent align="end" className="w-56">
-                    <div className="px-3 py-2">
-                      <p className="text-sm font-semibold leading-none truncate">
-                        {displayName}
-                      </p>
-                      {displayEmail && displayEmail !== displayName && (
-                        <p className="text-xs text-muted-foreground mt-0.5 truncate">
-                          {displayEmail}
-                        </p>
-                      )}
-                    </div>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="gap-2 cursor-pointer"
-                      onClick={() => navigate("/my-profile")}
-                    >
-                      <User className="h-4 w-4" />
-                      View My Profile
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="gap-2 cursor-pointer"
-                      onClick={() => navigate("/my-profile?tab=roles")}
-                    >
-                      <Shield className="h-4 w-4" />
-                      My Roles
-                    </DropdownMenuItem>
-                    <DropdownMenuItem
-                      className="gap-2 cursor-pointer"
-                      onClick={() => navigate("/my-profile?tab=password")}
-                    >
-                      <KeyRound className="h-4 w-4" />
-                      Change Password
-                    </DropdownMenuItem>
-                    <DropdownMenuSeparator />
-                    <DropdownMenuItem
-                      className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
-                      onClick={handleLogout}
-                    >
-                      <LogOut className="h-4 w-4" />
-                      Logout
-                    </DropdownMenuItem>
-                  </DropdownMenuContent>
-                </DropdownMenu>
+      <div className="flex-1 flex flex-col min-w-0">
+        {/* Header */}
+        <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40 flex-shrink-0">
+          <div className="flex items-center justify-between h-full px-6">
+            <div className="flex items-center gap-4 min-w-0">
+              <SidebarTrigger className="lg:hidden" />
+              <div className="text-gradient font-bold text-xl">
+                AURA Sport Academy
               </div>
             </div>
-          </header>
 
-          {/* Main Content */}
-          <main className="flex-1 p-6 overflow-auto">{children}</main>
-        </div>
+            <div className="flex items-center gap-2 flex-shrink-0">
+              <Button variant="ghost" size="icon">
+                <Search className="h-5 w-5" />
+              </Button>
+
+              {/* Notification bell */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="relative"
+                onClick={() => navigate("/notifications")}
+                title="Notifications"
+              >
+                <Bell className="h-5 w-5" />
+                {unreadCount > 0 && (
+                  <span
+                    className={cn(
+                      "absolute top-1 right-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground font-bold leading-none",
+                      unreadCount > 99
+                        ? "h-4 w-5 text-[9px]"
+                        : "h-4 w-4 text-[10px]",
+                    )}
+                  >
+                    {unreadCount > 99 ? "99+" : unreadCount}
+                  </span>
+                )}
+              </Button>
+
+              {/* Profile avatar dropdown */}
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <button className="w-8 h-8 rounded-full bg-gradient-primary flex items-center justify-center ring-2 ring-primary/20 hover:ring-primary/40 transition-all focus:outline-none focus-visible:ring-2 focus-visible:ring-ring">
+                    <span className="text-xs font-bold text-primary-foreground">
+                      {initials}
+                    </span>
+                  </button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent align="end" className="w-56">
+                  <div className="px-3 py-2">
+                    <p className="text-sm font-semibold leading-none truncate">
+                      {displayName}
+                    </p>
+                    {displayEmail && displayEmail !== displayName && (
+                      <p className="text-xs text-muted-foreground mt-0.5 truncate">
+                        {displayEmail}
+                      </p>
+                    )}
+                  </div>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="gap-2 cursor-pointer"
+                    onClick={() => navigate("/my-profile")}
+                  >
+                    <User className="h-4 w-4" />
+                    View My Profile
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="gap-2 cursor-pointer"
+                    onClick={() => navigate("/my-profile?tab=roles")}
+                  >
+                    <Shield className="h-4 w-4" />
+                    My Roles
+                  </DropdownMenuItem>
+                  <DropdownMenuItem
+                    className="gap-2 cursor-pointer"
+                    onClick={() => navigate("/my-profile?tab=password")}
+                  >
+                    <KeyRound className="h-4 w-4" />
+                    Change Password
+                  </DropdownMenuItem>
+                  <DropdownMenuSeparator />
+                  <DropdownMenuItem
+                    className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+                    onClick={handleLogout}
+                  >
+                    <LogOut className="h-4 w-4" />
+                    Logout
+                  </DropdownMenuItem>
+                </DropdownMenuContent>
+              </DropdownMenu>
+            </div>
+          </div>
+        </header>
+
+        {/* Main Content */}
+        <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>
+    </div>
+  );
+}
+
+/** Inner layout — wraps content with SidebarProvider + Toaster */
+function AppLayoutInner({ children }: AppLayoutProps) {
+  return (
+    <SidebarProvider>
+      <AppLayoutContent>{children}</AppLayoutContent>
       <Toaster />
     </SidebarProvider>
   );
