@@ -85,6 +85,7 @@ export function SportsFormModal({ open, onOpenChange, onSuccess }: SportsFormMod
         }),
       });
       toast({ title: "Sport created successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
