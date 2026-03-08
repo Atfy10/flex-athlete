@@ -4,6 +4,7 @@ import { FormInput } from "./FormInput";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { useFormDirty } from "@/hooks/useFormDirty";
 
 const branchSchema = z.object({
   name: z.string().trim().min(1, "Branch name is required").max(100, "Name too long"),
