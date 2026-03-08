@@ -404,18 +404,27 @@ export default function Trainees() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  {/* Select-all checkbox */}
+                  <TableHead className="w-10 pl-4">
+                    <Checkbox
+                      checked={allSelected ? true : someSelected ? "indeterminate" : false}
+                      onCheckedChange={toggleAll}
+                      aria-label="Select all"
+                    />
+                  </TableHead>
                   <SortTH col="name" label="Name" />
                   <TableHead>Sport / Level</TableHead>
                   <SortTH col="branch" label="Branch" />
                   <TableHead>Status</TableHead>
                   <SortTH col="attendance" label="Attendance" />
                   <SortTH col="joined" label="Joined" />
-                      <TableHead className="w-[88px]" />
-                 </TableRow>
-               </TableHeader>
+                  <TableHead className="w-[88px]" />
+                </TableRow>
+              </TableHeader>
               <TableBody>
                 {trainees.map((trainee) => {
                   const fullName = `${trainee.firstName} ${trainee.lastName}`;
+                  const checked = isSelected(trainee.id);
                   const sportSkills =
                     trainee.sportSkills && trainee.sportSkills.length > 0
                       ? trainee.sportSkills
@@ -425,9 +434,17 @@ export default function Trainees() {
                   return (
                     <TableRow
                       key={trainee.id}
-                      className="cursor-pointer hover:bg-muted/40 transition-colors"
+                      className={`cursor-pointer hover:bg-muted/40 transition-colors ${checked ? "bg-primary/5" : ""}`}
                       onClick={() => navigate(`/trainees/${trainee.id}`)}
                     >
+                      {/* Row checkbox */}
+                      <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() => toggleRow(trainee.id)}
+                          aria-label={`Select ${fullName}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2.5 min-w-0">
                           <Avatar className="h-8 w-8 shrink-0">
