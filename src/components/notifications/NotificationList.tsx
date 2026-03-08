@@ -1,6 +1,5 @@
 import { NotificationDto } from "@/services/notifications.service";
 import { NotificationItem, NotificationItemSkeleton } from "./NotificationItem";
-import { EmptyState } from "@/components/EmptyState";
 import { Bell } from "lucide-react";
 
 interface NotificationListProps {
