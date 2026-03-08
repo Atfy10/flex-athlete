@@ -94,6 +94,7 @@ export function SportEditModal({ open, onOpenChange, onSuccess, sport }: SportEd
       loading={loading}
       errors={errors}
       submitLabel="Save Changes"
+      isDirty={isDirty}
     >
       <FormInput id="name" label="Name" value={form.name} onChange={set("name")} required />
       <FormInput id="description" label="Description" value={form.description} onChange={set("description")} />
@@ -112,7 +113,7 @@ export function SportEditModal({ open, onOpenChange, onSuccess, sport }: SportEd
         id="isRequireHealthTest"
         label="Requires Health Test"
         checked={form.isRequireHealthTest}
-        onChange={(v) => setForm((f) => ({ ...f, isRequireHealthTest: v }))}
+        onChange={(v) => { markDirty(); setForm((f) => ({ ...f, isRequireHealthTest: v })); }}
         description="Enable if trainees need a health clearance"
       />
     </BaseModal>
