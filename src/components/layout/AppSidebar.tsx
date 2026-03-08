@@ -76,7 +76,8 @@ export function AppSidebar() {
   const [managementOpen, setManagementOpen] = useState(true);
   const [operationsOpen, setOperationsOpen] = useState(true);
 
-  const isActive = (path: string) => currentPath === path;
+  const isActive = (path: string) =>
+    path === "/" ? currentPath === "/" : currentPath.startsWith(path);
   const navItemCls =
     "transition-all duration-200 hover:translate-x-[1px] text-muted-foreground hover:text-foreground data-[active=true]:bg-primary data-[active=true]:text-primary-foreground data-[active=true]:border-r-4 data-[active=true]:border-primary data-[active=true]:font-semibold data-[active=true]:shadow-md";
 
