@@ -157,6 +157,17 @@ export default function Sessions() {
     loadStats();
   }, [refresh, loadStats]);
 
+  // Mark attendance state for sessions page
+  const [markOpen, setMarkOpen] = useState(false);
+  const [markSessionId, setMarkSessionId] = useState<number | undefined>(undefined);
+  const [markSessionLabel, setMarkSessionLabel] = useState<string | undefined>(undefined);
+
+  const openMarkAttendance = useCallback((session: SessionCardDto) => {
+    setMarkSessionId(session.id);
+    setMarkSessionLabel(`${session.sportName} — ${formatTime(session.startTime)}`);
+    setMarkOpen(true);
+  }, []);
+
   const statsValues = [
     totalSessions   != null ? String(totalSessions)   : "—",
     todayGroupCount != null ? String(todayGroupCount) : "—",
