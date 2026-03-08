@@ -69,6 +69,7 @@ function getLastFiveMonths(): { value: number; label: string }[] {
 
 // ─── Component ────────────────────────────────────────────────────────────────
 export default function Dashboard() {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
 
   // Scalar stats — all derived from API
