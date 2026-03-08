@@ -29,7 +29,6 @@ import {
   LineChart,
   Line,
 } from "recharts";
-import { ApiResult, PagedData } from "@/types/api";
 import { SportDto } from "@/types/SportDto";
 import { ListTraineeGroupDto } from "@/types/listTraineeGroup";
 import { mapSessions, getSessionsCount, SessionVm } from "@/lib/mappers";
@@ -46,61 +45,9 @@ import { getTraineeGroupsForSpecificDay } from "@/services/traineeGroup.services
 
 const STATS_META = [
   { title: "Total Trainees", icon: GraduationCap, change: "+12%" },
-  { title: "Active Coaches",  icon: UserCheck,    change: "+5%"  },
-  { title: "Today's Sessions", icon: Calendar,    change: "+8%"  },
-  { title: "Attendance Rate", icon: Activity,     change: "+2%"  },
-];
-
-const attendanceDummyData = [
-  { month: "Jan", attendance: 85 },
-  { month: "Feb", attendance: 88 },
-  { month: "Mar", attendance: 92 },
-  { month: "Apr", attendance: 89 },
-  { month: "May", attendance: 94 },
-  { month: "Jun", attendance: 96 },
-];
-
-const enrollmentDummyData = [
-  { sport: "Basketball", enrolled: 320 },
-  { sport: "Soccer", enrolled: 280 },
-  { sport: "Tennis", enrolled: 180 },
-  { sport: "Swimming", enrolled: 220 },
-  { sport: "Volleyball", enrolled: 160 },
-];
-
-const upcomingSessions = [
-  {
-    id: 1,
-    sport: "Basketball",
-    time: "09:00 AM",
-    coach: "Mike Johnson",
-    trainees: 15,
-    branch: "Downtown",
-  },
-  {
-    id: 2,
-    sport: "Swimming",
-    time: "10:30 AM",
-    coach: "Sarah Davis",
-    trainees: 12,
-    branch: "North Side",
-  },
-  {
-    id: 3,
-    sport: "Tennis",
-    time: "02:00 PM",
-    coach: "Carlos Rodriguez",
-    trainees: 8,
-    branch: "East Branch",
-  },
-  {
-    id: 4,
-    sport: "Soccer",
-    time: "04:00 PM",
-    coach: "Emma Wilson",
-    trainees: 22,
-    branch: "Downtown",
-  },
+  { title: "Active Coaches", icon: UserCheck, change: "+5%" },
+  { title: "Today's Sessions", icon: Calendar, change: "+8%" },
+  { title: "Attendance Rate", icon: Activity, change: "+2%" },
 ];
 
 const recentActivities = [
