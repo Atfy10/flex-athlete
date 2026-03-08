@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { BaseModal } from "./BaseModal";
 import { FormInput } from "./FormInput";
-import { FormSelect } from "./FormSelect";
+import { FormSelect, SelectOption } from "./FormSelect";
 import { FormMultiSelect, MultiSelectOption } from "./FormMultiSelect";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
