@@ -129,6 +129,7 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
         }),
       });
       toast({ title: "Enrollment created successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
