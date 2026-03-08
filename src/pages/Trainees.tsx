@@ -194,20 +194,14 @@ export default function Trainees() {
     return sportMatch && statusMatch;
   });
 
-  // ── Client-side sort (table mode) ─────────────────────────────────────────
-  const trainees = [...filtered].sort((a, b) => {
-    let av = "", bv = "";
-    if (sortKey === "name") { av = `${a.firstName} ${a.lastName}`; bv = `${b.firstName} ${b.lastName}`; }
-    else if (sortKey === "branch") { av = a.branchName; bv = b.branchName; }
-    else if (sortKey === "attendance") { return sortDir === "asc" ? a.attendanceRate - b.attendanceRate : b.attendanceRate - a.attendanceRate; }
-    else if (sortKey === "joined") { return sortDir === "asc" ? new Date(a.joinDate).getTime() - new Date(b.joinDate).getTime() : new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime(); }
-    return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+  // ── Client-side sort ──────────────────────────────────────────────────────
+  const trainees = sortItems(filtered, (t, key) => {
+    if (key === "name") return `${t.firstName} ${t.lastName}`;
+    if (key === "branch") return t.branchName;
+    if (key === "attendance") return t.attendanceRate;
+    if (key === "joined") return new Date(t.joinDate).getTime();
+    return "";
   });
-
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) setSortDir((d) => d === "asc" ? "desc" : "asc");
-    else { setSortKey(key); setSortDir("asc"); }
-  };
 
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleConfirmDelete = async () => {
