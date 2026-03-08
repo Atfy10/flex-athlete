@@ -269,20 +269,23 @@ export default function TraineeProfile() {
             </CardTitle>
           </CardHeader>
           <CardContent className="px-6 pb-6">
-            {trainee.attendanceRate !== undefined && (
-              <InfoRow
-                icon={<TrendingUp className="h-3.5 w-3.5" />}
-                label="Attendance Rate"
-                value={
-                  <div className="flex items-center gap-2">
-                    <span>{trainee.attendanceRate}%</span>
-                    <div className="w-16 bg-muted rounded-full h-1.5">
-                      <div className="bg-primary h-1.5 rounded-full" style={{ width: `${trainee.attendanceRate}%` }} />
+            {trainee.attendanceRate !== undefined && (() => {
+              const ac = getAttendanceColor(trainee.attendanceRate);
+              return (
+                <InfoRow
+                  icon={<TrendingUp className={`h-3.5 w-3.5 ${ac.text}`} />}
+                  label="Attendance Rate"
+                  value={
+                    <div className="flex items-center gap-2">
+                      <span className={`font-semibold ${ac.text}`}>{trainee.attendanceRate}%</span>
+                      <div className="w-20 bg-muted rounded-full h-2">
+                        <div className={`${ac.bar} h-2 rounded-full transition-all`} style={{ width: `${Math.min(trainee.attendanceRate, 100)}%` }} />
+                      </div>
                     </div>
-                  </div>
-                }
-              />
-            )}
+                  }
+                />
+              );
+            })()}
             {trainee.enrollmentCount !== undefined && (
               <InfoRow icon={<Users className="h-3.5 w-3.5" />} label="Enrollments" value={`${trainee.enrollmentCount} active`} />
             )}
