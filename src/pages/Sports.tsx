@@ -1,53 +1,85 @@
-import { useState, useMemo } from "react";
+import { useState, useCallback } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Trophy, Users, Plus, Clock, DollarSign, Target, Star, Eye } from "lucide-react";
+import { EntityCardSkeleton } from "@/components/ui/CardSkeleton";
 import { FilterBar } from "@/components/FilterBar";
+import { EmptyState } from "@/components/EmptyState";
+import { Trophy, Plus, Clock, Users, Eye, Tag, Target } from "lucide-react";
 import { SportsFormModal } from "@/components/modals/SportsFormModal";
-import { useClientPagination } from "@/hooks/useClientPagination";
+import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { BasePagination } from "@/components/BasePagination";
+import { useEntitySearch } from "@/hooks/useEntitySearch";
+import { listSports, searchSports, deleteSport } from "@/services/sport.services";
+import { SportDto } from "@/types/SportDto";
+import { useToast } from "@/hooks/use-toast";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import { MoreHorizontal, Trash2 } from "lucide-react";
 
-const allSports = [
-  { id: 1, name: "Basketball", category: "Team Sport", description: "Fast-paced team sport focusing on agility, teamwork, and strategic thinking.", skillLevel: ["Beginner", "Intermediate", "Advanced"], ageGroups: ["6-12", "13-17", "18+"], duration: "60 min", maxParticipants: 12, currentEnrollment: 87, monthlyFee: 120, coaches: 4, branches: ["Main Campus", "Downtown"], equipment: ["Basketball", "Hoops", "Protective Gear"], status: "Active" },
-  { id: 2, name: "Swimming", category: "Individual Sport", description: "Full-body workout sport that builds endurance, strength, and technique.", skillLevel: ["Beginner", "Intermediate", "Advanced", "Competitive"], ageGroups: ["4-8", "9-15", "16+"], duration: "45 min", maxParticipants: 8, currentEnrollment: 156, monthlyFee: 150, coaches: 6, branches: ["Main Campus"], equipment: ["Pool", "Lane Ropes", "Kickboards", "Safety Equipment"], status: "Active" },
-  { id: 3, name: "Tennis", category: "Racquet Sport", description: "Individual or doubles sport focusing on precision, strategy, and athleticism.", skillLevel: ["Beginner", "Intermediate", "Advanced"], ageGroups: ["8-14", "15+"], duration: "75 min", maxParticipants: 4, currentEnrollment: 64, monthlyFee: 180, coaches: 3, branches: ["Main Campus", "Westside"], equipment: ["Racquets", "Tennis Balls", "Court", "Nets"], status: "Active" },
-  { id: 4, name: "Martial Arts", category: "Combat Sport", description: "Traditional martial arts focusing on discipline, self-defense, and mental strength.", skillLevel: ["Beginner", "Intermediate", "Advanced", "Black Belt"], ageGroups: ["5-10", "11-17", "18+"], duration: "90 min", maxParticipants: 15, currentEnrollment: 92, monthlyFee: 140, coaches: 5, branches: ["Downtown", "Westside"], equipment: ["Mats", "Protective Gear", "Training Equipment"], status: "Active" },
-];
+const PAGE_SIZE = 9;
 
-const Sports = () => {
+export default function Sports() {
   const navigate = useNavigate();
-  const [searchTerm, setSearchTerm] = useState("");
+  const { toast } = useToast();
   const [modalOpen, setModalOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<SportDto | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
-  const filteredSports = useMemo(() => allSports.filter(s =>
-    s.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
-    s.category.toLowerCase().includes(searchTerm.toLowerCase())
-  ), [searchTerm]);
+  const stableList   = useCallback(listSports,   []);
+  const stableSearch = useCallback(searchSports, []);
 
-  const { paginatedData: sports, page, setPage, pageSize, setPageSize, totalPages, totalCount } = useClientPagination({ data: filteredSports, initialPageSize: 10 });
+  const {
+    items: sports,
+    loading,
+    term,
+    setTerm,
+    page,
+    setPage,
+    totalPages,
+    refresh,
+  } = useEntitySearch<SportDto>({
+    listFn: stableList,
+    searchFn: stableSearch,
+    pageSize: PAGE_SIZE,
+    minLength: 2,
+  });
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Active": return "bg-success text-success-foreground";
-      case "Inactive": return "bg-muted text-muted-foreground";
-      case "Seasonal": return "bg-warning text-warning-foreground";
-      default: return "bg-muted text-muted-foreground";
+  const handleRefresh = useCallback(() => {
+    setTerm("");
+    setPage(1);
+    refresh();
+  }, [setTerm, setPage, refresh]);
+
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      await deleteSport(deleteTarget.id);
+      toast({ title: "Sport deleted successfully." });
+      refresh();
+    } catch {
+      toast({ title: "Failed to delete sport.", variant: "destructive" });
+    } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
     }
   };
 
   const getCategoryColor = (category: string) => {
-    const colors: Record<string, string> = {
-      "Team Sport": "bg-primary/10 text-primary",
-      "Individual Sport": "bg-secondary/10 text-secondary",
-      "Racquet Sport": "bg-success/10 text-success",
-      "Combat Sport": "bg-warning/10 text-warning"
-    };
-    return colors[category] || "bg-muted text-muted-foreground";
+    switch (category) {
+      case "Team":       return "bg-primary/10 text-primary";
+      case "Individual": return "bg-secondary/10 text-secondary";
+      default:           return "bg-muted text-muted-foreground";
+    }
   };
-
-  const handleRefresh = () => {};
 
   return (
     <div className="space-y-6">
@@ -63,122 +95,126 @@ const Sports = () => {
         </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Sports</CardTitle>
-            <Trophy className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">12</div>
-            <p className="text-xs text-muted-foreground">4 categories</p>
-          </CardContent>
-        </Card>
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Active Programs</CardTitle>
-            <Target className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">11</div>
-            <p className="text-xs text-muted-foreground">91.7% active rate</p>
-          </CardContent>
-        </Card>
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Total Enrollment</CardTitle>
-            <Users className="h-4 w-4 text-secondary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">399</div>
-            <p className="text-xs text-muted-foreground">Across all sports</p>
-          </CardContent>
-        </Card>
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Avg. Monthly Fee</CardTitle>
-            <DollarSign className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">$148</div>
-            <p className="text-xs text-muted-foreground">Per participant</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search and Filters */}
+      {/* Search */}
       <Card className="card-athletic">
         <CardContent className="p-6">
           <FilterBar
-            searchValue={searchTerm}
-            onSearchChange={setSearchTerm}
-            searchPlaceholder="Search sports by name or category…"
-            onReset={() => setSearchTerm("")}
+            searchValue={term}
+            onSearchChange={(v) => { setTerm(v); setPage(1); }}
+            searchPlaceholder="Search sports by name…"
+            onReset={() => { setTerm(""); setPage(1); }}
           />
         </CardContent>
       </Card>
 
-      {/* Sports Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {sports.map((sport) => (
+      {/* Grid */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-6">
+        {loading && Array.from({ length: PAGE_SIZE }).map((_, i) => <EntityCardSkeleton key={i} />)}
+
+        {!loading && sports.length === 0 && (
+          <div className="col-span-full">
+            <EmptyState
+              icon={Trophy}
+              title={term ? `No results for "${term}"` : "No sports yet"}
+              description={term ? "Try a different search term." : "Add your first sport to get started."}
+              actionLabel={!term ? "Add Sport" : undefined}
+              onAction={!term ? () => setModalOpen(true) : undefined}
+            />
+          </div>
+        )}
+
+        {!loading && sports.map((sport) => (
           <Card key={sport.id} className="card-athletic">
             <CardContent className="p-6">
+              {/* Header */}
               <div className="flex items-start justify-between mb-4">
                 <div className="flex items-center gap-3">
-                  <div className="w-12 h-12 rounded-lg bg-gradient-primary flex items-center justify-center">
+                  <div className="w-12 h-12 rounded-lg bg-gradient-primary flex items-center justify-center shrink-0">
                     <Trophy className="h-6 w-6 text-primary-foreground" />
                   </div>
                   <div>
-                    <h3 className="font-semibold text-lg">{sport.name}</h3>
+                    <h3 className="font-semibold text-lg leading-tight">{sport.name}</h3>
                     <Badge className={getCategoryColor(sport.category)}>{sport.category}</Badge>
                   </div>
                 </div>
-                <Badge className={getStatusColor(sport.status)}>{sport.status}</Badge>
+
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-8 w-8 shrink-0">
+                      <MoreHorizontal className="h-4 w-4" />
+                    </Button>
+                  </DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                    <DropdownMenuItem onClick={() => navigate(`/sports/${sport.id}`)}>
+                      <Eye className="h-4 w-4 mr-2" /> View Details
+                    </DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem
+                      className="text-destructive focus:text-destructive"
+                      onClick={() => setTimeout(() => setDeleteTarget(sport), 0)}
+                    >
+                      <Trash2 className="h-4 w-4 mr-2" /> Delete Sport
+                    </DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
               </div>
-              <p className="text-sm text-muted-foreground mb-4">{sport.description}</p>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="flex items-center gap-2 text-sm"><Clock className="h-4 w-4 text-muted-foreground" /><span>{sport.duration}</span></div>
-                <div className="flex items-center gap-2 text-sm"><Users className="h-4 w-4 text-muted-foreground" /><span>{sport.maxParticipants} max</span></div>
-                <div className="flex items-center gap-2 text-sm"><DollarSign className="h-4 w-4 text-muted-foreground" /><span>${sport.monthlyFee}/month</span></div>
-                <div className="flex items-center gap-2 text-sm"><Star className="h-4 w-4 text-muted-foreground" /><span>{sport.coaches} coaches</span></div>
+
+              {/* Details */}
+              <div className="space-y-2 mb-5">
+                {sport.description && (
+                  <p className="text-sm text-muted-foreground line-clamp-2">{sport.description}</p>
+                )}
+                <div className="flex items-center gap-2 text-sm">
+                  <Target className="h-4 w-4 text-muted-foreground shrink-0" />
+                  <span className="text-muted-foreground">
+                    Health Test: {sport.isRequireHealthTest ? "Required" : "Not required"}
+                  </span>
+                </div>
               </div>
-              <div className="mb-4">
-                <div className="flex justify-between text-sm mb-2"><span>Current Enrollment</span><span className="font-medium">{sport.currentEnrollment}</span></div>
-              </div>
-              <div className="mb-4">
-                <p className="text-sm font-medium mb-2">Skill Levels</p>
-                <div className="flex flex-wrap gap-1">{sport.skillLevel.map((level) => (<Badge key={level} variant="secondary" className="text-xs">{level}</Badge>))}</div>
-              </div>
-              <div className="mb-4">
-                <p className="text-sm font-medium mb-2">Age Groups</p>
-                <div className="flex flex-wrap gap-1">{sport.ageGroups.map((age) => (<Badge key={age} variant="outline" className="text-xs">{age} years</Badge>))}</div>
-              </div>
-              <div className="mb-4">
-                <p className="text-sm font-medium mb-2">Available At</p>
-                <div className="flex flex-wrap gap-1">{sport.branches.map((branch) => (<Badge key={branch} className="text-xs bg-primary/10 text-primary">{branch}</Badge>))}</div>
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  variant="default"
-                  size="sm"
-                  className="flex-1"
-                  onClick={() => navigate(`/sports/${sport.id}`)}
-                >
-                  <Eye className="h-3.5 w-3.5 mr-1.5" />
-                  View Details
-                </Button>
-              </div>
+
+              {/* Action */}
+              <Button
+                variant="default"
+                size="sm"
+                className="w-full"
+                onClick={() => navigate(`/sports/${sport.id}`)}
+              >
+                <Eye className="h-3.5 w-3.5 mr-1.5" />
+                View Details
+              </Button>
             </CardContent>
           </Card>
         ))}
       </div>
 
-      <BasePagination page={page} totalPages={totalPages} pageSize={pageSize} totalCount={totalCount} onPageChange={setPage} onPageSizeChange={setPageSize} />
+      {/* Pagination */}
+      {!loading && sports.length > 0 && (
+        <BasePagination
+          page={page}
+          totalPages={totalPages}
+          pageSize={PAGE_SIZE}
+          onPageChange={setPage}
+          onPageSizeChange={() => setPage(1)}
+        />
+      )}
 
-      <SportsFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={handleRefresh} />
+      <SportsFormModal
+        open={modalOpen}
+        onOpenChange={setModalOpen}
+        onSuccess={handleRefresh}
+      />
+
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Sport"
+        description={`Are you sure you want to delete "${deleteTarget?.name}"? This action cannot be undone.`}
+        confirmLabel="Delete"
+        destructive
+        loading={deleteLoading}
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
-};
-
-export default Sports;
+}
