@@ -101,6 +101,7 @@ function TraineeCardSkeleton() {
 export default function Trainees() {
   const navigate = useNavigate();
   const { toast } = useToast();
+  const [searchParams] = useSearchParams();
 
   // ── View mode ────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
@@ -112,9 +113,11 @@ export default function Trainees() {
   const [deleteTarget, setDeleteTarget] = useState<TraineeCardDto | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
 
-  // ── Filters ───────────────────────────────────────────────────────────────
+  // ── Filters — seed from URL query param ───────────────────────────────────
   const [sportFilter, setSportFilter] = useState("all");
-  const [statusFilter, setStatusFilter] = useState("all");
+  const [statusFilter, setStatusFilter] = useState(() =>
+    searchParams.get("date") === "today" ? "active" : "all"
+  );
   const [sportOptions, setSportOptions] = useState<{ id: number; name: string }[]>([]);
 
   // ── Stats ─────────────────────────────────────────────────────────────────
