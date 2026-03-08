@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRealtime } from "@/contexts/RealtimeContext";
 import {
   LayoutDashboard,
   Users,
@@ -16,6 +17,7 @@ import {
   ChevronDown,
   LogOut,
   Shield,
+  Bell,
 } from "lucide-react";
 
 import {
@@ -35,6 +37,7 @@ import {
   CollapsibleContent,
   CollapsibleTrigger,
 } from "@/components/ui/collapsible";
+import { cn } from "@/lib/utils";
 
 const mainItems = [{ title: "Dashboard", url: "/", icon: LayoutDashboard }];
 
@@ -61,6 +64,7 @@ export function AppSidebar() {
   const location = useLocation();
   const navigate = useNavigate();
   const { logout } = useAuth();
+  const { unreadCount } = useRealtime();
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
 
@@ -115,6 +119,33 @@ export function AppSidebar() {
                   </SidebarMenuButton>
                 </SidebarMenuItem>
               ))}
+
+              {/* Notifications with unread badge */}
+              <SidebarMenuItem>
+                <SidebarMenuButton
+                  asChild
+                  isActive={isActive("/notifications")}
+                  className={navItemCls}
+                >
+                  <NavLink to="/notifications" className="relative flex items-center gap-2">
+                    <Bell className="h-5 w-5" />
+                    {!collapsed && <span>Notifications</span>}
+                    {unreadCount > 0 && (
+                      <span
+                        className={cn(
+                          "ml-auto flex items-center justify-center rounded-full bg-primary text-primary-foreground font-bold leading-none",
+                          unreadCount > 99
+                            ? "h-4 px-1 text-[9px]"
+                            : "h-4 w-4 text-[10px]",
+                          collapsed && "absolute -top-1 -right-1 ml-0",
+                        )}
+                      >
+                        {unreadCount > 99 ? "99+" : unreadCount}
+                      </span>
+                    )}
+                  </NavLink>
+                </SidebarMenuButton>
+              </SidebarMenuItem>
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
@@ -198,6 +229,7 @@ export function AppSidebar() {
             </CollapsibleContent>
           </SidebarGroup>
         </Collapsible>
+
         {/* Logout */}
         <div className="mt-auto px-2 pb-4">
           <button

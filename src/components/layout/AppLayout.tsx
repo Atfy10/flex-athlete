@@ -13,6 +13,9 @@ import {
 import { Bell, Search, User, KeyRound, LogOut, Shield } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { RealtimeProvider } from "@/contexts/RealtimeContext";
+import { useRealtime } from "@/contexts/RealtimeContext";
+import { cn } from "@/lib/utils";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -21,7 +24,6 @@ interface AppLayoutProps {
 /** Derive up-to-2-char initials from a name or email string */
 function getInitials(nameOrEmail: string): string {
   if (!nameOrEmail) return "U";
-  // For email addresses use the part before @
   const base = nameOrEmail.includes("@")
     ? nameOrEmail.split("@")[0]
     : nameOrEmail;
@@ -32,16 +34,17 @@ function getInitials(nameOrEmail: string): string {
   return base.slice(0, 2).toUpperCase();
 }
 
-export function AppLayout({ children }: AppLayoutProps) {
+/** Inner layout that can access RealtimeContext */
+function AppLayoutInner({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const { logout, devUser, token } = useAuth();
+  const { unreadCount } = useRealtime();
 
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
   };
 
-  // Derive display name + initials from available auth data
   const displayName: string = (() => {
     if (devUser) return devUser.name;
     if (token) {
@@ -96,8 +99,28 @@ export function AppLayout({ children }: AppLayoutProps) {
                 <Button variant="ghost" size="icon">
                   <Search className="h-5 w-5" />
                 </Button>
-                <Button variant="ghost" size="icon">
+
+                {/* Notification bell */}
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  className="relative"
+                  onClick={() => navigate("/notifications")}
+                  title="Notifications"
+                >
                   <Bell className="h-5 w-5" />
+                  {unreadCount > 0 && (
+                    <span
+                      className={cn(
+                        "absolute top-1 right-1 flex items-center justify-center rounded-full bg-primary text-primary-foreground font-bold leading-none",
+                        unreadCount > 99
+                          ? "h-4 w-5 text-[9px]"
+                          : "h-4 w-4 text-[10px]",
+                      )}
+                    >
+                      {unreadCount > 99 ? "99+" : unreadCount}
+                    </span>
+                  )}
                 </Button>
 
                 {/* Profile avatar dropdown */}
@@ -110,7 +133,6 @@ export function AppLayout({ children }: AppLayoutProps) {
                     </button>
                   </DropdownMenuTrigger>
                   <DropdownMenuContent align="end" className="w-56">
-                    {/* Account identity header */}
                     <div className="px-3 py-2">
                       <p className="text-sm font-semibold leading-none truncate">
                         {displayName}
@@ -163,5 +185,14 @@ export function AppLayout({ children }: AppLayoutProps) {
       </div>
       <Toaster />
     </SidebarProvider>
+  );
+}
+
+/** Outer wrapper — mounts RealtimeProvider then renders the inner layout */
+export function AppLayout({ children }: AppLayoutProps) {
+  return (
+    <RealtimeProvider>
+      <AppLayoutInner>{children}</AppLayoutInner>
+    </RealtimeProvider>
   );
 }
