@@ -7,7 +7,7 @@ import { EnrollmentEditModal, EnrollmentEditData } from "@/components/modals/Enr
 import { useEffect, useState, useCallback } from "react";
 import {
   User, Trophy, MapPin, Users, Calendar, DollarSign, TrendingUp,
-  CheckCircle, PlayCircle, PauseCircle, CreditCard,
+  CheckCircle, CreditCard, CalendarDays,
 } from "lucide-react";
 import {
   getEnrollmentById,
@@ -290,6 +290,11 @@ export default function EnrollmentProfile() {
             : "Activate Enrollment"
         }
         dropdownExtra={[
+          {
+            label: "View Session Occurrences",
+            icon: <CalendarDays className="h-3.5 w-3.5" />,
+            onClick: () => navigate("/session-occurrences"),
+          },
           {
             label: "Mark as Paid",
             icon: <CreditCard className="h-3.5 w-3.5" />,

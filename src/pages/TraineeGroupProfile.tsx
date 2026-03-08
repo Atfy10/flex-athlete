@@ -2,21 +2,15 @@ import { useParams, useNavigate } from "react-router-dom";
 import { ApiError } from "@/lib/api";
 import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
 import { useToast } from "@/hooks/use-toast";
-import { TraineeGroupFormModal } from "@/components/modals/TraineeGroupFormModal";
 import { useEffect, useState } from "react";
-import { Users, MapPin, Trophy, Clock, Layers, Shield } from "lucide-react";
+import { Users, MapPin, Trophy, Clock, Layers, Shield, Calendar } from "lucide-react";
 import {
   getTraineeGroupById,
   deleteTraineeGroup,
   TraineeGroupDetailDto,
 } from "@/services/traineeGroup.services";
-
-const LEVEL_COLOR: Record<string, string> = {
-  Beginner: "bg-secondary/10 text-secondary",
-  Intermediate: "bg-primary/10 text-primary",
-  Advanced: "bg-success/10 text-success",
-  Mixed: "bg-warning/10 text-warning",
-};
+import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
+import { TraineeGroupFormModal } from "@/components/modals/TraineeGroupFormModal";
 
 export default function TraineeGroupProfile() {
   const { id } = useParams<{ id: string }>();
@@ -27,6 +21,7 @@ export default function TraineeGroupProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [editOpen, setEditOpen] = useState(false);
+  const [operateOpen, setOperateOpen] = useState(false);
 
   const fetchGroup = async () => {
     if (!id) return;
@@ -65,10 +60,10 @@ export default function TraineeGroupProfile() {
         {
           title: "Group Information",
           fields: [
-            { label: "Sport",    value: group.sportName,  icon: <Trophy className="h-3.5 w-3.5" /> },
-            { label: "Coach",    value: group.coachName,  icon: <Users className="h-3.5 w-3.5" /> },
-            { label: "Branch",   value: group.branchName, icon: <MapPin className="h-3.5 w-3.5" /> },
-            { label: "Gender",   value: group.gender,     icon: <Shield className="h-3.5 w-3.5" /> },
+            { label: "Sport",  value: group.sportName,  icon: <Trophy className="h-3.5 w-3.5" /> },
+            { label: "Coach",  value: group.coachName,  icon: <Users className="h-3.5 w-3.5" /> },
+            { label: "Branch", value: group.branchName, icon: <MapPin className="h-3.5 w-3.5" /> },
+            { label: "Gender", value: group.gender,     icon: <Shield className="h-3.5 w-3.5" /> },
             group.skillLevel
               ? { label: "Skill Level", value: group.skillLevel, icon: <Layers className="h-3.5 w-3.5" /> }
               : null,
@@ -121,7 +116,13 @@ export default function TraineeGroupProfile() {
         fullName={group ? `${group.sportName} — ${group.branchName}` : ""}
         roleBadge={group?.skillLevel ?? "Group"}
         roleBadgeVariant="secondary"
-        statusBadge={group ? (group.traineesCount >= group.maximumCapacity ? "Full" : "Active") : ""}
+        statusBadge={
+          group
+            ? group.traineesCount >= group.maximumCapacity
+              ? "Full"
+              : "Active"
+            : ""
+        }
         statusBadgeClass={
           group && group.traineesCount >= group.maximumCapacity
             ? "bg-warning/10 text-warning"
@@ -131,6 +132,19 @@ export default function TraineeGroupProfile() {
         backPath="/trainee-groups"
         onEdit={() => setEditOpen(true)}
         onDelete={handleDelete}
+        dropdownExtra={[
+          {
+            label: "Generate Sessions",
+            icon: <Calendar className="h-3.5 w-3.5" />,
+            onClick: () => setTimeout(() => setOperateOpen(true), 0),
+          },
+          {
+            label: "View Sessions",
+            icon: <Clock className="h-3.5 w-3.5" />,
+            onClick: () =>
+              navigate(`/session-occurrences`),
+          },
+        ]}
         editModal={
           <TraineeGroupFormModal
             open={editOpen}
@@ -141,6 +155,12 @@ export default function TraineeGroupProfile() {
             }}
           />
         }
+      />
+
+      <OperateGroupModal
+        open={operateOpen}
+        onOpenChange={setOperateOpen}
+        onSuccess={() => setOperateOpen(false)}
       />
     </>
   );

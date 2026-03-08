@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useNavigate, useSearchParams } from "react-router-dom";
+import { useSearchParams } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { ApiError } from "@/lib/api";
 import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
@@ -7,12 +7,12 @@ import { useToast } from "@/hooks/use-toast";
 import { BaseModal } from "@/components/modals/BaseModal";
 import { FormInput } from "@/components/modals/FormInput";
 import { Badge } from "@/components/ui/badge";
-import { Mail, Phone, Shield, User, Calendar } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { Mail, Phone, Shield, User, Calendar, KeyRound } from "lucide-react";
 import { getMyProfile, changePassword, MyProfileDto } from "@/services/auth.services";
 
 export default function MyProfile() {
-  const { token } = useAuth();
-  const navigate = useNavigate();
+  const { token, devUser } = useAuth();
   const { toast } = useToast();
   const [searchParams] = useSearchParams();
 
@@ -20,19 +20,23 @@ export default function MyProfile() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
-  // Password change modal state
+  // Password change modal
   const [pwOpen, setPwOpen] = useState(false);
   const [pwLoading, setPwLoading] = useState(false);
   const [pwErrors, setPwErrors] = useState<string[]>([]);
-  const [pwForm, setPwForm] = useState({ currentPassword: "", newPassword: "", confirmPassword: "" });
+  const [pwForm, setPwForm] = useState({
+    currentPassword: "",
+    newPassword: "",
+    confirmPassword: "",
+  });
 
-  // Auto-open from URL tab
+  // Auto-open modals from URL ?tab= param
   useEffect(() => {
     const tab = searchParams.get("tab");
     if (tab === "password") setPwOpen(true);
   }, [searchParams]);
 
-  // Decode basic info from JWT as fallback
+  // ── Decode JWT as fallback ──────────────────────────────────────────────────
   const decodeJwtPayload = (t: string): Record<string, unknown> => {
     try {
       return JSON.parse(atob(t.split(".")[1]));
@@ -41,6 +45,7 @@ export default function MyProfile() {
     }
   };
 
+  // ── Fetch profile ───────────────────────────────────────────────────────────
   const fetchProfile = async () => {
     setLoading(true);
     setError(null);
@@ -52,10 +57,10 @@ export default function MyProfile() {
         return;
       }
     } catch {
-      // Fallback: decode JWT
+      // fall through to JWT fallback
     }
 
-    // Fallback: parse JWT for basic info
+    // Fallback 1: JWT claims
     if (token) {
       const payload = decodeJwtPayload(token) as {
         sub?: string;
@@ -76,16 +81,32 @@ export default function MyProfile() {
           ? [payload.role]
           : undefined,
       });
-    } else {
-      setError("Could not load profile.");
+      setLoading(false);
+      return;
     }
+
+    // Fallback 2: dev session
+    if (devUser) {
+      setProfile({
+        id: devUser.id,
+        userName: devUser.name,
+        email: devUser.email,
+        roles: [devUser.role],
+      });
+      setLoading(false);
+      return;
+    }
+
+    setError("Could not load profile.");
     setLoading(false);
   };
 
   useEffect(() => {
     fetchProfile();
-  }, [token]);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [token, devUser]);
 
+  // ── Password change ─────────────────────────────────────────────────────────
   const handlePasswordChange = async (e: React.FormEvent) => {
     e.preventDefault();
     setPwErrors([]);
@@ -104,34 +125,55 @@ export default function MyProfile() {
       setPwOpen(false);
       setPwForm({ currentPassword: "", newPassword: "", confirmPassword: "" });
     } catch (err) {
-      setPwErrors([err instanceof ApiError ? err.message : "Failed to change password."]);
+      setPwErrors([
+        err instanceof ApiError ? err.message : "Failed to change password.",
+      ]);
     } finally {
       setPwLoading(false);
     }
   };
 
+  // ── Derived display values ──────────────────────────────────────────────────
   const isEmailUsername = profile?.userName === profile?.email;
+  const displayName = isEmailUsername
+    ? (profile?.email ?? "My Profile")
+    : (profile?.userName ?? "My Profile");
 
+  // Primary role for the badge (first role, or "User" as default)
+  const primaryRole = profile?.roles?.[0] ?? "User";
+
+  // ── Sections ────────────────────────────────────────────────────────────────
   const sections: ProfileSection[] = profile
     ? [
         {
           title: "Account Information",
           fields: [
             !isEmailUsername
-              ? { label: "Username", value: profile.userName, icon: <User className="h-3.5 w-3.5" /> }
+              ? {
+                  label: "Username",
+                  value: profile.userName,
+                  icon: <User className="h-3.5 w-3.5" />,
+                }
               : null,
-            { label: "Email", value: profile.email, icon: <Mail className="h-3.5 w-3.5" /> },
+            {
+              label: "Email",
+              value: profile.email,
+              icon: <Mail className="h-3.5 w-3.5" />,
+            },
             profile.phoneNumber
-              ? { label: "Phone", value: profile.phoneNumber, icon: <Phone className="h-3.5 w-3.5" /> }
+              ? {
+                  label: "Phone",
+                  value: profile.phoneNumber,
+                  icon: <Phone className="h-3.5 w-3.5" />,
+                }
               : null,
             profile.createdAt
               ? {
                   label: "Member Since",
-                  value: new Date(profile.createdAt).toLocaleDateString("en-US", {
-                    year: "numeric",
-                    month: "long",
-                    day: "numeric",
-                  }),
+                  value: new Date(profile.createdAt).toLocaleDateString(
+                    "en-US",
+                    { year: "numeric", month: "long", day: "numeric" },
+                  ),
                   icon: <Calendar className="h-3.5 w-3.5" />,
                 }
               : null,
@@ -147,7 +189,11 @@ export default function MyProfile() {
                     value: (
                       <div className="flex flex-wrap gap-1 justify-end">
                         {profile.roles.map((role, i) => (
-                          <Badge key={i} variant="secondary" className="text-xs">
+                          <Badge
+                            key={i}
+                            variant="secondary"
+                            className="text-xs"
+                          >
                             <Shield className="h-3 w-3 mr-1" />
                             {role}
                           </Badge>
@@ -168,8 +214,8 @@ export default function MyProfile() {
       <ProfileViewLayout
         loading={loading}
         error={error}
-        fullName={profile?.userName ?? "My Profile"}
-        roleBadge="Admin User"
+        fullName={displayName}
+        roleBadge={primaryRole}
         roleBadgeVariant="secondary"
         statusBadge="Active"
         statusBadgeClass="bg-success/10 text-success"
@@ -178,13 +224,33 @@ export default function MyProfile() {
         onEdit={() => setPwOpen(true)}
         toggleLabel="Change Password"
         editModal={null}
-        extraActions={undefined}
+        extraActions={
+          <Button
+            variant="outline"
+            size="sm"
+            className="gap-2"
+            onClick={() => setPwOpen(true)}
+          >
+            <KeyRound className="h-4 w-4" />
+            Change Password
+          </Button>
+        }
       />
 
       {/* Change Password Modal */}
       <BaseModal
         open={pwOpen}
-        onOpenChange={setPwOpen}
+        onOpenChange={(open) => {
+          setPwOpen(open);
+          if (!open) {
+            setPwErrors([]);
+            setPwForm({
+              currentPassword: "",
+              newPassword: "",
+              confirmPassword: "",
+            });
+          }
+        }}
         title="Change Password"
         description="Enter your current password and choose a new one."
         onSubmit={handlePasswordChange}
@@ -207,6 +273,7 @@ export default function MyProfile() {
           value={pwForm.newPassword}
           onChange={(v) => setPwForm((p) => ({ ...p, newPassword: v }))}
           required
+          hint="Minimum 6 characters"
         />
         <FormInput
           id="confirmPassword"
