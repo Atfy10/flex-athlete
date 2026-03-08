@@ -94,6 +94,10 @@ export default function Dashboard() {
   // Sessions list
   const [sessions, setSessions] = useState<SessionVm[]>([]);
 
+  // Activity feed
+  const [activityItems,   setActivityItems]   = useState<NotificationDto[]>([]);
+  const [activityLoading, setActivityLoading] = useState(true);
+
   // Sport enrollments chart
   const [enrollmentData,  setEnrollmentData]  = useState<{ sport: string; enrolled: number }[]>([]);
   const [enrollmentLoading, setEnrollmentLoading] = useState(true);
