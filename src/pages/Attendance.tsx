@@ -389,7 +389,7 @@ const Attendance = () => {
       {/* ── Stats Cards ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
         {statsLoading || sessionsLoading ? (
-          Array.from({ length: 4 }).map((_, i) => <StatSkeleton key={i} />)
+          Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
         ) : (
           <>
             <Card className="card-athletic">
