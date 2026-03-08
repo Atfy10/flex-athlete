@@ -147,6 +147,7 @@ export function TraineeGroupFormModal({ open, onOpenChange, onSuccess }: Trainee
       title="Create Trainee Group"
       description="Set up a new training group. Fields marked with * are required."
       onSubmit={handleSubmit} loading={loading} errors={apiErrors}
+      isDirty={isDirty}
     >
       <div className="grid grid-cols-2 gap-3">
         <FormSelect
