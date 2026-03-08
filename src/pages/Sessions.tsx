@@ -288,12 +288,26 @@ export default function Sessions() {
         onOpenChange={setModalOpen}
         onSuccess={handleGenerateSuccess}
       />
+      <MarkAttendanceModal
+        open={markOpen}
+        onOpenChange={setMarkOpen}
+        onSuccess={() => { refresh(); loadStats(); }}
+        sessionOccurrenceId={markSessionId}
+        sessionLabel={markSessionLabel}
+      />
     </div>
   );
 }
 
 // ─── Session Card ─────────────────────────────────────────────────────────────
-function SessionCard({ session }: { session: SessionCardDto }) {
+function SessionCard({
+  session,
+  onMarkAttendance,
+}: {
+  session: SessionCardDto;
+  onMarkAttendance?: (session: SessionCardDto) => void;
+}) {
+  const navigate = useNavigate();
   return (
     <Card className="card-athletic flex flex-col">
       <CardHeader className="pb-4">
