@@ -25,7 +25,11 @@ export function useGlobalShortcuts(onCommandPalette?: () => void) {
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       // Cmd/Ctrl + K → Command Palette (works even from input fields)
-      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "k") {
+      if (
+        (e.ctrlKey || e.metaKey) &&
+        e.shiftKey &&
+        e.key.toLowerCase() === "k"
+      ) {
         e.preventDefault();
         onCommandPalette?.();
         return;
@@ -34,9 +38,11 @@ export function useGlobalShortcuts(onCommandPalette?: () => void) {
       if (isInputTarget(e)) return;
 
       // Alt + D
-      const isAltD = e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "d";
+      const isAltD =
+        e.altKey && !e.ctrlKey && !e.metaKey && e.key.toLowerCase() === "d";
       // Ctrl + Shift + D (alternate)
-      const isCtrlShiftD = (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "d";
+      const isCtrlShiftD =
+        (e.ctrlKey || e.metaKey) && e.shiftKey && e.key.toLowerCase() === "d";
 
       if (isAltD || isCtrlShiftD) {
         e.preventDefault();
@@ -48,4 +54,3 @@ export function useGlobalShortcuts(onCommandPalette?: () => void) {
     return () => window.removeEventListener("keydown", handleKeyDown);
   }, [navigate, onCommandPalette]);
 }
-
