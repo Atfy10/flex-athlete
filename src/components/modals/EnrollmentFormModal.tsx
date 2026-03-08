@@ -8,6 +8,10 @@ import { FormDatePicker } from "./FormDatePicker";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { format } from "date-fns";
+import { suggestSessionsAllowed } from "@/lib/enrollmentUtils";
+import { Sparkles, RotateCcw } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 
 // ─── Validation schema ────────────────────────────────────────────────────────
 const enrollmentSchema = z
@@ -31,6 +35,14 @@ const enrollmentSchema = z
 type EnrollmentFormValues = z.infer<typeof enrollmentSchema>;
 type FieldErrors = Partial<Record<keyof EnrollmentFormValues, string>>;
 
+/** Shape returned by the group detail / schedule endpoint */
+interface GroupScheduleDto {
+  id: number;
+  dayOfWeek: string;
+  startTime: string;
+  endTime: string;
+}
+
 interface EnrollmentFormModalProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
@@ -51,6 +63,12 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
   const [subscriptions, setSubscriptions] = useState<SelectOption[]>([]);
   const [subscriptionsLoading, setSubscriptionsLoading] = useState(false);
 
+  // Weekly frequency derived from the selected group's schedules
+  const [weeklyFrequency, setWeeklyFrequency] = useState<number | null>(null);
+  const [frequencyLoading, setFrequencyLoading] = useState(false);
+  // Tracks whether the user has manually edited sessionsAllowed
+  const [userOverrode, setUserOverrode] = useState(false);
+
   const [form, setForm] = useState({
     enrollmentDate: new Date() as Date | undefined,
     expiryDate: undefined as Date | undefined,
@@ -60,11 +78,14 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
     subscriptionDetailsId: "",
   });
 
+  // ── Load dropdown data on open ────────────────────────────────────────────
   useEffect(() => {
     if (!open) return;
     resetDirty();
     setApiErrors([]);
     setFieldErrors({});
+    setWeeklyFrequency(null);
+    setUserOverrode(false);
     setForm({
       enrollmentDate: new Date(), expiryDate: undefined,
       sessionAllowed: "", traineeId: "", traineeGroupId: "",
@@ -93,12 +114,54 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
     });
   }, [open]);
 
+  // ── Fetch group schedules when group changes ──────────────────────────────
+  useEffect(() => {
+    if (!form.traineeGroupId) {
+      setWeeklyFrequency(null);
+      return;
+    }
+    setFrequencyLoading(true);
+    apiFetch<{ data: { schedules?: GroupScheduleDto[] }; isSuccess: boolean }>(
+      `/api/TraineeGroup/${form.traineeGroupId}`,
+    )
+      .then((res) => {
+        if (res.isSuccess && res.data?.schedules) {
+          setWeeklyFrequency(res.data.schedules.length);
+        } else {
+          // Fallback: assume 1 session/week if no schedule data is returned
+          setWeeklyFrequency(null);
+        }
+      })
+      .catch(() => setWeeklyFrequency(null))
+      .finally(() => setFrequencyLoading(false));
+  }, [form.traineeGroupId]);
+
+  // ── Auto-suggest sessionsAllowed ──────────────────────────────────────────
+  const suggested = suggestSessionsAllowed(form.enrollmentDate, form.expiryDate, weeklyFrequency);
+
+  // Apply suggestion automatically when not overridden by user
+  useEffect(() => {
+    if (userOverrode) return;
+    if (suggested !== null) {
+      setForm((f) => ({ ...f, sessionAllowed: String(suggested) }));
+    }
+  }, [suggested, userOverrode]);
+
+  // ── Field helpers ─────────────────────────────────────────────────────────
   const set = (key: keyof typeof form) => (val: string) => {
     markDirty();
     setForm((f) => ({ ...f, [key]: val }));
     setFieldErrors((fe) => ({ ...fe, [key]: undefined }));
   };
 
+  const applysuggested = () => {
+    if (suggested === null) return;
+    setUserOverrode(false);
+    setForm((f) => ({ ...f, sessionAllowed: String(suggested) }));
+    setFieldErrors((fe) => ({ ...fe, sessionAllowed: undefined }));
+  };
+
+  // ── Submit ────────────────────────────────────────────────────────────────
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setApiErrors([]);
@@ -140,6 +203,10 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
     }
   };
 
+  // Whether we can show a suggestion at all
+  const showSuggestion = suggested !== null && !frequencyLoading;
+  const isOverridden = userOverrode && showSuggestion && form.sessionAllowed !== String(suggested);
+
   return (
     <BaseModal
       open={open} onOpenChange={onOpenChange}
@@ -159,7 +226,12 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
       />
       <FormSelect
         id="traineeGroupId" label="Trainee Group"
-        value={form.traineeGroupId} onChange={(v) => { set("traineeGroupId")(v); }}
+        value={form.traineeGroupId} onChange={(v) => {
+          markDirty();
+          setUserOverrode(false);
+          setForm((f) => ({ ...f, traineeGroupId: v, sessionAllowed: "" }));
+          setFieldErrors((fe) => ({ ...fe, traineeGroupId: undefined }));
+        }}
         options={groups} required
         placeholder="Select group"
         loading={groupsLoading}
@@ -172,6 +244,8 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
           id="enrollmentDate" label="Enrollment Date"
           value={form.enrollmentDate}
           onChange={(d) => {
+            markDirty();
+            setUserOverrode(false);
             setForm((f) => ({ ...f, enrollmentDate: d }));
             setFieldErrors((fe) => ({ ...fe, enrollmentDate: undefined }));
           }}
@@ -181,6 +255,8 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
           id="expiryDate" label="Expiry Date"
           value={form.expiryDate}
           onChange={(d) => {
+            markDirty();
+            setUserOverrode(false);
             setForm((f) => ({ ...f, expiryDate: d }));
             setFieldErrors((fe) => ({ ...fe, expiryDate: undefined }));
           }}
@@ -188,14 +264,62 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
         />
       </div>
 
-      <FormInput
-        id="sessionAllowed" label="Sessions Allowed"
-        value={form.sessionAllowed} onChange={set("sessionAllowed")}
-        type="number" min={1} required
-        placeholder="e.g. 24"
-        hint="Total number of sessions the trainee may attend"
-        error={fieldErrors.sessionAllowed}
-      />
+      {/* Sessions Allowed with auto-suggest */}
+      <div className="space-y-1.5">
+        <div className="flex items-center justify-between">
+          <span className="text-sm font-medium leading-none">
+            Sessions Allowed <span className="text-destructive ml-1" aria-hidden>*</span>
+          </span>
+          {showSuggestion && (
+            <div className="flex items-center gap-1.5">
+              <Badge
+                variant="secondary"
+                className="gap-1 text-xs font-normal bg-primary/10 text-primary border-primary/20"
+              >
+                <Sparkles className="h-3 w-3" />
+                Suggested: {suggested}
+                {weeklyFrequency && (
+                  <span className="text-primary/70">
+                    &nbsp;({weeklyFrequency}×/wk)
+                  </span>
+                )}
+              </Badge>
+              {isOverridden && (
+                <Button
+                  type="button"
+                  variant="ghost"
+                  size="sm"
+                  className="h-5 px-1.5 text-xs text-muted-foreground hover:text-primary"
+                  onClick={applysuggested}
+                  title="Reset to suggested value"
+                >
+                  <RotateCcw className="h-3 w-3 mr-0.5" />
+                  Reset
+                </Button>
+              )}
+            </div>
+          )}
+          {frequencyLoading && form.traineeGroupId && (
+            <span className="text-xs text-muted-foreground animate-pulse">Calculating…</span>
+          )}
+        </div>
+        <FormInput
+          id="sessionAllowed" label=""
+          value={form.sessionAllowed}
+          onChange={(v) => {
+            setUserOverrode(true);
+            set("sessionAllowed")(v);
+          }}
+          type="number" min={1} required
+          placeholder={showSuggestion ? `Suggested: ${suggested}` : "e.g. 24"}
+          hint={
+            !showSuggestion
+              ? "Select group, enrollment & expiry dates to auto-calculate"
+              : undefined
+          }
+          error={fieldErrors.sessionAllowed}
+        />
+      </div>
 
       <FormSelect
         id="subscriptionDetailsId" label="Subscription (optional)"
