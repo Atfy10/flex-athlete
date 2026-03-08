@@ -1,14 +1,12 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { ApiError } from "@/lib/api";
-import { ApiResult } from "@/types/api";
 import {
   ProfileViewLayout,
   ProfileSection,
 } from "@/components/profile/ProfileViewLayout";
 import { TraineeEditModal } from "@/components/modals/TraineeEditModal";
 import { useToast } from "@/hooks/use-toast";
-import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { Badge } from "@/components/ui/badge";
 import {
   Mail,
