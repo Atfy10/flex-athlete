@@ -95,7 +95,7 @@ function SessionsEmptyState({ isSearch }: { isSearch: boolean }) {
       <p className="text-sm mt-1">
         {isSearch
           ? "Try a different search term or clear the filter."
-          : "Use "Operate Group" to generate sessions from a trainee group's weekly schedule."}
+          : 'Use "Operate Group" to generate sessions from a trainee group\'s weekly schedule.'}
       </p>
     </div>
   );

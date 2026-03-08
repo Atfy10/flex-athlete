@@ -29,6 +29,7 @@ export function useEntitySearch<T>({
 }: UseEntitySearchProps<T>) {
   const [term, setTerm] = useState("");
   const [debouncedTerm, setDebouncedTerm] = useState("");
+  const [refreshKey, setRefreshKey] = useState(0);
   const [items, setItems] = useState<T[]>([]);
   const [loading, setLoading] = useState(false);
   const [page, setPage] = useState(1);
