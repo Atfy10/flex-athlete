@@ -23,7 +23,6 @@ import {
   deleteTraineeGroup,
 } from "@/services/traineeGroup.services";
 import { ListTraineeGroupDto } from "@/types/listTraineeGroup";
-import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
 import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
 
