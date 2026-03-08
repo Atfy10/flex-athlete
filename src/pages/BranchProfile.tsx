@@ -274,6 +274,18 @@ export default function BranchProfile() {
         onDelete={handleDelete}
         onToggleActive={isActive ? handleDeactivate : undefined}
         toggleLabel={deactivating ? "Deactivating…" : "Deactivate Branch"}
+        dropdownExtra={[
+          {
+            label: "View Sessions",
+            icon: <CalendarDays className="h-3.5 w-3.5" />,
+            onClick: () => navigate("/session-occurrences"),
+          },
+          {
+            label: "View Trainees",
+            icon: <Users className="h-3.5 w-3.5" />,
+            onClick: () => navigate("/trainees"),
+          },
+        ]}
         editModal={
           <BranchEditModal
             open={editOpen}
