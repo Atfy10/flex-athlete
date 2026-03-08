@@ -275,48 +275,33 @@ export default function Trainees() {
           <CardTitle>Search & Filter</CardTitle>
         </CardHeader>
         <CardContent>
-          <div className="flex flex-col sm:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-muted-foreground h-4 w-4" />
-              <Input
-                placeholder="Search trainees by name, email, or ID"
-                value={term}
-                onChange={(e) => { setTerm(e.target.value); setPage(1); }}
-                className="pl-10"
-              />
-            </div>
-
-            {/* Filter by Sport */}
-            <Select
-              value={sportFilter}
-              onValueChange={(v) => { setSportFilter(v); setPage(1); }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by Sport" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Sports</SelectItem>
-                {sportOptions.map((s) => (
-                  <SelectItem key={s.id} value={s.name}>{s.name}</SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
-
-            {/* Filter by Status */}
-            <Select
-              value={statusFilter}
-              onValueChange={(v) => { setStatusFilter(v); setPage(1); }}
-            >
-              <SelectTrigger className="w-[180px]">
-                <SelectValue placeholder="Filter by Status" />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="all">All Statuses</SelectItem>
-                <SelectItem value="active">Subscribed</SelectItem>
-                <SelectItem value="inactive">Not Subscribed</SelectItem>
-              </SelectContent>
-            </Select>
-          </div>
+          <FilterBar
+            searchValue={term}
+            onSearchChange={(v) => { setTerm(v); setPage(1); }}
+            searchPlaceholder="Search trainees by name, email, or ID"
+            filters={{ sport: sportFilter, status: statusFilter }}
+            onFilterChange={(key, val) => {
+              if (key === "sport") setSportFilter(val);
+              if (key === "status") setStatusFilter(val);
+              setPage(1);
+            }}
+            filterConfigs={[
+              {
+                key: "sport",
+                placeholder: "All Sports",
+                options: sportOptions.map((s) => ({ value: s.name, label: s.name })),
+              },
+              {
+                key: "status",
+                placeholder: "All Statuses",
+                options: [
+                  { value: "active", label: "Subscribed" },
+                  { value: "inactive", label: "Not Subscribed" },
+                ],
+              },
+            ]}
+            onReset={() => { setTerm(""); setSportFilter("all"); setStatusFilter("all"); setPage(1); }}
+          />
         </CardContent>
       </Card>
 
