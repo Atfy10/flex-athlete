@@ -239,7 +239,7 @@ export default function TraineeGroups() {
                       <DropdownMenuItem
                         className="text-destructive"
                         onClick={() =>
-                          setTimeout(() => handleDelete(group.id), 100)
+                          setTimeout(() => setDeleteTarget(group), 0)
                         }
                       >
                         Delete
