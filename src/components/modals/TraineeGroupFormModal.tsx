@@ -130,6 +130,7 @@ export function TraineeGroupFormModal({ open, onOpenChange, onSuccess }: Trainee
         }),
       });
       toast({ title: "Trainee group created successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
