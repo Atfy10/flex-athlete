@@ -4,6 +4,7 @@ import { FormInput } from "./FormInput";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { useFormDirty } from "@/hooks/useFormDirty";
 
 const branchEditSchema = z.object({
   name: z.string().trim().min(1, "Branch name is required").max(100, "Name too long"),
@@ -35,6 +36,7 @@ interface BranchEditModalProps {
 
 export function BranchEditModal({ open, onOpenChange, onSuccess, branch }: BranchEditModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -45,6 +47,7 @@ export function BranchEditModal({ open, onOpenChange, onSuccess, branch }: Branc
 
   useEffect(() => {
     if (!open || !branch) return;
+    resetDirty();
     setErrors([]);
     setFieldErrors({});
     setForm({
@@ -59,6 +62,7 @@ export function BranchEditModal({ open, onOpenChange, onSuccess, branch }: Branc
   }, [open, branch]);
 
   const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
     setFieldErrors((e) => ({ ...e, [key]: "" }));
   };
@@ -100,6 +104,7 @@ export function BranchEditModal({ open, onOpenChange, onSuccess, branch }: Branc
       }
 
       toast({ title: "Branch updated successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
@@ -120,6 +125,7 @@ export function BranchEditModal({ open, onOpenChange, onSuccess, branch }: Branc
       loading={loading}
       errors={errors}
       submitLabel="Save Changes"
+      isDirty={isDirty}
     >
       <FormInput id="name" label="Name" value={form.name} onChange={set("name")} required error={fieldErrors.name} />
       <div className="grid grid-cols-2 gap-3">
