@@ -493,6 +493,7 @@ export default function Profiles() {
           <BasePagination
             page={traineeSearch.page}
             totalPages={traineeSearch.totalPages}
+            pageSize={PAGE_SIZE_INNER}
             onPageChange={traineeSearch.setPage}
           />
         </div>
@@ -503,6 +504,7 @@ export default function Profiles() {
           <BasePagination
             page={coachSearch.page}
             totalPages={coachSearch.totalPages}
+            pageSize={PAGE_SIZE_INNER}
             onPageChange={coachSearch.setPage}
           />
         </div>
@@ -513,6 +515,7 @@ export default function Profiles() {
           <BasePagination
             page={employeeSearch.page}
             totalPages={employeeSearch.totalPages}
+            pageSize={PAGE_SIZE_INNER}
             onPageChange={employeeSearch.setPage}
           />
         </div>
