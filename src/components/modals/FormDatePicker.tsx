@@ -35,10 +35,11 @@ export function FormDatePicker({
         {label}
         {required && <span className="text-destructive ml-1">*</span>}
       </Label>
-      <Popover>
+      <Popover modal={false}>
         <PopoverTrigger asChild>
           <Button
             id={id}
+            type="button"
             variant="outline"
             className={cn(
               "w-full justify-start text-left font-normal",
@@ -50,7 +51,11 @@ export function FormDatePicker({
             {value ? format(value, "PPP") : <span>{placeholder}</span>}
           </Button>
         </PopoverTrigger>
-        <PopoverContent className="w-auto p-0" align="start">
+        <PopoverContent
+          className="w-auto p-0 pointer-events-auto"
+          align="start"
+          onInteractOutside={(e) => e.preventDefault()}
+        >
           <Calendar
             mode="single"
             selected={value}
