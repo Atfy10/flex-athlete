@@ -115,6 +115,7 @@ export function CoachFormModal({
       });
 
       toast({ title: res.message || "Coach created successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
