@@ -1,297 +1,549 @@
-import { useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
-import { 
-  ClipboardCheck, 
-  Users, 
-  Plus, 
-  Search, 
-  Filter,
+import { Skeleton } from "@/components/ui/skeleton";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import {
+  ClipboardCheck,
+  Users,
+  Search,
   Calendar,
   CheckCircle,
   XCircle,
   Clock,
-  TrendingUp
+  TrendingUp,
+  ChevronDown,
+  ChevronUp,
+  MapPin,
+  Trophy,
+  RefreshCw,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  getSessionOccurrencesByDate,
+  getAttendanceBySession,
+  getAverageAttendance,
+} from "@/services/attendance.services";
+import {
+  SessionOccurrenceDto,
+  AttendanceRecordDto,
+  AttendanceStatus,
+} from "@/types/AttendanceDto";
 
-const Attendance = () => {
-  const [searchTerm, setSearchTerm] = useState("");
-  const [selectedDate, setSelectedDate] = useState("2024-03-15");
+// ─── Helpers ──────────────────────────────────────────────────────────────────
+function todayIso() {
+  return new Date().toISOString().split("T")[0];
+}
 
-  // Mock attendance data
-  const attendanceRecords = [
-    {
-      id: 1,
-      session: {
-        title: "Basketball Advanced",
-        sport: "Basketball",
-        coach: "John Smith",
-        time: "09:00 AM",
-        branch: "Main Campus"
-      },
-      trainees: [
-        {
-          id: 1,
-          name: "Alex Thompson",
-          avatar: "/api/placeholder/40/40",
-          status: "Present",
-          checkInTime: "08:55 AM"
-        },
-        {
-          id: 2,
-          name: "Sarah Wilson", 
-          avatar: "/api/placeholder/40/40",
-          status: "Late",
-          checkInTime: "09:15 AM"
-        },
-        {
-          id: 3,
-          name: "Mike Johnson",
-          avatar: "/api/placeholder/40/40",
-          status: "Absent",
-          checkInTime: null
-        }
-      ],
-      totalEnrolled: 12,
-      totalPresent: 9,
-      totalLate: 2,
-      totalAbsent: 1
-    },
-    {
-      id: 2,
-      session: {
-        title: "Swimming Competitive",
-        sport: "Swimming", 
-        coach: "Maria Garcia",
-        time: "10:30 AM",
-        branch: "Main Campus"
-      },
-      trainees: [
-        {
-          id: 4,
-          name: "Emma Davis",
-          avatar: "/api/placeholder/40/40",
-          status: "Present",
-          checkInTime: "10:25 AM"
-        },
-        {
-          id: 5,
-          name: "David Chen",
-          avatar: "/api/placeholder/40/40", 
-          status: "Present",
-          checkInTime: "10:28 AM"
-        }
-      ],
-      totalEnrolled: 8,
-      totalPresent: 7,
-      totalLate: 0,
-      totalAbsent: 1
+function formatTime(t: string) {
+  return t?.slice(0, 5) ?? "";
+}
+
+function formatDuration(minutes: number) {
+  const h = Math.floor(minutes / 60);
+  const m = minutes % 60;
+  if (h === 0) return `${m} min`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
+}
+
+function getInitials(name: string) {
+  return name
+    .split(" ")
+    .map((n) => n[0])
+    .join("")
+    .toUpperCase()
+    .slice(0, 2);
+}
+
+function attendanceRate(present: number, late: number, total: number) {
+  if (!total) return 0;
+  return Math.round(((present + late) / total) * 100);
+}
+
+// ─── Status helpers ───────────────────────────────────────────────────────────
+const STATUS_CONFIG: Record<
+  AttendanceStatus,
+  { label: string; color: string; icon: React.ReactNode }
+> = {
+  Present: {
+    label: "Present",
+    color: "bg-success/10 text-success border-success/20",
+    icon: <CheckCircle className="h-3.5 w-3.5" />,
+  },
+  Late: {
+    label: "Late",
+    color: "bg-warning/10 text-warning border-warning/20",
+    icon: <Clock className="h-3.5 w-3.5" />,
+  },
+  Absent: {
+    label: "Absent",
+    color: "bg-destructive/10 text-destructive border-destructive/20",
+    icon: <XCircle className="h-3.5 w-3.5" />,
+  },
+  Excused: {
+    label: "Excused",
+    color: "bg-muted text-muted-foreground",
+    icon: <Clock className="h-3.5 w-3.5" />,
+  },
+};
+
+// ─── Skeleton ─────────────────────────────────────────────────────────────────
+function SessionCardSkeleton() {
+  return (
+    <Card className="card-athletic">
+      <CardHeader>
+        <div className="flex items-start justify-between gap-4">
+          <div className="flex-1 space-y-2">
+            <Skeleton className="h-5 w-1/2" />
+            <Skeleton className="h-4 w-2/3" />
+          </div>
+          <div className="grid grid-cols-4 gap-3">
+            {[0, 1, 2, 3].map((i) => (
+              <Skeleton key={i} className="h-14 w-16 rounded-lg" />
+            ))}
+          </div>
+        </div>
+      </CardHeader>
+    </Card>
+  );
+}
+
+// ─── Empty state ──────────────────────────────────────────────────────────────
+function AttendanceEmptyState({ date }: { date: string }) {
+  const formatted = new Date(date + "T00:00:00").toLocaleDateString("en-US", {
+    weekday: "long",
+    year: "numeric",
+    month: "long",
+    day: "numeric",
+  });
+  return (
+    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground col-span-full">
+      <ClipboardCheck className="h-12 w-12 mb-4 opacity-30" />
+      <p className="text-base font-medium">No sessions on {formatted}</p>
+      <p className="text-sm mt-1">
+        Generate sessions for this date using the Sessions page.
+      </p>
+    </div>
+  );
+}
+
+// ─── Attendance roster row ────────────────────────────────────────────────────
+function AttendeeRow({ record }: { record: AttendanceRecordDto }) {
+  const cfg = STATUS_CONFIG[record.status] ?? STATUS_CONFIG.Absent;
+  return (
+    <div className="flex items-center justify-between p-3 rounded-lg border border-border hover:bg-muted/40 transition-colors">
+      <div className="flex items-center gap-3">
+        <Avatar className="h-8 w-8 shrink-0">
+          <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-semibold">
+            {getInitials(record.traineeName)}
+          </AvatarFallback>
+        </Avatar>
+        <div>
+          <p className="text-sm font-medium">{record.traineeName}</p>
+          {record.checkInTime && (
+            <p className="text-xs text-muted-foreground">
+              Check-in: {formatTime(record.checkInTime)}
+            </p>
+          )}
+        </div>
+      </div>
+      <Badge className={`${cfg.color} flex items-center gap-1 text-xs`}>
+        {cfg.icon}
+        {cfg.label}
+      </Badge>
+    </div>
+  );
+}
+
+// ─── Roster skeleton ─────────────────────────────────────────────────────────
+function RosterSkeleton() {
+  return (
+    <div className="space-y-2 pt-4 border-t border-border">
+      {Array.from({ length: 4 }).map((_, i) => (
+        <div key={i} className="flex items-center gap-3 p-3">
+          <Skeleton className="h-8 w-8 rounded-full" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-3.5 w-1/3" />
+            <Skeleton className="h-3 w-1/4" />
+          </div>
+          <Skeleton className="h-6 w-16 rounded-full" />
+        </div>
+      ))}
+    </div>
+  );
+}
+
+// ─── Session Attendance Card ──────────────────────────────────────────────────
+function SessionAttendanceCard({
+  session,
+  searchTerm,
+}: {
+  session: SessionOccurrenceDto;
+  searchTerm: string;
+}) {
+  const [expanded, setExpanded] = useState(false);
+  const [roster, setRoster] = useState<AttendanceRecordDto[]>([]);
+  const [rosterLoading, setRosterLoading] = useState(false);
+  const [rosterLoaded, setRosterLoaded] = useState(false);
+
+  const loadRoster = useCallback(async () => {
+    if (rosterLoaded) return;
+    setRosterLoading(true);
+    try {
+      const res = await getAttendanceBySession(session.id);
+      if (res.isSuccess) setRoster(res.data);
+    } finally {
+      setRosterLoading(false);
+      setRosterLoaded(true);
     }
-  ];
+  }, [session.id, rosterLoaded]);
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Present": return "bg-success text-success-foreground";
-      case "Late": return "bg-warning text-warning-foreground";
-      case "Absent": return "bg-destructive text-destructive-foreground";
-      case "Excused": return "bg-muted text-muted-foreground";
-      default: return "bg-muted text-muted-foreground";
-    }
+  const handleToggle = () => {
+    const next = !expanded;
+    setExpanded(next);
+    if (next) loadRoster();
   };
 
-  const getStatusIcon = (status: string) => {
-    switch (status) {
-      case "Present": return <CheckCircle className="h-4 w-4" />;
-      case "Late": return <Clock className="h-4 w-4" />;
-      case "Absent": return <XCircle className="h-4 w-4" />;
-      default: return <Clock className="h-4 w-4" />;
-    }
-  };
+  const rate = attendanceRate(session.totalPresent, session.totalLate, session.totalEnrolled);
 
-  const getInitials = (name: string) => {
-    return name.split(' ').map(n => n[0]).join('').toUpperCase();
-  };
-
-  const getAttendanceRate = (present: number, total: number) => {
-    return Math.round((present / total) * 100);
-  };
+  const filteredRoster = searchTerm.trim().length >= 2
+    ? roster.filter((r) =>
+        r.traineeName.toLowerCase().includes(searchTerm.toLowerCase()),
+      )
+    : roster;
 
   return (
-    <div className="space-y-6">
-      {/* Header */}
+    <Card className="card-athletic overflow-hidden">
+      <CardHeader>
+        <div className="flex flex-col md:flex-row md:items-start justify-between gap-4">
+          {/* Session info */}
+          <div className="space-y-1.5 flex-1 min-w-0">
+            <CardTitle className="text-base flex items-center gap-2">
+              <Trophy className="h-4 w-4 text-primary shrink-0" />
+              {session.sportName}
+            </CardTitle>
+            <div className="flex flex-wrap items-center gap-x-3 gap-y-1 text-sm text-muted-foreground">
+              <span className="flex items-center gap-1">
+                <Users className="h-3.5 w-3.5" />
+                {session.coachName}
+              </span>
+              <span className="flex items-center gap-1">
+                <Clock className="h-3.5 w-3.5" />
+                {formatTime(session.startTime)} ({formatDuration(session.durationInMinutes)})
+              </span>
+              <span className="flex items-center gap-1">
+                <MapPin className="h-3.5 w-3.5" />
+                {session.branchName}
+              </span>
+            </div>
+          </div>
+
+          {/* Summary counters */}
+          <div className="flex items-center gap-3 flex-shrink-0">
+            <div className="grid grid-cols-4 gap-2 text-center">
+              <div className="px-3 py-2 rounded-lg bg-success/10">
+                <p className="text-lg font-bold text-success">{session.totalPresent}</p>
+                <p className="text-xs text-muted-foreground">Present</p>
+              </div>
+              <div className="px-3 py-2 rounded-lg bg-warning/10">
+                <p className="text-lg font-bold text-warning">{session.totalLate}</p>
+                <p className="text-xs text-muted-foreground">Late</p>
+              </div>
+              <div className="px-3 py-2 rounded-lg bg-destructive/10">
+                <p className="text-lg font-bold text-destructive">{session.totalAbsent}</p>
+                <p className="text-xs text-muted-foreground">Absent</p>
+              </div>
+              <div className="px-3 py-2 rounded-lg bg-muted/50">
+                <p className="text-lg font-bold">{session.totalEnrolled}</p>
+                <p className="text-xs text-muted-foreground">Total</p>
+              </div>
+            </div>
+
+            {/* Rate + expand */}
+            <div className="flex flex-col items-end gap-2">
+              <Badge
+                className={
+                  rate >= 80
+                    ? "bg-success/10 text-success border-success/20"
+                    : rate >= 60
+                    ? "bg-warning/10 text-warning border-warning/20"
+                    : "bg-destructive/10 text-destructive border-destructive/20"
+                }
+              >
+                {rate}%
+              </Badge>
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={handleToggle}
+                className="flex items-center gap-1.5 text-xs"
+              >
+                {expanded ? (
+                  <>
+                    <ChevronUp className="h-3.5 w-3.5" /> Hide Roster
+                  </>
+                ) : (
+                  <>
+                    <ChevronDown className="h-3.5 w-3.5" /> View Roster
+                  </>
+                )}
+              </Button>
+            </div>
+          </div>
+        </div>
+      </CardHeader>
+
+      {/* Expandable roster */}
+      {expanded && (
+        <CardContent className="pt-0">
+          {rosterLoading ? (
+            <RosterSkeleton />
+          ) : filteredRoster.length === 0 ? (
+            <div className="pt-4 border-t border-border text-center py-8 text-muted-foreground text-sm">
+              {roster.length === 0
+                ? "No attendance records found for this session."
+                : "No trainees match the search term."}
+            </div>
+          ) : (
+            <div className="pt-4 border-t border-border space-y-2">
+              <p className="text-xs text-muted-foreground font-medium uppercase tracking-wide mb-3">
+                Attendance Roster — {filteredRoster.length} trainees
+              </p>
+              {filteredRoster.map((r) => (
+                <AttendeeRow key={r.id} record={r} />
+              ))}
+            </div>
+          )}
+        </CardContent>
+      )}
+    </Card>
+  );
+}
+
+// ─── Stat card skeleton ───────────────────────────────────────────────────────
+function StatSkeleton() {
+  return (
+    <Card className="card-athletic">
+      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+        <Skeleton className="h-4 w-28" />
+        <Skeleton className="h-4 w-4 rounded" />
+      </CardHeader>
+      <CardContent>
+        <Skeleton className="h-7 w-12 mb-1" />
+        <Skeleton className="h-3 w-24" />
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Main Page ────────────────────────────────────────────────────────────────
+const Attendance = () => {
+  const [selectedDate, setSelectedDate] = useState(todayIso());
+  const [searchTerm, setSearchTerm] = useState("");
+
+  // Sessions for selected date
+  const [sessions, setSessions]       = useState<SessionOccurrenceDto[]>([]);
+  const [sessionsLoading, setSessionsLoading] = useState(true);
+
+  // Stat: overall attendance rate
+  const [avgRate, setAvgRate] = useState<number | null>(null);
+  const [statsLoading, setStatsLoading] = useState(true);
+
+  // ── Fetch sessions for selected date ─────────────────────────────────────
+  const loadSessions = useCallback(async (date: string) => {
+    setSessionsLoading(true);
+    setSessions([]);
+    try {
+      const res = await getSessionOccurrencesByDate(date);
+      if (res.isSuccess) setSessions(res.data.items);
+    } finally {
+      setSessionsLoading(false);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadSessions(selectedDate);
+  }, [selectedDate, loadSessions]);
+
+  // ── Fetch overall stats ───────────────────────────────────────────────────
+  useEffect(() => {
+    const loadStats = async () => {
+      setStatsLoading(true);
+      try {
+        const res = await getAverageAttendance();
+        if (res.isSuccess) setAvgRate(res.data);
+      } finally {
+        setStatsLoading(false);
+      }
+    };
+    loadStats();
+  }, []);
+
+  // Derive stat values from loaded sessions
+  const todayTotal   = sessions.length;
+  const todayPresent = sessions.reduce((s, r) => s + r.totalPresent + r.totalLate, 0);
+  const todayAbsent  = sessions.reduce((s, r) => s + r.totalAbsent, 0);
+  const todayEnrolled = sessions.reduce((s, r) => s + r.totalEnrolled, 0);
+
+  // Filter sessions by search term (session-level: sport, coach, branch)
+  const visibleSessions =
+    searchTerm.trim().length >= 2
+      ? sessions.filter(
+          (s) =>
+            s.sportName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.coachName.toLowerCase().includes(searchTerm.toLowerCase()) ||
+            s.branchName.toLowerCase().includes(searchTerm.toLowerCase()),
+        )
+      : sessions;
+
+  return (
+    <div className="space-y-8">
+      {/* ── Header ─────────────────────────────────────────────────────── */}
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-gradient">Attendance Management</h1>
-          <p className="text-muted-foreground">Track and manage session attendance</p>
+          <p className="text-muted-foreground">Track and review session attendance by date</p>
         </div>
-        <Button className="btn-hero">
-          <Plus className="h-4 w-4 mr-2" />
-          Mark Attendance
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={() => loadSessions(selectedDate)}
+          disabled={sessionsLoading}
+          className="flex items-center gap-2"
+        >
+          <RefreshCw className={`h-4 w-4 ${sessionsLoading ? "animate-spin" : ""}`} />
+          Refresh
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* ── Stats Cards ────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Today's Sessions</CardTitle>
-            <ClipboardCheck className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground">6 completed</p>
-          </CardContent>
-        </Card>
+        {statsLoading || sessionsLoading ? (
+          Array.from({ length: 4 }).map((_, i) => <StatSkeleton key={i} />)
+        ) : (
+          <>
+            <Card className="card-athletic">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Today's Sessions</CardTitle>
+                <ClipboardCheck className="h-4 w-4 text-primary" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{todayTotal}</div>
+                <p className="text-xs text-muted-foreground">
+                  for{" "}
+                  {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
+                    month: "short",
+                    day: "numeric",
+                  })}
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Overall Attendance</CardTitle>
-            <TrendingUp className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">87%</div>
-            <p className="text-xs text-muted-foreground">+3% from last week</p>
-          </CardContent>
-        </Card>
+            <Card className="card-athletic">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Overall Rate</CardTitle>
+                <TrendingUp className="h-4 w-4 text-success" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">
+                  {avgRate !== null ? `${avgRate}%` : "—"}
+                </div>
+                <p className="text-xs text-muted-foreground">all-time average</p>
+              </CardContent>
+            </Card>
 
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Present Today</CardTitle>
-            <CheckCircle className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">92</div>
-            <p className="text-xs text-muted-foreground">Out of 105 expected</p>
-          </CardContent>
-        </Card>
+            <Card className="card-athletic">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Present Today</CardTitle>
+                <CheckCircle className="h-4 w-4 text-success" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{todayPresent}</div>
+                <p className="text-xs text-muted-foreground">
+                  out of {todayEnrolled} expected
+                </p>
+              </CardContent>
+            </Card>
 
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Absent Today</CardTitle>
-            <XCircle className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">13</div>
-            <p className="text-xs text-muted-foreground">12.4% absence rate</p>
-          </CardContent>
-        </Card>
+            <Card className="card-athletic">
+              <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
+                <CardTitle className="text-sm font-medium">Absent Today</CardTitle>
+                <XCircle className="h-4 w-4 text-destructive" />
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{todayAbsent}</div>
+                <p className="text-xs text-muted-foreground">
+                  {todayEnrolled > 0
+                    ? `${Math.round((todayAbsent / todayEnrolled) * 100)}% absence rate`
+                    : "no sessions loaded"}
+                </p>
+              </CardContent>
+            </Card>
+          </>
+        )}
       </div>
 
-      {/* Search and Filters */}
+      {/* ── Date Picker & Search ────────────────────────────────────────── */}
       <Card className="card-athletic">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search sessions or trainees..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <div className="flex gap-2">
+            {/* Date */}
+            <div className="flex items-center gap-3">
+              <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
               <Input
                 type="date"
                 value={selectedDate}
                 onChange={(e) => setSelectedDate(e.target.value)}
                 className="w-auto"
               />
-              <Button variant="outline">
-                <Filter className="h-4 w-4 mr-2" />
-                Filter
-              </Button>
             </div>
+
+            {/* Search */}
+            <div className="relative flex-1">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+              <Input
+                placeholder="Search by sport, coach, or branch…"
+                value={searchTerm}
+                onChange={(e) => setSearchTerm(e.target.value)}
+                className="pl-10"
+              />
+            </div>
+
+            {/* Session count badge */}
+            {!sessionsLoading && sessions.length > 0 && (
+              <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium whitespace-nowrap">
+                <Users className="h-4 w-4" />
+                {sessions.length} session{sessions.length !== 1 ? "s" : ""}
+              </div>
+            )}
           </div>
         </CardContent>
       </Card>
 
-      {/* Session Attendance */}
-      <div className="space-y-6">
-        {attendanceRecords.map((record) => (
-          <Card key={record.id} className="card-athletic">
-            <CardHeader>
-              <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-                <div>
-                  <CardTitle className="text-lg">{record.session.title}</CardTitle>
-                  <p className="text-muted-foreground">
-                    {record.session.coach} • {record.session.time} • {record.session.branch}
-                  </p>
-                </div>
-                <div className="flex items-center gap-4">
-                  <div className="text-right">
-                    <p className="text-sm font-medium">
-                      {record.totalPresent + record.totalLate}/{record.totalEnrolled} Present
-                    </p>
-                    <p className="text-xs text-muted-foreground">
-                      {getAttendanceRate(record.totalPresent + record.totalLate, record.totalEnrolled)}% attendance
-                    </p>
-                  </div>
-                  <Button variant="outline" size="sm">
-                    Edit Attendance
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent>
-              {/* Attendance Summary */}
-              <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
-                <div className="text-center p-3 rounded-lg bg-success/10">
-                  <p className="text-2xl font-bold text-success">{record.totalPresent}</p>
-                  <p className="text-xs text-muted-foreground">Present</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-warning/10">
-                  <p className="text-2xl font-bold text-warning">{record.totalLate}</p>
-                  <p className="text-xs text-muted-foreground">Late</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-destructive/10">
-                  <p className="text-2xl font-bold text-destructive">{record.totalAbsent}</p>
-                  <p className="text-xs text-muted-foreground">Absent</p>
-                </div>
-                <div className="text-center p-3 rounded-lg bg-muted/50">
-                  <p className="text-2xl font-bold">{record.totalEnrolled}</p>
-                  <p className="text-xs text-muted-foreground">Total</p>
-                </div>
-              </div>
-
-              {/* Individual Attendance */}
-              <div className="space-y-3">
-                <h4 className="font-medium">Individual Attendance</h4>
-                <div className="grid gap-3">
-                  {record.trainees.map((trainee) => (
-                    <div key={trainee.id} className="flex items-center justify-between p-3 rounded-lg border">
-                      <div className="flex items-center gap-3">
-                        <Avatar className="h-8 w-8">
-                          <AvatarImage src={trainee.avatar} alt={trainee.name} />
-                          <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs">
-                            {getInitials(trainee.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div>
-                          <p className="font-medium">{trainee.name}</p>
-                          {trainee.checkInTime && (
-                            <p className="text-xs text-muted-foreground">
-                              Check-in: {trainee.checkInTime}
-                            </p>
-                          )}
-                        </div>
-                      </div>
-                      <Badge className={getStatusColor(trainee.status)}>
-                        <div className="flex items-center gap-1">
-                          {getStatusIcon(trainee.status)}
-                          {trainee.status}
-                        </div>
-                      </Badge>
-                    </div>
-                  ))}
-                </div>
-              </div>
-            </CardContent>
-          </Card>
-        ))}
+      {/* ── Session Cards ───────────────────────────────────────────────── */}
+      <div className="space-y-4">
+        {sessionsLoading ? (
+          Array.from({ length: 3 }).map((_, i) => <SessionCardSkeleton key={i} />)
+        ) : visibleSessions.length === 0 ? (
+          searchTerm.trim().length >= 2 ? (
+            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
+              <Search className="h-10 w-10 mb-3 opacity-30" />
+              <p className="text-sm font-medium">No sessions match &quot;{searchTerm}&quot;</p>
+            </div>
+          ) : (
+            <AttendanceEmptyState date={selectedDate} />
+          )
+        ) : (
+          visibleSessions.map((session) => (
+            <SessionAttendanceCard
+              key={session.id}
+              session={session}
+              searchTerm={searchTerm}
+            />
+          ))
+        )}
       </div>
     </div>
   );
