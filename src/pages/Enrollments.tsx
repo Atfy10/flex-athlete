@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnrollmentRowSkeleton } from "@/components/ui/TableRowSkeleton";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { FilterBar } from "@/components/FilterBar";
 import { EmptyState } from "@/components/EmptyState";
@@ -26,6 +27,7 @@ import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import {
   UserPlus, Users, Plus, Calendar, DollarSign, CheckCircle, Clock,
   Eye, MoreHorizontal, Pencil, Trash2, PlayCircle, PauseCircle, CreditCard,
+  Download, XCircle,
 } from "lucide-react";
 import { EnrollmentFormModal } from "@/components/modals/EnrollmentFormModal";
 import { EnrollmentEditModal, EnrollmentEditData } from "@/components/modals/EnrollmentEditModal";
@@ -42,6 +44,8 @@ import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 import { SortableTableHead } from "@/components/ui/SortableTableHead";
 import { useSortable } from "@/hooks/useSortable";
 import { RowActions } from "@/components/ui/RowActions";
+import { useTableSelection } from "@/hooks/useTableSelection";
+import { BulkActionsBar } from "@/components/ui/BulkActionsBar";
 
 const PAGE_SIZE = 10;
 
