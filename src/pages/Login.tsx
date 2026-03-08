@@ -6,24 +6,46 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Trophy, LogIn } from "lucide-react";
+import { Trophy, LogIn, FlaskConical } from "lucide-react";
+import { DEV_EMAIL, isDevLoginEnabled } from "@/auth/dev-login";
 
 export default function Login() {
-  const { login } = useAuth();
+  const { login, loginDev } = useAuth();
   const navigate = useNavigate();
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
+
+  const [email, setEmail]         = useState("");
+  const [password, setPassword]   = useState("");
   const [rememberMe, setRememberMe] = useState(false);
-  const [errors, setErrors] = useState<string[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [errors, setErrors]       = useState<string[]>([]);
+  const [loading, setLoading]     = useState(false);
+
+  // Whether the current email qualifies for the dev bypass
+  const isDevEmail =
+    isDevLoginEnabled() &&
+    email.trim().toLowerCase() === DEV_EMAIL;
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setErrors([]);
     setLoading(true);
+
     try {
+      // ── Dev bypass (Vite dev mode + feature flag + dev email) ────────────
+      if (isDevEmail) {
+        loginDev(email.trim().toLowerCase());
+        navigate("/", { replace: true });
+        return;
+      }
+
+      // ── Normal authentication ─────────────────────────────────────────────
       await login({ email, password });
       navigate("/", { replace: true });
     } catch (err) {
@@ -46,9 +68,20 @@ export default function Login() {
           </div>
           <div>
             <CardTitle className="text-2xl text-gradient">Welcome Back</CardTitle>
-            <CardDescription className="mt-1">Sign in to AURA Sport Academy</CardDescription>
+            <CardDescription className="mt-1">
+              Sign in to AURA Sport Academy
+            </CardDescription>
           </div>
+
+          {/* Dev-mode badge — tree-shaken in production */}
+          {isDevLoginEnabled() && (
+            <div className="flex items-center justify-center gap-1.5 px-3 py-1 rounded-full border border-warning/40 bg-warning/10 text-warning text-xs font-medium w-fit mx-auto">
+              <FlaskConical className="h-3 w-3" />
+              Development mode — use {DEV_EMAIL} for instant access
+            </div>
+          )}
         </CardHeader>
+
         <CardContent>
           <form onSubmit={handleSubmit} className="space-y-4">
             {errors.length > 0 && (
@@ -63,6 +96,7 @@ export default function Login() {
               </Alert>
             )}
 
+            {/* Email */}
             <div className="space-y-2">
               <Label htmlFor="email">Email</Label>
               <Input
@@ -76,18 +110,32 @@ export default function Login() {
               />
             </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <Input
-                id="password"
-                type="password"
-                placeholder="••••••••"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                required
-                autoComplete="current-password"
-              />
-            </div>
+            {/* Password — hidden when dev email is entered */}
+            {!isDevEmail && (
+              <div className="space-y-2">
+                <Label htmlFor="password">Password</Label>
+                <Input
+                  id="password"
+                  type="password"
+                  placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  required
+                  autoComplete="current-password"
+                />
+              </div>
+            )}
+
+            {/* Dev bypass hint when dev email is detected */}
+            {isDevEmail && (
+              <Alert className="border-warning/40 bg-warning/10 text-warning [&>svg]:text-warning">
+                <FlaskConical className="h-4 w-4" />
+                <AlertDescription className="text-warning/90">
+                  Dev bypass active — no password required. No backend call will
+                  be made.
+                </AlertDescription>
+              </Alert>
+            )}
 
             <div className="flex items-center gap-2">
               <Checkbox
@@ -95,19 +143,39 @@ export default function Login() {
                 checked={rememberMe}
                 onCheckedChange={(checked) => setRememberMe(checked === true)}
               />
-              <Label htmlFor="rememberMe" className="text-sm font-normal cursor-pointer">
+              <Label
+                htmlFor="rememberMe"
+                className="text-sm font-normal cursor-pointer"
+              >
                 Remember me
               </Label>
             </div>
 
-            <Button type="submit" className="w-full" variant="hero" disabled={loading}>
-              <LogIn className="h-4 w-4" />
-              {loading ? "Signing in..." : "Sign In"}
+            <Button
+              type="submit"
+              className="w-full"
+              variant={isDevEmail ? "outline" : "hero"}
+              disabled={loading}
+            >
+              {isDevEmail ? (
+                <>
+                  <FlaskConical className="h-4 w-4" />
+                  {loading ? "Entering…" : "Enter as Developer"}
+                </>
+              ) : (
+                <>
+                  <LogIn className="h-4 w-4" />
+                  {loading ? "Signing in…" : "Sign In"}
+                </>
+              )}
             </Button>
 
             <p className="text-center text-sm text-muted-foreground">
               Don't have an account?{" "}
-              <Link to="/register" className="text-primary font-medium hover:underline">
+              <Link
+                to="/register"
+                className="text-primary font-medium hover:underline"
+              >
                 Create one
               </Link>
             </p>
