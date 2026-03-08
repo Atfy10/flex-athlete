@@ -34,6 +34,7 @@ import {
 } from "@/services/session.services";
 import { SessionCardDto } from "@/types/SessionCardDto";
 import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
+import { MarkAttendanceModal } from "@/components/modals/MarkAttendanceModal";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function todayIso() {
