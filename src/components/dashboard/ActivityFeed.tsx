@@ -1,4 +1,3 @@
-import { formatDistanceToNow } from "date-fns";
 import { useNavigate } from "react-router-dom";
 import {
   ClipboardCheck,
@@ -14,6 +13,7 @@ import {
 import { Skeleton } from "@/components/ui/skeleton";
 import { cn } from "@/lib/utils";
 import { NotificationDto } from "@/services/notifications.service";
+import { formatRelativeDateTime, formatSmartDate } from "@/lib/dateUtils";
 
 // ─── Type config ──────────────────────────────────────────────────────────────
 const TYPE_CONFIG: Record<
@@ -73,9 +73,10 @@ function getConfig(type: string) {
 
 function timeAgo(iso: string) {
   try {
-    return formatDistanceToNow(new Date(iso), { addSuffix: true });
+    const { label, title } = formatSmartDate(iso);
+    return { label, title };
   } catch {
-    return "";
+    return { label: "", title: "" };
   }
 }
 
@@ -126,7 +127,12 @@ function ActivityRow({ item }: { item: NotificationDto }) {
         <p className="text-xs text-muted-foreground mt-0.5 line-clamp-1">
           {item.message}
         </p>
-        <p className="text-xs text-muted-foreground/70 mt-1">{timeAgo(item.createdAt)}</p>
+        <p
+          className="text-xs text-muted-foreground/70 mt-1"
+          title={timeAgo(item.createdAt).title}
+        >
+          {timeAgo(item.createdAt).label}
+        </p>
       </div>
 
       {/* Arrow hint for clickable rows */}
