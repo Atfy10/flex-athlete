@@ -258,6 +258,59 @@ export default function Dashboard() {
         </div>
       </div>
 
+      {/* ── Quick Action Bar ─────────────────────────────────────────────── */}
+      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        {[
+          {
+            label: "Add Trainee",
+            icon: UserPlus,
+            onClick: () => setTraineeOpen(true),
+            color: "text-success",
+            bg: "bg-success/10 hover:bg-success/20",
+          },
+          {
+            label: "New Enrollment",
+            icon: BookOpen,
+            onClick: () => setEnrollmentOpen(true),
+            color: "text-secondary",
+            bg: "bg-secondary/10 hover:bg-secondary/20",
+          },
+          {
+            label: "Mark Attendance",
+            icon: ClipboardCheck,
+            onClick: () => navigate("/attendance"),
+            color: "text-primary",
+            bg: "bg-primary/10 hover:bg-primary/20",
+          },
+          {
+            label: "Generate Sessions",
+            icon: Zap,
+            onClick: () => setOperateOpen(true),
+            color: "text-warning",
+            bg: "bg-warning/10 hover:bg-warning/20",
+          },
+          {
+            label: "Add Coach",
+            icon: Users,
+            onClick: () => setCoachOpen(true),
+            color: "text-primary",
+            bg: "bg-primary/10 hover:bg-primary/20",
+          },
+        ].map((action) => (
+          <button
+            key={action.label}
+            onClick={action.onClick}
+            className={`flex flex-col items-center justify-center gap-2 p-4 rounded-xl border border-border ${action.bg} transition-all duration-150 group cursor-pointer focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring`}
+          >
+            <div className={`p-2 rounded-lg bg-background/60 ${action.color} group-hover:scale-110 transition-transform duration-150`}>
+              <action.icon className="h-5 w-5" />
+            </div>
+            <span className="text-xs font-medium text-foreground text-center leading-tight">
+              {action.label}
+            </span>
+          </button>
+        ))}
+
       {/* ── Stats Grid ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
         {loading
