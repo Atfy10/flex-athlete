@@ -1,12 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { apiFetch, ApiError } from "@/lib/api";
-import { ApiResult } from "@/types/api";
+import { ApiError } from "@/lib/api";
 import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { EnrollmentFormModal } from "@/components/modals/EnrollmentFormModal";
 import { useEffect, useState } from "react";
 import { User, Trophy, MapPin, Users, Calendar, DollarSign, TrendingUp, CheckCircle } from "lucide-react";
+import { getEnrollmentById, deleteEnrollment } from "@/services/enrollment.services";
 
 interface EnrollmentDetailDto {
   id: number;
@@ -41,7 +41,7 @@ export default function EnrollmentProfile() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch<ApiResult<EnrollmentDetailDto>>(`/api/enrollment/${id}`);
+      const res = await getEnrollmentById(id) as { isSuccess: boolean; data: EnrollmentDetailDto; message: string };
       if (res.isSuccess && res.data) {
         setEnrollment(res.data);
       } else {
@@ -60,7 +60,7 @@ export default function EnrollmentProfile() {
 
   const handleDelete = async () => {
     try {
-      await apiFetch(`/api/enrollment/${id}`, { method: "DELETE" });
+      await deleteEnrollment(id!);
       toast({ title: "Enrollment removed successfully." });
       navigate("/enrollments");
     } catch {

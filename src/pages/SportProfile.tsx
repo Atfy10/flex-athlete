@@ -1,6 +1,5 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { apiFetch, ApiError } from "@/lib/api";
-import { ApiResult } from "@/types/api";
+import { ApiError } from "@/lib/api";
 import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
@@ -8,6 +7,7 @@ import { SportEditModal } from "@/components/modals/SportEditModal";
 import { AddSkillLevelModal } from "@/components/modals/AddSkillLevelModal";
 import { useEffect, useState } from "react";
 import { Trophy, Users, Clock, DollarSign, Star, MapPin, Tag, Target, Layers } from "lucide-react";
+import { getSportById, deleteSport } from "@/services/sport.services";
 
 interface SportDetailDto {
   id: number;
@@ -42,7 +42,7 @@ export default function SportProfile() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch<ApiResult<SportDetailDto>>(`/api/sport/${id}`);
+      const res = await getSportById(id) as { isSuccess: boolean; data: SportDetailDto; message: string };
       if (res.isSuccess && res.data) {
         setSport(res.data);
       } else {
@@ -61,7 +61,7 @@ export default function SportProfile() {
 
   const handleDelete = async () => {
     try {
-      await apiFetch(`/api/sport/${id}`, { method: "DELETE" });
+      await deleteSport(id!);
       toast({ title: "Sport deleted successfully." });
       navigate("/sports");
     } catch {

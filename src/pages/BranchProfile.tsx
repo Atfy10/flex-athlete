@@ -1,12 +1,12 @@
 import { useParams, useNavigate } from "react-router-dom";
-import { apiFetch, ApiError } from "@/lib/api";
-import { ApiResult } from "@/types/api";
+import { ApiError } from "@/lib/api";
 import { ProfileViewLayout, ProfileSection } from "@/components/profile/ProfileViewLayout";
 import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { BranchFormModal } from "@/components/modals/BranchFormModal";
 import { useEffect, useState } from "react";
-import { MapPin, Phone, Mail, Users, Trophy, Building2, User, Layers } from "lucide-react";
+import { MapPin, Phone, Mail, Users, Trophy, User, Layers } from "lucide-react";
+import { getBranchById, deleteBranch } from "@/services/branch.services";
 
 interface BranchDetailDto {
   id: number;
@@ -37,7 +37,7 @@ export default function BranchProfile() {
     setLoading(true);
     setError(null);
     try {
-      const res = await apiFetch<ApiResult<BranchDetailDto>>(`/api/branch/${id}`);
+      const res = await getBranchById(id) as { isSuccess: boolean; data: BranchDetailDto; message: string };
       if (res.isSuccess && res.data) {
         setBranch(res.data);
       } else {
@@ -56,7 +56,7 @@ export default function BranchProfile() {
 
   const handleDelete = async () => {
     try {
-      await apiFetch(`/api/branch/${id}`, { method: "DELETE" });
+      await deleteBranch(id!);
       toast({ title: "Branch deleted successfully." });
       navigate("/branches");
     } catch {
