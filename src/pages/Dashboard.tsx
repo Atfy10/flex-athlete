@@ -31,6 +31,7 @@ import {
   LineChart,
   Line,
 } from "recharts";
+import { useNavigate } from "react-router-dom";
 import { mapSessions, SessionVm } from "@/lib/mappers";
 import { getActiveCoachesCount } from "@/services/coaches.service";
 import { getSports } from "@/services/sport.services";
