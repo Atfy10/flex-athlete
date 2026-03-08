@@ -1,434 +1,541 @@
-import { useState } from "react";
+import { useState, useEffect, useCallback } from "react";
+import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { FilterBar } from "@/components/FilterBar";
+import { EmptyState } from "@/components/EmptyState";
+import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
+import { BasePagination } from "@/components/BasePagination";
+import { useEntitySearch } from "@/hooks/useEntitySearch";
 import {
-  User,
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
+import {
   Users,
-  Plus,
-  Search,
-  Filter,
+  UserCheck,
+  GraduationCap,
+  MoreHorizontal,
   Mail,
   Phone,
-  Calendar,
   MapPin,
-  Heart,
-  AlertTriangle,
-  FileText,
+  Calendar,
+  TrendingUp,
+  Eye,
+  Pencil,
+  Trash2,
 } from "lucide-react";
-import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
+import {
+  listTrainees,
+  searchTrainees,
+  deleteTrainee,
+  countTrainees,
+} from "@/services/trainee.service";
+import {
+  listCoaches,
+  searchCoaches,
+  deleteCoach,
+  countCoaches,
+} from "@/services/coaches.service";
+import {
+  listEmployees,
+  searchEmployees,
+  deleteEmployee,
+  getTotalEmployees,
+} from "@/services/employees.service";
+import { TraineeCardDto } from "@/types/TraineeCardDto";
+import { CoachCardDto } from "@/types/CoachCardDto";
+import { EmployeeCardDto } from "@/types/EmployeeCardDto";
+import { useToast } from "@/hooks/use-toast";
 
-type MedicalInfo = {
-  bloodType?: string;
-  allergies: string[];
-  conditions: string[];
-  medications: string[];
-};
+// ─── Union type ─────────────────────────────────────────────────────────────
+type ProfileType = "trainee" | "coach" | "employee";
 
-type EmergencyContact = {
-  name: string;
-  relationship: string;
-  phone: string;
-};
+type UnifiedProfile =
+  | ({ _type: "trainee" } & TraineeCardDto)
+  | ({ _type: "coach" } & CoachCardDto)
+  | ({ _type: "employee" } & EmployeeCardDto);
 
-type Profile = {
-  id: number;
-  name: string;
-  email: string;
-  phone: string;
-  dateOfBirth: string;
-  address: string;
-  avatar: string;
-  role: string;
-  joinDate: string;
-  emergencyContact: EmergencyContact;
-  medicalInfo: MedicalInfo;
-  sports: string[];
-  branch: string;
-  status: string;
-  certifications?: string[];
-};
+// ─── Helpers ─────────────────────────────────────────────────────────────────
+const getInitials = (first: string, last?: string) =>
+  ((first?.[0] ?? "") + (last?.[0] ?? "")).toUpperCase() || "?";
 
-const Profiles = () => {
-  const [searchTerm, setSearchTerm] = useState("");
+const PAGE_SIZE = 9;
 
-  // Mock profile data
-  const profiles = [
-    {
-      id: 1,
-      name: "Alex Thompson",
-      email: "alex.thompson@email.com",
-      phone: "+1 234 567 8901",
-      dateOfBirth: "1995-06-15",
-      address: "123 Main St, City Center",
-      avatar: "/api/placeholder/80/80",
-      role: "Trainee",
-      joinDate: "2024-01-15",
-      emergencyContact: {
-        name: "Jennifer Thompson",
-        relationship: "Mother",
-        phone: "+1 234 567 8902",
-      },
-      medicalInfo: {
-        bloodType: "O+",
-        allergies: ["Peanuts"],
-        conditions: ["Asthma"],
-        medications: ["Inhaler"],
-      },
-      sports: ["Basketball", "Tennis"],
-      branch: "Main Campus",
-      status: "Active",
-    },
-    {
-      id: 2,
-      name: "Sarah Wilson",
-      email: "sarah.wilson@email.com",
-      phone: "+1 234 567 8903",
-      dateOfBirth: "1988-03-22",
-      address: "456 Oak Ave, Downtown",
-      avatar: "/api/placeholder/80/80",
-      role: "Coach",
-      joinDate: "2022-08-10",
-      emergencyContact: {
-        name: "Mark Wilson",
-        relationship: "Spouse",
-        phone: "+1 234 567 8904",
-      },
-      medicalInfo: {
-        bloodType: "A+",
-        allergies: [],
-        conditions: [],
-        medications: [],
-      },
-      sports: ["Swimming", "Water Polo"],
-      branch: "Main Campus",
-      status: "Active",
-      certifications: ["CPR Certified", "First Aid", "Swimming Instructor"],
-    },
-    {
-      id: 3,
-      name: "Mike Johnson",
-      email: "mike.johnson@email.com",
-      phone: "+1 234 567 8905",
-      dateOfBirth: "2010-11-08",
-      address: "789 Pine St, Westside",
-      avatar: "/api/placeholder/80/80",
-      role: "Trainee",
-      joinDate: "2024-02-01",
-      emergencyContact: {
-        name: "Lisa Johnson",
-        relationship: "Mother",
-        phone: "+1 234 567 8906",
-      },
-      medicalInfo: {
-        bloodType: "B+",
-        allergies: ["Latex"],
-        conditions: [],
-        medications: [],
-      },
-      sports: ["Tennis"],
-      branch: "Downtown",
-      status: "Active",
-    },
-  ];
+// ─── Card Skeleton ────────────────────────────────────────────────────────────
+function ProfileCardSkeleton() {
+  return (
+    <Card className="card-athletic">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-3">
+          <Skeleton className="h-12 w-12 rounded-full" />
+          <div className="flex-1 space-y-1.5">
+            <Skeleton className="h-4 w-36" />
+            <Skeleton className="h-3 w-24" />
+          </div>
+          <Skeleton className="h-8 w-8 rounded" />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-2.5">
+        <Skeleton className="h-3 w-full" />
+        <Skeleton className="h-3 w-4/5" />
+        <Skeleton className="h-3 w-3/5" />
+        <div className="pt-3 border-t border-border">
+          <Skeleton className="h-8 w-full rounded-md" />
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case "Active":
-        return "bg-success text-success-foreground";
-      case "Inactive":
-        return "bg-muted text-muted-foreground";
-      case "Suspended":
-        return "bg-destructive text-destructive-foreground";
-      default:
-        return "bg-muted text-muted-foreground";
-    }
-  };
+// ─── Individual profile card ──────────────────────────────────────────────────
+function ProfileCard({
+  profile,
+  onView,
+  onEdit,
+  onDelete,
+}: {
+  profile: UnifiedProfile;
+  onView: () => void;
+  onEdit: () => void;
+  onDelete: () => void;
+}) {
+  const firstName = profile.firstName;
+  const lastName = profile.lastName;
+  const fullName = `${firstName} ${lastName}`;
 
-  const getRoleColor = (role: string) => {
-    switch (role) {
-      case "Trainee":
-        return "bg-primary/10 text-primary";
-      case "Coach":
-        return "bg-secondary/10 text-secondary";
-      case "Employee":
-        return "bg-success/10 text-success";
-      case "Admin":
-        return "bg-warning/10 text-warning";
-      default:
-        return "bg-muted text-muted-foreground";
-    }
-  };
+  const typeLabel =
+    profile._type === "trainee"
+      ? "Trainee"
+      : profile._type === "coach"
+        ? "Coach"
+        : "Employee";
 
-  const getInitials = (name: string) => {
-    return name
-      .split(" ")
-      .map((n) => n[0])
-      .join("")
-      .toUpperCase();
-  };
+  const typeBadgeCls =
+    profile._type === "trainee"
+      ? "bg-primary/10 text-primary"
+      : profile._type === "coach"
+        ? "bg-secondary/10 text-secondary"
+        : "bg-success/10 text-success";
 
-  const calculateAge = (dateOfBirth: string) => {
-    const today = new Date();
-    const birthDate = new Date(dateOfBirth);
-    let age = today.getFullYear() - birthDate.getFullYear();
-    const monthDiff = today.getMonth() - birthDate.getMonth();
-    if (
-      monthDiff < 0 ||
-      (monthDiff === 0 && today.getDate() < birthDate.getDate())
-    ) {
-      age--;
-    }
-    return age;
-  };
+  const statusLabel =
+    profile._type === "trainee"
+      ? (profile as TraineeCardDto).isSubscribed
+        ? "Active"
+        : "Inactive"
+      : (profile as EmployeeCardDto).isWork
+        ? "Working"
+        : "Inactive";
 
-  const hasMedicalConcerns = (medicalInfo: MedicalInfo) => {
-    return (
-      (medicalInfo.allergies && medicalInfo.allergies.length > 0) ||
-      (medicalInfo.conditions && medicalInfo.conditions.length > 0) ||
-      (medicalInfo.medications && medicalInfo.medications.length > 0)
-    );
-  };
+  const statusCls =
+    (profile._type === "trainee"
+      ? (profile as TraineeCardDto).isSubscribed
+      : (profile as EmployeeCardDto).isWork)
+      ? "bg-success/10 text-success"
+      : "bg-muted text-muted-foreground";
+
+  const subtitle =
+    profile._type === "trainee"
+      ? `Age ${(profile as TraineeCardDto).age} · Trainee`
+      : profile._type === "coach"
+        ? `${(profile as CoachCardDto).position || "Coach"} · ${(profile as CoachCardDto).sportName || ""}`
+        : (profile as EmployeeCardDto).position || "Employee";
 
   return (
-    <div className="space-y-6">
+    <Card className="card-athletic flex flex-col">
+      <CardHeader className="pb-4">
+        <div className="flex items-center gap-3">
+          <Avatar className="h-12 w-12 shrink-0">
+            <AvatarFallback className="bg-gradient-primary text-primary-foreground font-semibold">
+              {getInitials(firstName, lastName)}
+            </AvatarFallback>
+          </Avatar>
+          <div className="flex-1 min-w-0">
+            <p className="font-semibold leading-tight truncate">{fullName}</p>
+            <p className="text-xs text-muted-foreground truncate mt-0.5">
+              {subtitle}
+            </p>
+            <div className="flex gap-1.5 mt-1.5">
+              <Badge className={`${typeBadgeCls} text-xs`}>{typeLabel}</Badge>
+              <Badge className={`${statusCls} text-xs`}>{statusLabel}</Badge>
+            </div>
+          </div>
+          <DropdownMenu>
+            <DropdownMenuTrigger asChild>
+              <Button variant="ghost" size="icon" className="shrink-0">
+                <MoreHorizontal className="h-4 w-4" />
+              </Button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="end">
+              <DropdownMenuLabel>Actions</DropdownMenuLabel>
+              <DropdownMenuItem onClick={onView} className="gap-2">
+                <Eye className="h-4 w-4" />
+                View Profile
+              </DropdownMenuItem>
+              <DropdownMenuItem
+                onClick={() => setTimeout(onEdit, 0)}
+                className="gap-2"
+              >
+                <Pencil className="h-4 w-4" />
+                Edit
+              </DropdownMenuItem>
+              <DropdownMenuSeparator />
+              <DropdownMenuItem
+                onClick={() => setTimeout(onDelete, 0)}
+                className="gap-2 text-destructive focus:text-destructive focus:bg-destructive/10"
+              >
+                <Trash2 className="h-4 w-4" />
+                Remove
+              </DropdownMenuItem>
+            </DropdownMenuContent>
+          </DropdownMenu>
+        </div>
+      </CardHeader>
+
+      <CardContent className="flex-1 space-y-2">
+        <div className="flex items-center gap-2 text-sm">
+          <Mail className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="truncate text-muted-foreground">{profile.email}</span>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <Phone className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="text-muted-foreground">
+            {profile._type === "trainee"
+              ? (profile as TraineeCardDto).phoneNumber
+              : (profile as EmployeeCardDto).phoneNumber}
+          </span>
+        </div>
+        <div className="flex items-center gap-2 text-sm">
+          <MapPin className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+          <span className="text-muted-foreground truncate">
+            {profile.branchName}
+          </span>
+        </div>
+        {profile._type === "trainee" && (
+          <div className="flex items-center gap-2 text-sm">
+            <Calendar className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="text-muted-foreground">
+              Att: {(profile as TraineeCardDto).attendanceRate}%
+            </span>
+          </div>
+        )}
+        {profile._type === "coach" && (
+          <div className="flex items-center gap-2 text-sm">
+            <Users className="h-3.5 w-3.5 text-muted-foreground shrink-0" />
+            <span className="text-muted-foreground">
+              {(profile as CoachCardDto).totalTrainees} trainees
+            </span>
+          </div>
+        )}
+
+        <div className="pt-3 border-t border-border">
+          <Button
+            variant="outline"
+            size="sm"
+            className="w-full gap-2"
+            onClick={onView}
+          >
+            <Eye className="h-3.5 w-3.5" />
+            View Profile
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  );
+}
+
+// ─── Page ─────────────────────────────────────────────────────────────────────
+const PAGE_SIZE_INNER = PAGE_SIZE;
+
+export default function Profiles() {
+  const navigate = useNavigate();
+  const { toast } = useToast();
+
+  // ── Type filter ─────────────────────────────────────────────────────────────
+  const [typeFilter, setTypeFilter] = useState<ProfileType | "all">("all");
+
+  // ── Stats ───────────────────────────────────────────────────────────────────
+  const [stats, setStats] = useState({
+    total: 0,
+    trainees: 0,
+    coaches: 0,
+    employees: 0,
+  });
+
+  useEffect(() => {
+    let active = true;
+    Promise.allSettled([
+      countTrainees(),
+      countCoaches(),
+      getTotalEmployees(),
+    ]).then(([tRes, cRes, eRes]) => {
+      if (!active) return;
+      const t = tRes.status === "fulfilled" && tRes.value?.isSuccess ? tRes.value.data : 0;
+      const c = cRes.status === "fulfilled" && cRes.value?.isSuccess ? cRes.value.data : 0;
+      const e = eRes.status === "fulfilled" && eRes.value?.isSuccess ? eRes.value.data : 0;
+      setStats({ total: t + c + e, trainees: t, coaches: c, employees: e });
+    });
+    return () => { active = false; };
+  }, []);
+
+  // ── Delete state ─────────────────────────────────────────────────────────────
+  const [deleteTarget, setDeleteTarget] = useState<UnifiedProfile | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
+
+  // ── Entity search hooks (one per type) ───────────────────────────────────────
+  const traineeSearch = useEntitySearch<TraineeCardDto>({
+    listFn: listTrainees,
+    searchFn: searchTrainees,
+    pageSize: PAGE_SIZE_INNER,
+    minLength: 2,
+  });
+
+  const coachSearch = useEntitySearch<CoachCardDto>({
+    listFn: listCoaches,
+    searchFn: searchCoaches,
+    pageSize: PAGE_SIZE_INNER,
+    minLength: 2,
+  });
+
+  const employeeSearch = useEntitySearch<EmployeeCardDto>({
+    listFn: listEmployees,
+    searchFn: searchEmployees,
+    pageSize: PAGE_SIZE_INNER,
+    minLength: 2,
+  });
+
+  // ── Unified search term (drives all three hooks) ─────────────────────────────
+  const [term, setTerm] = useState("");
+
+  const handleTermChange = useCallback(
+    (val: string) => {
+      setTerm(val);
+      traineeSearch.setTerm(val);
+      coachSearch.setTerm(val);
+      employeeSearch.setTerm(val);
+    },
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [],
+  );
+
+  const handleReset = () => {
+    handleTermChange("");
+    setTypeFilter("all");
+  };
+
+  // ── Combine into unified list ─────────────────────────────────────────────
+  const allProfiles: UnifiedProfile[] = [
+    ...traineeSearch.items.map((t) => ({ _type: "trainee" as const, ...t })),
+    ...coachSearch.items.map((c) => ({ _type: "coach" as const, ...c })),
+    ...employeeSearch.items.map((e) => ({ _type: "employee" as const, ...e })),
+  ];
+
+  const filtered =
+    typeFilter === "all"
+      ? allProfiles
+      : allProfiles.filter((p) => p._type === typeFilter);
+
+  const loading =
+    traineeSearch.loading || coachSearch.loading || employeeSearch.loading;
+
+  // ── Delete handler ────────────────────────────────────────────────────────
+  const handleConfirmDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
+    try {
+      if (deleteTarget._type === "trainee") {
+        await deleteTrainee(deleteTarget.id);
+      } else if (deleteTarget._type === "coach") {
+        await deleteCoach(deleteTarget.id);
+      } else {
+        await deleteEmployee(deleteTarget.id);
+      }
+      toast({ title: "Profile removed successfully." });
+      traineeSearch.refresh();
+      coachSearch.refresh();
+      employeeSearch.refresh();
+    } catch {
+      toast({ title: "Failed to remove profile.", variant: "destructive" });
+    } finally {
+      setDeleteLoading(false);
+      setDeleteTarget(null);
+    }
+  };
+
+  // ── Navigation ────────────────────────────────────────────────────────────
+  const getViewPath = (p: UnifiedProfile) => {
+    if (p._type === "trainee") return `/trainees/${p.id}`;
+    if (p._type === "coach") return `/coaches/${p.id}`;
+    return `/employees/${p.id}`;
+  };
+
+  const getEditPath = (p: UnifiedProfile) => {
+    if (p._type === "trainee") return `/trainees/${p.id}`;
+    if (p._type === "coach") return `/coaches/${p.id}`;
+    return `/employees/${p.id}`;
+  };
+
+  // ── Stats cards ────────────────────────────────────────────────────────────
+  const statCards = [
+    { label: "Total Profiles", value: stats.total, icon: Users, color: "text-primary" },
+    { label: "Trainees", value: stats.trainees, icon: GraduationCap, color: "text-success" },
+    { label: "Coaches", value: stats.coaches, icon: UserCheck, color: "text-secondary" },
+    { label: "Employees", value: stats.employees, icon: TrendingUp, color: "text-warning" },
+  ];
+
+  return (
+    <div className="space-y-8">
       {/* Header */}
-      <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
         <div>
-          <h1 className="text-3xl font-bold text-gradient">
-            Profile Management
-          </h1>
+          <h1 className="text-3xl font-bold text-gradient">Profile Directory</h1>
           <p className="text-muted-foreground">
-            Manage user profiles and personal information
+            Unified view of all trainees, coaches, and employees
           </p>
         </div>
-        <Button className="btn-hero">
-          <Plus className="h-4 w-4 mr-2" />
-          Add Profile
-        </Button>
       </div>
 
-      {/* Stats Cards */}
-      <div className="grid grid-cols-1 md:grid-cols-4 gap-6">
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Total Profiles
-            </CardTitle>
-            <User className="h-4 w-4 text-primary" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">187</div>
-            <p className="text-xs text-muted-foreground">All users</p>
-          </CardContent>
-        </Card>
-
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Trainees</CardTitle>
-            <Users className="h-4 w-4 text-success" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">156</div>
-            <p className="text-xs text-muted-foreground">83% of total</p>
-          </CardContent>
-        </Card>
-
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Medical Alerts
-            </CardTitle>
-            <Heart className="h-4 w-4 text-destructive" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">23</div>
-            <p className="text-xs text-muted-foreground">Require attention</p>
-          </CardContent>
-        </Card>
-
-        <Card className="card-athletic">
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">
-              Incomplete Profiles
-            </CardTitle>
-            <AlertTriangle className="h-4 w-4 text-warning" />
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">8</div>
-            <p className="text-xs text-muted-foreground">Need updates</p>
-          </CardContent>
-        </Card>
-      </div>
-
-      {/* Search and Filters */}
-      <Card className="card-athletic">
-        <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
-            <div className="relative flex-1">
-              <Search className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-              <Input
-                placeholder="Search profiles..."
-                value={searchTerm}
-                onChange={(e) => setSearchTerm(e.target.value)}
-                className="pl-10"
-              />
-            </div>
-            <Button variant="outline">
-              <Filter className="h-4 w-4 mr-2" />
-              Filter
-            </Button>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Profiles Grid */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {profiles.map((profile: Profile) => (
-          <Card key={profile.id} className="card-athletic">
+      {/* Stats */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+        {statCards.map((s, i) => (
+          <Card key={i} className="card-athletic">
             <CardContent className="p-6">
-              {/* Header */}
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-4">
-                  <Avatar className="h-16 w-16">
-                    <AvatarImage src={profile.avatar} alt={profile.name} />
-                    <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                      {getInitials(profile.name)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div>
-                    <h3 className="font-semibold text-lg">{profile.name}</h3>
-                    <p className="text-sm text-muted-foreground">
-                      Age {calculateAge(profile.dateOfBirth)} • {profile.branch}
-                    </p>
-                    <div className="flex gap-2 mt-1">
-                      <Badge className={getRoleColor(profile.role)}>
-                        {profile.role}
-                      </Badge>
-                      <Badge className={getStatusColor(profile.status)}>
-                        {profile.status}
-                      </Badge>
-                    </div>
-                  </div>
+              <div className="flex items-center justify-between">
+                <div>
+                  <p className="text-muted-foreground text-sm font-medium">{s.label}</p>
+                  <p className="text-2xl font-bold mt-1">{s.value}</p>
                 </div>
-                {hasMedicalConcerns(profile.medicalInfo) && (
-                  <AlertTriangle className="h-5 w-5 text-warning" />
-                )}
-              </div>
-
-              {/* Contact Info */}
-              <div className="space-y-2 mb-4">
-                <div className="flex items-center gap-2 text-sm">
-                  <Mail className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">{profile.email}</span>
+                <div className="p-3 rounded-xl bg-primary/10">
+                  <s.icon className={`h-5 w-5 ${s.color}`} />
                 </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Phone className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">{profile.phone}</span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <MapPin className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    {profile.address}
-                  </span>
-                </div>
-                <div className="flex items-center gap-2 text-sm">
-                  <Calendar className="h-4 w-4 text-muted-foreground" />
-                  <span className="text-muted-foreground">
-                    Joined {profile.joinDate}
-                  </span>
-                </div>
-              </div>
-
-              {/* Sports */}
-              <div className="mb-4">
-                <p className="text-sm font-medium mb-2">Sports</p>
-                <div className="flex flex-wrap gap-1">
-                  {profile.sports.map((sport) => (
-                    <Badge key={sport} variant="secondary" className="text-xs">
-                      {sport}
-                    </Badge>
-                  ))}
-                </div>
-              </div>
-
-              {/* Emergency Contact */}
-              <div className="mb-4">
-                <p className="text-sm font-medium mb-2">Emergency Contact</p>
-                <div className="text-sm text-muted-foreground">
-                  <p>
-                    {profile.emergencyContact.name} (
-                    {profile.emergencyContact.relationship})
-                  </p>
-                  <p>{profile.emergencyContact.phone}</p>
-                </div>
-              </div>
-
-              {/* Medical Info (if concerns exist) */}
-              {hasMedicalConcerns(profile.medicalInfo) && (
-                <div className="mb-4 p-3 rounded-lg bg-warning/10 border border-warning/20">
-                  <div className="flex items-center gap-2 mb-2">
-                    <Heart className="h-4 w-4 text-warning" />
-                    <p className="text-sm font-medium text-warning">
-                      Medical Information
-                    </p>
-                  </div>
-                  <div className="text-xs space-y-1">
-                    {profile.medicalInfo.allergies.length > 0 && (
-                      <p>
-                        <strong>Allergies:</strong>{" "}
-                        {profile.medicalInfo.allergies.join(", ")}
-                      </p>
-                    )}
-                    {profile.medicalInfo.conditions.length > 0 && (
-                      <p>
-                        <strong>Conditions:</strong>{" "}
-                        {profile.medicalInfo.conditions.join(", ")}
-                      </p>
-                    )}
-                    {profile.medicalInfo.medications.length > 0 && (
-                      <p>
-                        <strong>Medications:</strong>{" "}
-                        {profile.medicalInfo.medications.join(", ")}
-                      </p>
-                    )}
-                  </div>
-                </div>
-              )}
-
-              {/* Certifications (for coaches) */}
-              {profile.role === "Coach" && profile.certifications && (
-                <div className="mb-4">
-                  <p className="text-sm font-medium mb-2">Certifications</p>
-                  <div className="flex flex-wrap gap-1">
-                    {profile.certifications.map((cert: string) => (
-                      <Badge
-                        key={cert}
-                        className="text-xs bg-success/10 text-success"
-                      >
-                        {cert}
-                      </Badge>
-                    ))}
-                  </div>
-                </div>
-              )}
-
-              <div className="flex gap-2">
-                <Button variant="outline" size="sm" className="flex-1">
-                  <FileText className="h-4 w-4 mr-1" />
-                  Edit
-                </Button>
-                <Button variant="outline" size="sm" className="flex-1">
-                  View Full
-                </Button>
               </div>
             </CardContent>
           </Card>
         ))}
       </div>
+
+      {/* Filters */}
+      <Card className="card-athletic">
+        <CardHeader>
+          <CardTitle>Search & Filter</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <FilterBar
+            searchValue={term}
+            onSearchChange={handleTermChange}
+            searchPlaceholder="Search by name or email…"
+            filters={{ type: typeFilter }}
+            onFilterChange={(key, val) => {
+              if (key === "type") setTypeFilter(val as ProfileType | "all");
+            }}
+            filterConfigs={[
+              {
+                key: "type",
+                placeholder: "All Types",
+                options: [
+                  { value: "trainee", label: "Trainees" },
+                  { value: "coach", label: "Coaches" },
+                  { value: "employee", label: "Employees" },
+                ],
+                width: "w-full sm:w-40",
+              },
+            ]}
+            onReset={handleReset}
+            hasActiveFilters={term !== "" || typeFilter !== "all"}
+          />
+        </CardContent>
+      </Card>
+
+      {/* Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
+        {loading ? (
+          Array.from({ length: PAGE_SIZE }).map((_, i) => (
+            <ProfileCardSkeleton key={i} />
+          ))
+        ) : filtered.length === 0 ? (
+          <div className="col-span-full">
+            <EmptyState
+              icon={Users}
+              title="No profiles found"
+              description={
+                term
+                  ? `No results for "${term}". Try a different search or reset the filters.`
+                  : "No profiles match the selected filters."
+              }
+              actionLabel={term || typeFilter !== "all" ? "Reset Filters" : undefined}
+              onAction={term || typeFilter !== "all" ? handleReset : undefined}
+            />
+          </div>
+        ) : (
+          filtered.map((profile) => (
+            <ProfileCard
+              key={`${profile._type}-${profile.id}`}
+              profile={profile}
+              onView={() => navigate(getViewPath(profile))}
+              onEdit={() => navigate(getEditPath(profile))}
+              onDelete={() => setDeleteTarget(profile)}
+            />
+          ))
+        )}
+      </div>
+
+      {/* Pagination per active type */}
+      {typeFilter !== "coach" && typeFilter !== "employee" && traineeSearch.totalPages > 1 && !loading && (
+        <div className="flex flex-col items-center gap-1">
+          <p className="text-xs text-muted-foreground">Trainees pagination</p>
+          <BasePagination
+            page={traineeSearch.page}
+            totalPages={traineeSearch.totalPages}
+            pageSize={PAGE_SIZE_INNER}
+            onPageChange={traineeSearch.setPage}
+          />
+        </div>
+      )}
+      {typeFilter !== "trainee" && typeFilter !== "employee" && coachSearch.totalPages > 1 && !loading && (
+        <div className="flex flex-col items-center gap-1">
+          <p className="text-xs text-muted-foreground">Coaches pagination</p>
+          <BasePagination
+            page={coachSearch.page}
+            totalPages={coachSearch.totalPages}
+            pageSize={PAGE_SIZE_INNER}
+            onPageChange={coachSearch.setPage}
+          />
+        </div>
+      )}
+      {typeFilter !== "trainee" && typeFilter !== "coach" && employeeSearch.totalPages > 1 && !loading && (
+        <div className="flex flex-col items-center gap-1">
+          <p className="text-xs text-muted-foreground">Employees pagination</p>
+          <BasePagination
+            page={employeeSearch.page}
+            totalPages={employeeSearch.totalPages}
+            pageSize={PAGE_SIZE_INNER}
+            onPageChange={employeeSearch.setPage}
+          />
+        </div>
+      )}
+
+      {/* Confirm Delete */}
+      <ConfirmDialog
+        open={!!deleteTarget}
+        onOpenChange={(o) => !o && setDeleteTarget(null)}
+        title="Remove Profile"
+        description={
+          deleteTarget
+            ? `Are you sure you want to remove ${deleteTarget.firstName} ${deleteTarget.lastName}? This action cannot be undone.`
+            : ""
+        }
+        confirmLabel="Remove"
+        loading={deleteLoading}
+        destructive
+        onConfirm={handleConfirmDelete}
+      />
     </div>
   );
-};
-
-export default Profiles;
+}
