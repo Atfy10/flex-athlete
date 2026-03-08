@@ -322,6 +322,16 @@ export default function TraineeGroups() {
         onOpenChange={setOperateOpen}
         onSuccess={refresh}
       />
+      <ConfirmDialog
+        open={deleteTarget !== null}
+        onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
+        title="Delete Group"
+        description={`Are you sure you want to delete the ${deleteTarget?.sportName} group? This action cannot be undone.`}
+        confirmLabel="Delete"
+        destructive
+        loading={deleteLoading}
+        onConfirm={handleDelete}
+      />
     </div>
   );
 }
