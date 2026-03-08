@@ -121,9 +121,6 @@ export default function TraineeGroupProfile() {
         fullName={group ? `${group.sportName} — ${group.branchName}` : ""}
         roleBadge={group?.skillLevel ?? "Group"}
         roleBadgeVariant="secondary"
-        roleBadgeClass={
-          group?.skillLevel ? LEVEL_COLOR[group.skillLevel] : undefined
-        }
         statusBadge={group ? (group.traineesCount >= group.maximumCapacity ? "Full" : "Active") : ""}
         statusBadgeClass={
           group && group.traineesCount >= group.maximumCapacity
