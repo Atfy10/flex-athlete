@@ -200,16 +200,18 @@ const Enrollments = () => {
     }
   };
 
-  const handleDelete = async (id: number) => {
-    setActionLoadingId(id);
+  const handleDelete = async () => {
+    if (!deleteTarget) return;
+    setDeleteLoading(true);
     try {
-      await deleteEnrollment(id);
+      await deleteEnrollment(deleteTarget.id);
       toast({ title: "Enrollment removed." });
       handleRefresh();
     } catch {
       toast({ title: "Failed to remove enrollment.", variant: "destructive" });
     } finally {
-      setActionLoadingId(null);
+      setDeleteLoading(false);
+      setDeleteTarget(null);
     }
   };
 
