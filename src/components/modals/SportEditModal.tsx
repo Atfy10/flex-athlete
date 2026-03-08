@@ -24,6 +24,7 @@ interface SportEditModalProps {
 
 export function SportEditModal({ open, onOpenChange, onSuccess, sport }: SportEditModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
@@ -36,6 +37,7 @@ export function SportEditModal({ open, onOpenChange, onSuccess, sport }: SportEd
 
   useEffect(() => {
     if (!open || !sport) return;
+    resetDirty();
     setErrors([]);
     setForm({
       name: sport.name ?? "",
@@ -45,8 +47,10 @@ export function SportEditModal({ open, onOpenChange, onSuccess, sport }: SportEd
     });
   }, [open, sport]);
 
-  const set = (key: keyof typeof form) => (val: string) =>
+  const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
