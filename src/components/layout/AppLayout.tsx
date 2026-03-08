@@ -105,8 +105,20 @@ function AppLayoutContent({ children }: AppLayoutProps) {
         <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40 flex-shrink-0">
           <div className="flex items-center justify-between h-full px-6">
             <div className="flex items-center gap-3 min-w-0">
-              {/* Always-visible sidebar toggle */}
-              <SidebarTrigger />
+              {/* Always-visible sidebar toggle with Ctrl+B hint */}
+              <TooltipProvider delayDuration={500}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <SidebarTrigger />
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">
+                    Toggle Sidebar{" "}
+                    <kbd className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[10px] text-muted-foreground">
+                      Ctrl+B
+                    </kbd>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               {/* Dashboard shortcut — desktop only, when sidebar is collapsed */}
               {showDashboardButton && <FloatingDashboardButton inline />}
               <div className="text-gradient font-bold text-xl truncate">
