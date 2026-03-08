@@ -34,6 +34,7 @@ interface SportsFormModalProps {
 
 export function SportsFormModal({ open, onOpenChange, onSuccess }: SportsFormModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [apiErrors, setApiErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -44,12 +45,14 @@ export function SportsFormModal({ open, onOpenChange, onSuccess }: SportsFormMod
 
   useEffect(() => {
     if (!open) return;
+    resetDirty();
     setApiErrors([]);
     setFieldErrors({});
     setForm({ name: "", description: "", category: "", isRequireHealthTest: false });
   }, [open]);
 
   const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
     setFieldErrors((fe) => ({ ...fe, [key]: undefined }));
   };
