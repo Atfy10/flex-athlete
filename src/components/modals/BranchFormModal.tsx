@@ -24,6 +24,7 @@ interface BranchFormModalProps {
 
 export function BranchFormModal({ open, onOpenChange, onSuccess }: BranchFormModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -34,12 +35,14 @@ export function BranchFormModal({ open, onOpenChange, onSuccess }: BranchFormMod
 
   useEffect(() => {
     if (!open) return;
+    resetDirty();
     setErrors([]);
     setFieldErrors({});
     setForm({ name: "", city: "", country: "", phoneNumber: "", email: "", coX: "", coY: "" });
   }, [open]);
 
   const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
     setFieldErrors((e) => ({ ...e, [key]: "" }));
   };
