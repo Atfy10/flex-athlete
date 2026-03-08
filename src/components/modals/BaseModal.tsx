@@ -44,20 +44,15 @@ export function BaseModal({
   const formRef = useRef<HTMLFormElement>(null);
   const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
 
-  /** Auto-focus the first interactive field when the dialog finishes opening */
-  const handleAnimationEnd = () => {
-    if (!open) return;
-    const first = formRef.current?.querySelector<HTMLElement>(
-      "input:not([type='hidden']):not([disabled]):not([readonly])," +
-      "select:not([disabled])," +
-      "textarea:not([disabled]):not([readonly])"
-    );
-    first?.focus();
-  };
-
   /**
    * Central close gate — intercepts every close trigger.
    * If the form is dirty we ask for confirmation first.
+   *
+   * Radix Dialog natively handles:
+   *  - Focus trap (Tab/Shift+Tab cycle only within the dialog)
+   *  - Escape key → fires onOpenChange(false)
+   *  - Return focus to the trigger element on close
+   *  - Initial focus on the first focusable element inside the content
    */
   const requestClose = useCallback(() => {
     if (isDirty) {
@@ -84,10 +79,31 @@ export function BaseModal({
   return (
     <>
       <Dialog open={open} onOpenChange={handleOpenChange}>
+        {/*
+         * DialogContent uses Radix FocusScope internally:
+         *  - `trapped` keeps Tab/Shift+Tab inside the dialog
+         *  - `loop` wraps focus from last → first focusable element
+         *  - No aria-modal override needed; Radix sets it automatically
+         */}
         <DialogContent
           className="max-w-lg max-h-[90vh] overflow-y-auto"
-          aria-modal="true"
-          onAnimationEnd={handleAnimationEnd}
+          // Let Radix auto-focus the first focusable descendant on open.
+          // Do NOT set onAnimationEnd focus manually — it races with
+          // Radix's own FocusScope and can steal focus mid-animation.
+          onOpenAutoFocus={(e) => {
+            // Prefer the first real input/select/textarea inside the form.
+            const first = formRef.current?.querySelector<HTMLElement>(
+              "input:not([type='hidden']):not([disabled]):not([readonly])," +
+              "select:not([disabled])," +
+              "textarea:not([disabled]):not([readonly])"
+            );
+            if (first) {
+              e.preventDefault(); // cancel Radix default
+              first.focus();
+            }
+            // If no input found, Radix will fall back to focusing the
+            // dialog container itself, keeping focus inside.
+          }}
         >
           <DialogHeader>
             <DialogTitle>{title}</DialogTitle>
