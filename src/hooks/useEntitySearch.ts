@@ -94,7 +94,9 @@ export function useEntitySearch<T>({
     return () => {
       active = false;
     };
-  }, [debouncedTerm, page, minLength, pageSize, listFn, searchFn]);
+  }, [debouncedTerm, page, minLength, pageSize, listFn, searchFn, refreshKey]);
+
+  const refresh = () => setRefreshKey((k) => k + 1);
 
   return {
     items,
@@ -104,5 +106,6 @@ export function useEntitySearch<T>({
     page,
     setPage,
     totalPages,
+    refresh,
   };
 }
