@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { EnrollmentRowSkeleton } from "@/components/ui/TableRowSkeleton";
+import { Skeleton } from "@/components/ui/skeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { FilterBar } from "@/components/FilterBar";
 import { EmptyState } from "@/components/EmptyState";
@@ -18,22 +19,14 @@ import {
   DropdownMenuSubTrigger,
   DropdownMenuSubContent,
 } from "@/components/ui/dropdown-menu";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import {
-  UserPlus,
-  Users,
-  Plus,
-  Calendar,
-  DollarSign,
-  CheckCircle,
-  Clock,
-  Eye,
-  MoreHorizontal,
-  Pencil,
-  Trash2,
-  PlayCircle,
-  PauseCircle,
-  CreditCard,
+  UserPlus, Users, Plus, Calendar, DollarSign, CheckCircle, Clock,
+  Eye, MoreHorizontal, Pencil, Trash2, PlayCircle, PauseCircle, CreditCard,
+  ChevronUp, ChevronDown,
 } from "lucide-react";
 import { EnrollmentFormModal } from "@/components/modals/EnrollmentFormModal";
 import { EnrollmentEditModal, EnrollmentEditData } from "@/components/modals/EnrollmentEditModal";
@@ -41,46 +34,41 @@ import { BasePagination } from "@/components/BasePagination";
 import { useEntitySearch } from "@/hooks/useEntitySearch";
 import { useToast } from "@/hooks/use-toast";
 import {
-  listEnrollments,
-  searchEnrollments,
-  countAllEnrollments,
-  countActiveEnrollments,
-  countPendingPayments,
-  activateEnrollment,
-  suspendEnrollment,
-  updatePaymentStatus,
-  deleteEnrollment,
+  listEnrollments, searchEnrollments, countAllEnrollments, countActiveEnrollments,
+  countPendingPayments, activateEnrollment, suspendEnrollment,
+  updatePaymentStatus, deleteEnrollment,
 } from "@/services/enrollment.services";
 import { EnrollmentCardDto } from "@/types/EnrollmentCardDto";
+import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 
 const PAGE_SIZE = 10;
 
-interface EnrollmentStats {
-  total: number;
-  active: number;
-  pendingPayment: number;
+interface EnrollmentStats { total: number; active: number; pendingPayment: number; }
+
+type SortKey = "traineeName" | "sport" | "branch" | "status" | "paymentStatus" | "enrollmentDate";
+
+function SortIcon({ col, sort }: { col: SortKey; sort: { key: SortKey; dir: "asc" | "desc" } | null }) {
+  if (sort?.key !== col) return <ChevronUp className="h-3 w-3 opacity-20" />;
+  return sort.dir === "asc" ? <ChevronUp className="h-3 w-3 text-primary" /> : <ChevronDown className="h-3 w-3 text-primary" />;
 }
 
-// (EnrollmentRowSkeleton is now imported from TableRowSkeleton)
-
-// ── Helpers ───────────────────────────────────────────────────────────────────
 const getStatusColor = (status: string) => {
   switch (status) {
-    case "Active":    return "bg-success text-success-foreground";
-    case "Pending":   return "bg-warning text-warning-foreground";
+    case "Active": return "bg-success text-success-foreground";
+    case "Pending": return "bg-warning text-warning-foreground";
     case "Suspended":
     case "Cancelled": return "bg-destructive text-destructive-foreground";
     case "Completed": return "bg-muted text-muted-foreground";
-    default:          return "bg-muted text-muted-foreground";
+    default: return "bg-muted text-muted-foreground";
   }
 };
 
 const getPaymentStatusColor = (status: string) => {
   switch (status) {
-    case "Paid":    return "bg-success text-success-foreground";
+    case "Paid": return "bg-success text-success-foreground";
     case "Pending": return "bg-warning text-warning-foreground";
     case "Overdue": return "bg-destructive text-destructive-foreground";
-    default:        return "bg-muted text-muted-foreground";
+    default: return "bg-muted text-muted-foreground";
   }
 };
 
@@ -90,7 +78,6 @@ const getInitials = (name: string) =>
 const progressPct = (completed = 0, total = 0) =>
   total > 0 ? Math.round((completed / total) * 100) : 0;
 
-// ── Main page ─────────────────────────────────────────────────────────────────
 const Enrollments = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
@@ -103,116 +90,136 @@ const Enrollments = () => {
   const [stats, setStats] = useState<EnrollmentStats>({ total: 0, active: 0, pendingPayment: 0 });
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
+  const [view, setView] = useState<ViewMode>("grid");
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
 
   const {
-    items: enrollments,
-    loading,
-    term,
-    setTerm,
-    page,
-    setPage,
-    totalPages,
-    refresh,
+    items: enrollments, loading, term, setTerm, page, setPage, totalPages, refresh,
   } = useEntitySearch<EnrollmentCardDto>({
-    listFn: listEnrollments,
-    searchFn: searchEnrollments,
-    pageSize: PAGE_SIZE,
-    minLength: 2,
+    listFn: listEnrollments, searchFn: searchEnrollments, pageSize: PAGE_SIZE, minLength: 2,
   });
 
   const fetchStats = useCallback(async () => {
     const results = await Promise.allSettled([
-      countAllEnrollments(),
-      countActiveEnrollments(),
-      countPendingPayments(),
+      countAllEnrollments(), countActiveEnrollments(), countPendingPayments(),
     ]);
     const [totalRes, activeRes, pendingRes] = results;
     setStats({
-      total:          totalRes.status  === "fulfilled" && totalRes.value?.isSuccess  ? totalRes.value.data  : 0,
-      active:         activeRes.status === "fulfilled" && activeRes.value?.isSuccess ? activeRes.value.data : 0,
+      total: totalRes.status === "fulfilled" && totalRes.value?.isSuccess ? totalRes.value.data : 0,
+      active: activeRes.status === "fulfilled" && activeRes.value?.isSuccess ? activeRes.value.data : 0,
       pendingPayment: pendingRes.status === "fulfilled" && pendingRes.value?.isSuccess ? pendingRes.value.data : 0,
     });
   }, []);
 
   useEffect(() => { fetchStats(); }, [fetchStats]);
 
-  const handleRefresh = useCallback(() => {
-    refresh?.();
-    fetchStats();
-  }, [refresh, fetchStats]);
+  const handleRefresh = useCallback(() => { refresh?.(); fetchStats(); }, [refresh, fetchStats]);
 
-  // Client-side status + payment filter
   const filteredEnrollments = enrollments.filter((e) => {
     const matchesStatus = statusFilter === "all" || e.status === statusFilter;
     const matchesPayment = paymentFilter === "all" || e.paymentStatus === paymentFilter;
     return matchesStatus && matchesPayment;
   });
 
+  const toggleSort = (key: SortKey) => {
+    setSort((prev) =>
+      prev?.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }
+    );
+  };
+
+  const sortedEnrollments = sort
+    ? [...filteredEnrollments].sort((a, b) => {
+        const av = (a as Record<string, unknown>)[sort.key] ?? "";
+        const bv = (b as Record<string, unknown>)[sort.key] ?? "";
+        const cmp = String(av).localeCompare(String(bv));
+        return sort.dir === "asc" ? cmp : -cmp;
+      })
+    : filteredEnrollments;
+
   const openEdit = (enrollment: EnrollmentCardDto) => {
     setSelectedEnrollment({
-      id: enrollment.id,
-      traineeName: enrollment.traineeName,
-      traineeEmail: enrollment.traineeEmail,
-      sport: enrollment.sport,
-      program: enrollment.program,
-      status: enrollment.status,
-      paymentStatus: enrollment.paymentStatus,
+      id: enrollment.id, traineeName: enrollment.traineeName,
+      traineeEmail: enrollment.traineeEmail, sport: enrollment.sport,
+      program: enrollment.program, status: enrollment.status, paymentStatus: enrollment.paymentStatus,
     });
     setEditOpen(true);
   };
 
   const handleActivate = async (id: number) => {
     setActionLoadingId(id);
-    try {
-      await activateEnrollment(id);
-      toast({ title: "Enrollment activated." });
-      handleRefresh();
-    } catch {
-      toast({ title: "Failed to activate enrollment.", variant: "destructive" });
-    } finally {
-      setActionLoadingId(null);
-    }
+    try { await activateEnrollment(id); toast({ title: "Enrollment activated." }); handleRefresh(); }
+    catch { toast({ title: "Failed to activate enrollment.", variant: "destructive" }); }
+    finally { setActionLoadingId(null); }
   };
 
   const handleSuspend = async (id: number) => {
     setActionLoadingId(id);
-    try {
-      await suspendEnrollment(id);
-      toast({ title: "Enrollment suspended." });
-      handleRefresh();
-    } catch {
-      toast({ title: "Failed to suspend enrollment.", variant: "destructive" });
-    } finally {
-      setActionLoadingId(null);
-    }
+    try { await suspendEnrollment(id); toast({ title: "Enrollment suspended." }); handleRefresh(); }
+    catch { toast({ title: "Failed to suspend enrollment.", variant: "destructive" }); }
+    finally { setActionLoadingId(null); }
   };
 
   const handlePaymentStatus = async (id: number, status: string) => {
     setActionLoadingId(id);
-    try {
-      await updatePaymentStatus(id, status);
-      toast({ title: `Payment status updated to ${status}.` });
-      handleRefresh();
-    } catch {
-      toast({ title: "Failed to update payment status.", variant: "destructive" });
-    } finally {
-      setActionLoadingId(null);
-    }
+    try { await updatePaymentStatus(id, status); toast({ title: `Payment status updated to ${status}.` }); handleRefresh(); }
+    catch { toast({ title: "Failed to update payment status.", variant: "destructive" }); }
+    finally { setActionLoadingId(null); }
   };
 
   const handleDelete = async () => {
     if (!deleteTarget) return;
     setDeleteLoading(true);
-    try {
-      await deleteEnrollment(deleteTarget.id);
-      toast({ title: "Enrollment removed." });
-      handleRefresh();
-    } catch {
-      toast({ title: "Failed to remove enrollment.", variant: "destructive" });
-    } finally {
-      setDeleteLoading(false);
-      setDeleteTarget(null);
-    }
+    try { await deleteEnrollment(deleteTarget.id); toast({ title: "Enrollment removed." }); handleRefresh(); }
+    catch { toast({ title: "Failed to remove enrollment.", variant: "destructive" }); }
+    finally { setDeleteLoading(false); setDeleteTarget(null); }
+  };
+
+  const ActionMenu = ({ enrollment }: { enrollment: EnrollmentCardDto }) => {
+    const isLoading = actionLoadingId === enrollment.id;
+    const isActive = enrollment.status === "Active";
+    return (
+      <DropdownMenu>
+        <DropdownMenuTrigger asChild>
+          <Button variant="outline" size="sm" className="px-2" disabled={isLoading}>
+            <MoreHorizontal className="h-4 w-4" />
+          </Button>
+        </DropdownMenuTrigger>
+        <DropdownMenuContent align="end" className="w-48">
+          <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">Actions</DropdownMenuLabel>
+          <DropdownMenuItem onClick={() => openEdit(enrollment)} className="gap-2 cursor-pointer">
+            <Pencil className="h-3.5 w-3.5" />Edit Details
+          </DropdownMenuItem>
+          {isActive ? (
+            <DropdownMenuItem onClick={() => handleSuspend(enrollment.id)} className="gap-2 cursor-pointer">
+              <PauseCircle className="h-3.5 w-3.5" />Suspend Enrollment
+            </DropdownMenuItem>
+          ) : (
+            <DropdownMenuItem onClick={() => handleActivate(enrollment.id)} className="gap-2 cursor-pointer">
+              <PlayCircle className="h-3.5 w-3.5" />Activate Enrollment
+            </DropdownMenuItem>
+          )}
+          <DropdownMenuSub>
+            <DropdownMenuSubTrigger className="gap-2 cursor-pointer">
+              <CreditCard className="h-3.5 w-3.5" />Payment Status
+            </DropdownMenuSubTrigger>
+            <DropdownMenuSubContent>
+              {["Paid", "Pending", "Overdue"].map((s) => (
+                <DropdownMenuItem key={s} onClick={() => handlePaymentStatus(enrollment.id, s)}
+                  className="gap-2 cursor-pointer" disabled={enrollment.paymentStatus === s}>{s}
+                </DropdownMenuItem>
+              ))}
+            </DropdownMenuSubContent>
+          </DropdownMenuSub>
+          <DropdownMenuSeparator />
+          <DropdownMenuItem
+            onSelect={(e) => { e.preventDefault(); setTimeout(() => setDeleteTarget({ id: enrollment.id, traineeName: enrollment.traineeName }), 0); }}
+            className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
+          >
+            <Trash2 className="h-3.5 w-3.5" />Remove Enrollment
+          </DropdownMenuItem>
+        </DropdownMenuContent>
+      </DropdownMenu>
+    );
   };
 
   return (
@@ -224,8 +231,7 @@ const Enrollments = () => {
           <p className="text-muted-foreground">Track student registrations and program participation</p>
         </div>
         <Button className="btn-hero" onClick={() => setModalOpen(true)}>
-          <Plus className="h-4 w-4 mr-2" />
-          New Enrollment
+          <Plus className="h-4 w-4 mr-2" />New Enrollment
         </Button>
       </div>
 
@@ -241,7 +247,6 @@ const Enrollments = () => {
             <p className="text-xs text-muted-foreground">All time</p>
           </CardContent>
         </Card>
-
         <Card className="card-athletic">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Active</CardTitle>
@@ -254,7 +259,6 @@ const Enrollments = () => {
             </p>
           </CardContent>
         </Card>
-
         <Card className="card-athletic">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Pending Payment</CardTitle>
@@ -270,68 +274,60 @@ const Enrollments = () => {
       {/* Search & Filters */}
       <Card className="card-athletic">
         <CardContent className="p-6">
-          <FilterBar
-            searchValue={term}
-            onSearchChange={(v) => { setTerm(v); setPage(1); }}
-            searchPlaceholder="Search enrollments by trainee name or sport…"
-            filters={{ status: statusFilter, payment: paymentFilter }}
-            onFilterChange={(key, val) => {
-              if (key === "status") setStatusFilter(val);
-              if (key === "payment") setPaymentFilter(val);
-              setPage(1);
-            }}
-            filterConfigs={[
-              {
-                key: "status",
-                placeholder: "All Statuses",
-                options: [
-                  { value: "Active", label: "Active" },
-                  { value: "Pending", label: "Pending" },
-                  { value: "Suspended", label: "Suspended" },
-                  { value: "Completed", label: "Completed" },
-                ],
-              },
-              {
-                key: "payment",
-                placeholder: "All Payments",
-                options: [
-                  { value: "Paid", label: "Paid" },
-                  { value: "Pending", label: "Pending" },
-                  { value: "Overdue", label: "Overdue" },
-                ],
-              },
-            ]}
-            onReset={() => { setTerm(""); setStatusFilter("all"); setPaymentFilter("all"); setPage(1); }}
-          />
+          <div className="flex items-center gap-3">
+            <div className="flex-1">
+              <FilterBar
+                searchValue={term}
+                onSearchChange={(v) => { setTerm(v); setPage(1); }}
+                searchPlaceholder="Search enrollments by trainee name or sport…"
+                filters={{ status: statusFilter, payment: paymentFilter }}
+                onFilterChange={(key, val) => {
+                  if (key === "status") setStatusFilter(val);
+                  if (key === "payment") setPaymentFilter(val);
+                  setPage(1);
+                }}
+                filterConfigs={[
+                  {
+                    key: "status", placeholder: "All Statuses",
+                    options: [
+                      { value: "Active", label: "Active" }, { value: "Pending", label: "Pending" },
+                      { value: "Suspended", label: "Suspended" }, { value: "Completed", label: "Completed" },
+                    ],
+                  },
+                  {
+                    key: "payment", placeholder: "All Payments",
+                    options: [
+                      { value: "Paid", label: "Paid" }, { value: "Pending", label: "Pending" }, { value: "Overdue", label: "Overdue" },
+                    ],
+                  },
+                ]}
+                onReset={() => { setTerm(""); setStatusFilter("all"); setPaymentFilter("all"); setPage(1); }}
+              />
+            </div>
+            <ViewToggle view={view} onViewChange={setView} />
+          </div>
         </CardContent>
       </Card>
 
-      {/* List */}
-
-      <div className="space-y-4">
-        {loading && Array.from({ length: 5 }).map((_, i) => <EnrollmentRowSkeleton key={i} />)}
-
-        {!loading && filteredEnrollments.length === 0 && (
-          <EmptyState
-            icon={UserPlus}
-            title={term ? `No results for "${term}"` : "No enrollments yet"}
-            description={term ? "Try a different search term or adjust your filters." : "Create the first enrollment to get started."}
-            actionLabel={!term ? "New Enrollment" : undefined}
-            onAction={!term ? () => setModalOpen(true) : undefined}
-          />
-        )}
-
-        {!loading &&
-          filteredEnrollments.map((enrollment) => {
+      {/* List / Table */}
+      {view === "grid" ? (
+        <div className="space-y-4">
+          {loading && Array.from({ length: 5 }).map((_, i) => <EnrollmentRowSkeleton key={i} />)}
+          {!loading && sortedEnrollments.length === 0 && (
+            <EmptyState
+              icon={UserPlus}
+              title={term ? `No results for "${term}"` : "No enrollments yet"}
+              description={term ? "Try a different search term or adjust your filters." : "Create the first enrollment to get started."}
+              actionLabel={!term ? "New Enrollment" : undefined}
+              onAction={!term ? () => setModalOpen(true) : undefined}
+            />
+          )}
+          {!loading && sortedEnrollments.map((enrollment) => {
             const pct = progressPct(enrollment.sessionsCompleted, enrollment.totalSessions);
-            const isLoading = actionLoadingId === enrollment.id;
-            const isActive = enrollment.status === "Active";
-
             return (
               <Card key={enrollment.id} className="card-athletic">
                 <CardContent className="p-6">
                   <div className="flex flex-col lg:flex-row lg:items-center gap-4">
-                    {/* Trainee */}
                     <div className="flex items-center gap-4 lg:w-1/4">
                       <Avatar className="h-12 w-12 shrink-0">
                         <AvatarFallback className="bg-gradient-primary text-primary-foreground">
@@ -345,13 +341,9 @@ const Enrollments = () => {
                         )}
                       </div>
                     </div>
-
-                    {/* Program info */}
                     <div className="lg:w-1/4 space-y-1">
                       <p className="font-medium">{enrollment.sport}</p>
-                      {enrollment.program && (
-                        <p className="text-sm text-muted-foreground">{enrollment.program}</p>
-                      )}
+                      {enrollment.program && <p className="text-sm text-muted-foreground">{enrollment.program}</p>}
                       {(enrollment.coachName || enrollment.branch) && (
                         <div className="flex items-center gap-1 text-xs text-muted-foreground">
                           <Users className="h-3 w-3" />
@@ -359,8 +351,6 @@ const Enrollments = () => {
                         </div>
                       )}
                     </div>
-
-                    {/* Progress */}
                     <div className="lg:w-1/4 space-y-2">
                       {enrollment.totalSessions != null && (
                         <>
@@ -369,10 +359,7 @@ const Enrollments = () => {
                             <span>{enrollment.sessionsCompleted ?? 0}/{enrollment.totalSessions}</span>
                           </div>
                           <div className="w-full bg-muted rounded-full h-2">
-                            <div
-                              className="h-2 rounded-full bg-primary transition-all"
-                              style={{ width: `${pct}%` }}
-                            />
+                            <div className="h-2 rounded-full bg-primary transition-all" style={{ width: `${pct}%` }} />
                           </div>
                           <p className="text-xs text-muted-foreground">{pct}% complete</p>
                         </>
@@ -384,8 +371,6 @@ const Enrollments = () => {
                         </div>
                       )}
                     </div>
-
-                    {/* Status + actions */}
                     <div className="lg:w-1/4 flex flex-col gap-2">
                       <div className="flex flex-wrap gap-2">
                         <Badge className={getStatusColor(enrollment.status)}>{enrollment.status}</Badge>
@@ -402,93 +387,10 @@ const Enrollments = () => {
                         </div>
                       )}
                       <div className="flex gap-2 mt-1">
-                        <Button
-                          variant="default"
-                          size="sm"
-                          className="flex-1"
-                          onClick={() => navigate(`/enrollments/${enrollment.id}`)}
-                        >
-                          <Eye className="h-3.5 w-3.5 mr-1.5" />
-                          View
+                        <Button variant="default" size="sm" className="flex-1" onClick={() => navigate(`/enrollments/${enrollment.id}`)}>
+                          <Eye className="h-3.5 w-3.5 mr-1.5" />View
                         </Button>
-
-                        {/* Dropdown actions */}
-                        <DropdownMenu>
-                          <DropdownMenuTrigger asChild>
-                            <Button
-                              variant="outline"
-                              size="sm"
-                              className="px-2"
-                              disabled={isLoading}
-                            >
-                              <MoreHorizontal className="h-4 w-4" />
-                            </Button>
-                          </DropdownMenuTrigger>
-                          <DropdownMenuContent align="end" className="w-48">
-                            <DropdownMenuLabel className="text-xs text-muted-foreground font-normal">
-                              Actions
-                            </DropdownMenuLabel>
-
-                            <DropdownMenuItem
-                              onClick={() => openEdit(enrollment)}
-                              className="gap-2 cursor-pointer"
-                            >
-                              <Pencil className="h-3.5 w-3.5" />
-                              Edit Details
-                            </DropdownMenuItem>
-
-                            {isActive ? (
-                              <DropdownMenuItem
-                                onClick={() => handleSuspend(enrollment.id)}
-                                className="gap-2 cursor-pointer"
-                              >
-                                <PauseCircle className="h-3.5 w-3.5" />
-                                Suspend Enrollment
-                              </DropdownMenuItem>
-                            ) : (
-                              <DropdownMenuItem
-                                onClick={() => handleActivate(enrollment.id)}
-                                className="gap-2 cursor-pointer"
-                              >
-                                <PlayCircle className="h-3.5 w-3.5" />
-                                Activate Enrollment
-                              </DropdownMenuItem>
-                            )}
-
-                            {/* Payment status sub-menu */}
-                            <DropdownMenuSub>
-                              <DropdownMenuSubTrigger className="gap-2 cursor-pointer">
-                                <CreditCard className="h-3.5 w-3.5" />
-                                Payment Status
-                              </DropdownMenuSubTrigger>
-                              <DropdownMenuSubContent>
-                                {["Paid", "Pending", "Overdue"].map((s) => (
-                                  <DropdownMenuItem
-                                    key={s}
-                                    onClick={() => handlePaymentStatus(enrollment.id, s)}
-                                    className="gap-2 cursor-pointer"
-                                    disabled={enrollment.paymentStatus === s}
-                                  >
-                                    {s}
-                                  </DropdownMenuItem>
-                                ))}
-                              </DropdownMenuSubContent>
-                            </DropdownMenuSub>
-
-                            <DropdownMenuSeparator />
-
-                            <DropdownMenuItem
-                              onSelect={(e) => {
-                                e.preventDefault();
-                                setTimeout(() => setDeleteTarget({ id: enrollment.id, traineeName: enrollment.traineeName }), 0);
-                              }}
-                              className="gap-2 cursor-pointer text-destructive focus:text-destructive focus:bg-destructive/10"
-                            >
-                              <Trash2 className="h-3.5 w-3.5" />
-                              Remove Enrollment
-                            </DropdownMenuItem>
-                          </DropdownMenuContent>
-                        </DropdownMenu>
+                        <ActionMenu enrollment={enrollment} />
                       </div>
                     </div>
                   </div>
@@ -496,41 +398,118 @@ const Enrollments = () => {
               </Card>
             );
           })}
-      </div>
+        </div>
+      ) : (
+        <Card className="card-athletic">
+          <CardContent className="p-0">
+            {loading ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {["Trainee", "Sport", "Branch", "Status", "Payment", "Fee", ""].map((h) => (
+                      <TableHead key={h}>{h}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <TableRow key={i}>
+                      {Array.from({ length: 7 }).map((__, j) => (
+                        <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : sortedEnrollments.length === 0 ? (
+              <div className="p-12 text-center text-muted-foreground">
+                <UserPlus className="h-10 w-10 opacity-40 mx-auto mb-3" />
+                <p>{term ? `No results for "${term}"` : "No enrollments yet"}</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {(
+                      [
+                        { label: "Trainee", key: "traineeName" },
+                        { label: "Sport", key: "sport" },
+                        { label: "Branch", key: "branch" },
+                        { label: "Status", key: "status" },
+                        { label: "Payment", key: "paymentStatus" },
+                      ] as { label: string; key: SortKey }[]
+                    ).map(({ label, key }) => (
+                      <TableHead key={key} className="cursor-pointer select-none" onClick={() => toggleSort(key)}>
+                        <div className="flex items-center gap-1">
+                          {label}
+                          <SortIcon col={key} sort={sort} />
+                        </div>
+                      </TableHead>
+                    ))}
+                    <TableHead>Fee</TableHead>
+                    <TableHead />
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {sortedEnrollments.map((enrollment) => (
+                    <TableRow key={enrollment.id} className="cursor-pointer" onClick={() => navigate(`/enrollments/${enrollment.id}`)}>
+                      <TableCell>
+                        <div className="flex items-center gap-2">
+                          <Avatar className="h-7 w-7 shrink-0">
+                            <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs">
+                              {getInitials(enrollment.traineeName)}
+                            </AvatarFallback>
+                          </Avatar>
+                          <div>
+                            <p className="font-medium text-sm">{enrollment.traineeName}</p>
+                            {enrollment.traineeEmail && (
+                              <p className="text-xs text-muted-foreground">{enrollment.traineeEmail}</p>
+                            )}
+                          </div>
+                        </div>
+                      </TableCell>
+                      <TableCell>{enrollment.sport}</TableCell>
+                      <TableCell>{enrollment.branch ?? "—"}</TableCell>
+                      <TableCell>
+                        <Badge className={`${getStatusColor(enrollment.status)} text-xs`}>{enrollment.status}</Badge>
+                      </TableCell>
+                      <TableCell>
+                        {enrollment.paymentStatus ? (
+                          <Badge className={`${getPaymentStatusColor(enrollment.paymentStatus)} text-xs`}>
+                            {enrollment.paymentStatus}
+                          </Badge>
+                        ) : "—"}
+                      </TableCell>
+                      <TableCell>
+                        {enrollment.monthlyFee != null ? `$${enrollment.monthlyFee}/mo` : "—"}
+                      </TableCell>
+                      <TableCell onClick={(e) => e.stopPropagation()}>
+                        <ActionMenu enrollment={enrollment} />
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </CardContent>
+        </Card>
+      )}
 
-      {/* Pagination */}
       {!loading && enrollments.length > 0 && (
         <BasePagination
-          page={page}
-          totalPages={totalPages}
-          pageSize={PAGE_SIZE}
-          onPageChange={setPage}
-          onPageSizeChange={() => setPage(1)}
+          page={page} totalPages={totalPages} pageSize={PAGE_SIZE}
+          onPageChange={setPage} onPageSizeChange={() => setPage(1)}
         />
       )}
 
-      <EnrollmentFormModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        onSuccess={handleRefresh}
-      />
-
-      <EnrollmentEditModal
-        open={editOpen}
-        onOpenChange={setEditOpen}
-        enrollment={selectedEnrollment}
-        onSuccess={handleRefresh}
-      />
-
+      <EnrollmentFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={handleRefresh} />
+      <EnrollmentEditModal open={editOpen} onOpenChange={setEditOpen} enrollment={selectedEnrollment} onSuccess={handleRefresh} />
       <ConfirmDialog
         open={deleteTarget !== null}
         onOpenChange={(open) => { if (!open) setDeleteTarget(null); }}
         title="Remove Enrollment?"
         description={`This will permanently remove the enrollment for ${deleteTarget?.traineeName}. This action cannot be undone.`}
-        confirmLabel="Remove"
-        destructive
-        loading={deleteLoading}
-        onConfirm={handleDelete}
+        confirmLabel="Remove" destructive loading={deleteLoading} onConfirm={handleDelete}
       />
     </div>
   );
