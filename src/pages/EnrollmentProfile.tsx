@@ -5,6 +5,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Badge } from "@/components/ui/badge";
 import { EnrollmentEditModal, EnrollmentEditData } from "@/components/modals/EnrollmentEditModal";
 import { useEffect, useState, useCallback } from "react";
+import { formatSmartDate } from "@/lib/dateUtils";
 import {
   User, Trophy, MapPin, Users, Calendar, DollarSign, TrendingUp,
   CheckCircle, CreditCard, CalendarDays,
