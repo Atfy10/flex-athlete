@@ -233,21 +233,10 @@ export default function SessionOccurrences() {
     else setSearchPage(p);
   };
 
-  const toggleSort = (key: SortKey) => {
-    setSort((prev) =>
-      prev?.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }
-    );
-  };
-
-  const sortedItems = sort
-    ? [...items].sort((a, b) => {
-        const av = (a as unknown as Record<string, unknown>)[sort.key] ?? "";
-        const bv = (b as unknown as Record<string, unknown>)[sort.key] ?? "";
-        const cmp = typeof av === "number" && typeof bv === "number"
-          ? av - bv : String(av).localeCompare(String(bv));
-        return sort.dir === "asc" ? cmp : -cmp;
-      })
-    : items;
+  const sortedItems = sortItems(items, (o, key) => {
+    const v = (o as unknown as Record<string, unknown>)[key] ?? "";
+    return typeof v === "number" ? v : String(v);
+  });
 
   const rateColor = (rate: number | null) =>
     rate === null ? "bg-muted text-muted-foreground" :

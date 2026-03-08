@@ -117,20 +117,9 @@ const Enrollments = () => {
     return matchesStatus && matchesPayment;
   });
 
-  const toggleSort = (key: SortKey) => {
-    setSort((prev) =>
-      prev?.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }
-    );
-  };
-
-  const sortedEnrollments = sort
-    ? [...filteredEnrollments].sort((a, b) => {
-        const av = (a as unknown as Record<string, unknown>)[sort.key] ?? "";
-        const bv = (b as unknown as Record<string, unknown>)[sort.key] ?? "";
-        const cmp = String(av).localeCompare(String(bv));
-        return sort.dir === "asc" ? cmp : -cmp;
-      })
-    : filteredEnrollments;
+  const sortedEnrollments = sortItems(filteredEnrollments, (e, key) =>
+    (e as unknown as Record<string, unknown>)[key] as string ?? ""
+  );
 
   const openEdit = (enrollment: EnrollmentCardDto) => {
     setSelectedEnrollment({

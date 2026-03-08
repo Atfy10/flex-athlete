@@ -104,24 +104,10 @@ export default function TraineeGroups() {
     }
   };
 
-  const toggleSort = (key: SortKey) => {
-    setSort((prev) =>
-      prev?.key === key
-        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
-        : { key, dir: "asc" },
-    );
-  };
-
-  const sortedGroups = sort
-    ? [...groups].sort((a, b) => {
-        const av = a[sort.key] ?? "";
-        const bv = b[sort.key] ?? "";
-        const cmp = typeof av === "number" && typeof bv === "number"
-          ? av - bv
-          : String(av).localeCompare(String(bv));
-        return sort.dir === "asc" ? cmp : -cmp;
-      })
-    : groups;
+  const sortedGroups = sortItems(groups, (g, key) => {
+    const v = g[key] ?? "";
+    return typeof v === "number" ? v : String(v);
+  });
 
   const statsData = [
     { title: "Groups (this page)", value: loading ? "—" : String(groups.length), icon: Users },
