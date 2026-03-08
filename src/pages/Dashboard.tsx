@@ -90,7 +90,10 @@ function getMonthWindow(
 export default function Dashboard() {
   const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
-  const [operateOpen, setOperateOpen] = useState(false);
+  const [operateOpen,    setOperateOpen]    = useState(false);
+  const [traineeOpen,    setTraineeOpen]    = useState(false);
+  const [enrollmentOpen, setEnrollmentOpen] = useState(false);
+  const [coachOpen,      setCoachOpen]      = useState(false);
 
   // Scalar stats
   const [traineesCount,  setTraineesCount]  = useState(0);
