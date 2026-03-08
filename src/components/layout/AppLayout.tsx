@@ -88,16 +88,16 @@ function AppLayoutContent({ children }: AppLayoutProps) {
     <div className="min-h-screen flex w-full bg-background overflow-hidden">
       <AppSidebar />
 
-      {/* Floating Dashboard button — visible only when sidebar is collapsed */}
-      {sidebarCollapsed && <FloatingDashboardButton />}
-
       <div className="flex-1 flex flex-col min-w-0">
         {/* Header */}
         <header className="h-16 border-b border-border bg-card/50 backdrop-blur-sm sticky top-0 z-40 flex-shrink-0">
           <div className="flex items-center justify-between h-full px-6">
-            <div className="flex items-center gap-4 min-w-0">
-              <SidebarTrigger className="lg:hidden" />
-              <div className="text-gradient font-bold text-xl">
+            <div className="flex items-center gap-3 min-w-0">
+              {/* Always-visible sidebar toggle */}
+              <SidebarTrigger />
+              {/* Dashboard shortcut — only shown when sidebar is collapsed */}
+              {sidebarCollapsed && <FloatingDashboardButton inline />}
+              <div className="text-gradient font-bold text-xl hidden sm:block">
                 AURA Sport Academy
               </div>
             </div>
