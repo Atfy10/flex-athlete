@@ -1,6 +1,7 @@
 import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useRealtime } from "@/contexts/RealtimeContext";
 import {
   LayoutDashboard,
   Users,
@@ -16,6 +17,7 @@ import {
   ChevronDown,
   LogOut,
   Shield,
+  Bell,
 } from "lucide-react";
 
 import {
