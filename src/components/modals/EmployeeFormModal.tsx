@@ -189,6 +189,7 @@ export function EmployeeFormModal({
       onSubmit={handleSubmit}
       loading={loading}
       errors={apiErrors}
+      isDirty={isDirty}
     >
       <div className="grid grid-cols-2 gap-3">
         <FormInput
