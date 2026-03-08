@@ -497,16 +497,30 @@ const Attendance = () => {
       <Card className="card-athletic">
         <CardContent className="p-6">
           <div className="flex flex-col md:flex-row gap-4">
-            {/* Date */}
-            <div className="flex items-center gap-3">
-              <Calendar className="h-4 w-4 text-muted-foreground shrink-0" />
-              <Input
-                type="date"
-                value={selectedDate}
-                onChange={(e) => setSelectedDate(e.target.value)}
-                className="w-auto"
-              />
-            </div>
+            {/* Shadcn Popover/Calendar date picker */}
+            <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
+              <PopoverTrigger asChild>
+                <Button variant="outline" className="flex items-center gap-2 w-auto min-w-[160px] justify-start font-normal">
+                  <CalendarIcon className="h-4 w-4 text-muted-foreground" />
+                  {selectedDate
+                    ? format(new Date(selectedDate + "T00:00:00"), "MMM d, yyyy")
+                    : "Pick a date"}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={selectedDate ? new Date(selectedDate + "T00:00:00") : undefined}
+                  onSelect={(d) => {
+                    if (d) {
+                      setSelectedDate(format(d, "yyyy-MM-dd"));
+                      setCalendarOpen(false);
+                    }
+                  }}
+                  initialFocus
+                />
+              </PopoverContent>
+            </Popover>
 
             {/* Search */}
             <div className="relative flex-1">
@@ -549,10 +563,23 @@ const Attendance = () => {
               key={session.id}
               session={session}
               searchTerm={searchTerm}
+              onMarkAttendance={() => {
+                setMarkSession(session);
+                setMarkOpen(true);
+              }}
             />
           ))
         )}
       </div>
+
+      {/* ── Mark Attendance Modal ───────────────────────────────────────── */}
+      <MarkAttendanceModal
+        open={markOpen}
+        onOpenChange={setMarkOpen}
+        onSuccess={() => loadSessions(selectedDate)}
+        sessionOccurrenceId={markSession?.id}
+        sessionLabel={markSession ? `${markSession.sportName} — ${formatTime(markSession.startTime)}` : undefined}
+      />
     </div>
   );
 };
