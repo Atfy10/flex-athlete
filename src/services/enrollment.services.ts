@@ -54,3 +54,36 @@ export const deleteEnrollment = async (id: number | string) => {
   if (isDevSession()) return devMock<boolean>(true);
   return apiFetch<ApiResult<boolean>>(`/api/enrollment/${id}`, { method: "DELETE" });
 };
+
+export const activateEnrollment = async (id: number | string) => {
+  if (isDevSession()) return devMock<boolean>(true);
+  return apiFetch<ApiResult<boolean>>(`/api/enrollment/${id}/activate`, { method: "PATCH" });
+};
+
+export const suspendEnrollment = async (id: number | string) => {
+  if (isDevSession()) return devMock<boolean>(true);
+  return apiFetch<ApiResult<boolean>>(`/api/enrollment/${id}/suspend`, { method: "PATCH" });
+};
+
+export const updatePaymentStatus = async (id: number | string, paymentStatus: string) => {
+  if (isDevSession()) return devMock<boolean>(true);
+  return apiFetch<ApiResult<boolean>>(`/api/enrollment/${id}/payment-status`, {
+    method: "PATCH",
+    body: JSON.stringify({ paymentStatus }),
+  });
+};
+
+export const updateEnrollment = async (
+  id: number | string,
+  data: {
+    expiryDate?: string | null;
+    sessionAllowed?: number | null;
+    subscriptionDetailsId?: number | null;
+  },
+) => {
+  if (isDevSession()) return devMock<boolean>(true);
+  return apiFetch<ApiResult<boolean>>(`/api/enrollment/${id}`, {
+    method: "PUT",
+    body: JSON.stringify(data),
+  });
+};
