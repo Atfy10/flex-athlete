@@ -54,6 +54,9 @@ function AppLayoutContent({ children }: AppLayoutProps) {
   // On mobile the sidebar uses a sheet overlay — state stays "expanded".
   const showDashboardButton = !isMobile && state === "collapsed";
 
+  // Register global keyboard shortcuts (Alt+D / Ctrl+Shift+D → Dashboard)
+  useGlobalShortcuts();
+
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
