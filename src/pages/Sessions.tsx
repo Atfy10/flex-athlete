@@ -57,22 +57,6 @@ function getCapacityColor(count: number) {
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
 
-function SessionsEmptyState({ isSearch }: { isSearch: boolean }) {
-  return (
-    <div className="col-span-full flex flex-col items-center justify-center py-20 text-muted-foreground">
-      <Layers className="h-12 w-12 mb-4 opacity-30" />
-      <p className="text-base font-medium">
-        {isSearch ? "No sessions match your search" : "No sessions scheduled yet"}
-      </p>
-      <p className="text-sm mt-1">
-        {isSearch
-          ? "Try a different search term or clear the filter."
-          : 'Use "Operate Group" to generate sessions from a trainee group\'s weekly schedule.'}
-      </p>
-    </div>
-  );
-}
-
 // ─── Stats meta ───────────────────────────────────────────────────────────────
 const STATS_META = [
   { title: "Total Sessions", icon: Calendar },
