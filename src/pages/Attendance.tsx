@@ -416,10 +416,9 @@ type AttendanceSortKey = "sportName" | "coachName" | "branchName" | "startTime" 
                 <div className="text-2xl font-bold">{todayTotal}</div>
                 <p className="text-xs text-muted-foreground">
                   for{" "}
-                  {new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", {
-                    month: "short",
-                    day: "numeric",
-                  })}
+                  <span title={new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", year: "numeric", month: "long", day: "numeric" })}>
+                    {formatRelativeDate(selectedDate + "T00:00:00")}
+                  </span>
                 </p>
               </CardContent>
             </Card>
