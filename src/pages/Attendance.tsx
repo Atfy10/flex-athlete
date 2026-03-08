@@ -310,10 +310,13 @@ const Attendance = () => {
     try {
       const res = await getSessionOccurrencesByDate(date);
       if (res.isSuccess) setSessions(res.data.items);
+      else toast({ title: "Failed to load sessions.", variant: "destructive" });
+    } catch {
+      toast({ title: "Failed to load sessions.", variant: "destructive" });
     } finally {
       setSessionsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     loadSessions(selectedDate);
