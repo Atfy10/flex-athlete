@@ -83,6 +83,7 @@ const App = () => (
                       <Route path="/users-roles" element={<UsersRoles />} />
                       <Route path="*" element={<NotFound />} />
                     </Routes>
+                    </ErrorBoundary>
                   </AppLayout>
                 </ProtectedRoute>
               }
