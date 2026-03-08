@@ -59,6 +59,7 @@ import { countSports, getSports } from "@/services/sport.services";
 import { getAverageAttendance } from "@/services/attendance.services";
 import { TraineeCardDto } from "@/types/TraineeCardDto";
 import { useToast } from "@/hooks/use-toast";
+import { getAttendanceColor } from "@/lib/attendanceUtils";
 
 interface TraineesStats {
   totalTrainees: number;

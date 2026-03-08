@@ -22,6 +22,7 @@ import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { useToast } from "@/hooks/use-toast";
 import { TraineeDetailsDto } from "@/types/TraineeDetailsDto";
 import { getTraineeById, deleteTrainee } from "@/services/trainee.service";
+import { getAttendanceColor } from "@/lib/attendanceUtils";
 import { TraineeEditModal } from "@/components/modals/TraineeEditModal";
 
 // ── Info Row ──────────────────────────────────────────────────────────────────
