@@ -7,7 +7,6 @@ import {
 } from "@/components/profile/ProfileViewLayout";
 import { TraineeEditModal } from "@/components/modals/TraineeEditModal";
 import { useToast } from "@/hooks/use-toast";
-import { Users } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import {
   Mail,
