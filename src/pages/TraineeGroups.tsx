@@ -55,6 +55,8 @@ export default function TraineeGroups() {
   const { toast } = useToast();
   const [createOpen, setCreateOpen] = useState(false);
   const [operateOpen, setOperateOpen] = useState(false);
+  const [deleteTarget, setDeleteTarget] = useState<ListTraineeGroupDto | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
 
   const listFn = useCallback(
     (page: number, pageSize: number) => getTraineeGroups(page, pageSize),
