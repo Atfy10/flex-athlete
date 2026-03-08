@@ -8,7 +8,7 @@ import { FilterBar } from "@/components/FilterBar";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import {
   Plus, Users, Calendar, Play, MoreHorizontal,
-  Clock, MapPin, Trophy, Eye, AlertCircle, ChevronUp, ChevronDown,
+  Clock, MapPin, Trophy, Eye, AlertCircle,
 } from "lucide-react";
 import {
   DropdownMenu, DropdownMenuContent, DropdownMenuItem,
@@ -29,15 +29,10 @@ import { ListTraineeGroupDto } from "@/types/listTraineeGroup";
 import { useToast } from "@/hooks/use-toast";
 import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
+import { SortableTableHead } from "@/components/ui/SortableTableHead";
+import { useSortable } from "@/hooks/useSortable";
 
 type SortKey = keyof Pick<ListTraineeGroupDto, "sportName" | "coachName" | "branchName" | "durationInMinutes" | "traineesCount" | "startTime">;
-
-function SortIcon({ col, sort }: { col: SortKey; sort: { key: SortKey; dir: "asc" | "desc" } | null }) {
-  if (sort?.key !== col) return <ChevronUp className="h-3 w-3 opacity-20" />;
-  return sort.dir === "asc"
-    ? <ChevronUp className="h-3 w-3 text-primary" />
-    : <ChevronDown className="h-3 w-3 text-primary" />;
-}
 
 function GroupCardSkeleton() {
   return (
@@ -71,7 +66,7 @@ export default function TraineeGroups() {
   const [deleteTarget, setDeleteTarget] = useState<ListTraineeGroupDto | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [view, setView] = useState<ViewMode>("grid");
-  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
+  const { sort, toggle: toggleSort, sortItems } = useSortable<SortKey>();
 
   const listFn = useCallback(
     (page: number, pageSize: number) => getTraineeGroups(page, pageSize),
@@ -109,24 +104,10 @@ export default function TraineeGroups() {
     }
   };
 
-  const toggleSort = (key: SortKey) => {
-    setSort((prev) =>
-      prev?.key === key
-        ? { key, dir: prev.dir === "asc" ? "desc" : "asc" }
-        : { key, dir: "asc" },
-    );
-  };
-
-  const sortedGroups = sort
-    ? [...groups].sort((a, b) => {
-        const av = a[sort.key] ?? "";
-        const bv = b[sort.key] ?? "";
-        const cmp = typeof av === "number" && typeof bv === "number"
-          ? av - bv
-          : String(av).localeCompare(String(bv));
-        return sort.dir === "asc" ? cmp : -cmp;
-      })
-    : groups;
+  const sortedGroups = sortItems(groups, (g, key) => {
+    const v = g[key] ?? "";
+    return typeof v === "number" ? v : String(v);
+  });
 
   const statsData = [
     { title: "Groups (this page)", value: loading ? "—" : String(groups.length), icon: Users },
@@ -335,16 +316,7 @@ export default function TraineeGroups() {
                       { label: "Trainees", key: "traineesCount" },
                     ] as { label: string; key: SortKey }[]
                   ).map(({ label, key }) => (
-                    <TableHead
-                      key={key}
-                      className="cursor-pointer select-none"
-                      onClick={() => toggleSort(key)}
-                    >
-                      <div className="flex items-center gap-1">
-                        {label}
-                        <SortIcon col={key} sort={sort} />
-                      </div>
-                    </TableHead>
+                    <SortableTableHead key={key} col={key} label={label} sort={sort} onSort={toggleSort} />
                   ))}
                   <TableHead />
                 </TableRow>

@@ -24,8 +24,6 @@ import {
   XCircle,
   Clock,
   TrendingUp,
-  ChevronDown,
-  ChevronUp,
   MapPin,
   Trophy,
   RefreshCw,
@@ -42,7 +40,10 @@ import {
   AttendanceStatus,
 } from "@/types/AttendanceDto";
 import { MarkAttendanceModal } from "@/components/modals/MarkAttendanceModal";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
+import { SortableTableHead } from "@/components/ui/SortableTableHead";
+import { useSortable } from "@/hooks/useSortable";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function todayIso() {
@@ -300,6 +301,7 @@ const Attendance = () => {
   const [markOpen, setMarkOpen] = useState(false);
   const [markSession, setMarkSession] = useState<SessionOccurrenceDto | null>(null);
   const [view, setView] = useState<ViewMode>("grid");
+  const { sort, toggle: toggleSort, sortItems } = useSortable<"sportName" | "coachName" | "branchName" | "startTime" | "durationInMinutes" | "totalPresent" | "totalEnrolled">();
 
   // Sessions for selected date
   const [sessions, setSessions] = useState<SessionOccurrenceDto[]>([]);
@@ -348,8 +350,10 @@ const Attendance = () => {
   const todayAbsent   = sessions.reduce((s, r) => s + r.totalAbsent, 0);
   const todayEnrolled = sessions.reduce((s, r) => s + r.totalEnrolled, 0);
 
+type AttendanceSortKey = "sportName" | "coachName" | "branchName" | "startTime" | "durationInMinutes" | "totalPresent" | "totalEnrolled";
+
   // Filter sessions by search term (session-level: sport, coach, branch)
-  const visibleSessions =
+  const filteredSessions =
     searchTerm.trim().length >= 2
       ? sessions.filter(
           (s) =>
@@ -358,6 +362,11 @@ const Attendance = () => {
             s.branchName.toLowerCase().includes(searchTerm.toLowerCase()),
         )
       : sessions;
+
+  const visibleSessions = sortItems(filteredSessions, (s, key) => {
+    const v = (s as unknown as Record<string, unknown>)[key] ?? "";
+    return typeof v === "number" ? v : String(v);
+  });
 
   return (
     <div className="space-y-8">
@@ -559,12 +568,19 @@ const Attendance = () => {
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Sport</TableHead>
-                  <TableHead>Coach</TableHead>
-                  <TableHead>Branch</TableHead>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Present</TableHead>
+                  {(
+                    [
+                      { label: "Sport", key: "sportName" },
+                      { label: "Coach", key: "coachName" },
+                      { label: "Branch", key: "branchName" },
+                      { label: "Time", key: "startTime" },
+                      { label: "Duration", key: "durationInMinutes" },
+                      { label: "Present", key: "totalPresent" },
+                      { label: "Enrolled", key: "totalEnrolled" },
+                    ] as { label: string; key: AttendanceSortKey }[]
+                  ).map(({ label, key }) => (
+                    <SortableTableHead key={key} col={key} label={label} sort={sort} onSort={toggleSort} />
+                  ))}
                   <TableHead>Late</TableHead>
                   <TableHead>Absent</TableHead>
                   <TableHead>Rate</TableHead>

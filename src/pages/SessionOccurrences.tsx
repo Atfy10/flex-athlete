@@ -20,8 +20,6 @@ import {
   Search,
   X,
   AlertCircle,
-  ChevronUp,
-  ChevronDown,
 } from "lucide-react";
 import { BasePagination } from "@/components/BasePagination";
 import { useEntitySearch } from "@/hooks/useEntitySearch";
@@ -33,6 +31,8 @@ import {
 import { SessionOccurrenceDto } from "@/types/AttendanceDto";
 import { MarkAttendanceModal } from "@/components/modals/MarkAttendanceModal";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
+import { SortableTableHead } from "@/components/ui/SortableTableHead";
+import { useSortable } from "@/hooks/useSortable";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function formatTime(t: string) { return t?.slice(0, 5) ?? ""; }
@@ -51,11 +51,6 @@ function attendanceRate(present: number, late: number, total: number) {
 }
 
 type SortKey = "sportName" | "coachName" | "branchName" | "date" | "startTime" | "durationInMinutes" | "totalEnrolled";
-
-function SortIcon({ col, sort }: { col: SortKey; sort: { key: SortKey; dir: "asc" | "desc" } | null }) {
-  if (sort?.key !== col) return <ChevronUp className="h-3 w-3 opacity-20" />;
-  return sort.dir === "asc" ? <ChevronUp className="h-3 w-3 text-primary" /> : <ChevronDown className="h-3 w-3 text-primary" />;
-}
 
 // ─── Card Skeleton ─────────────────────────────────────────────────────────────
 function OccurrenceCardSkeleton() {
@@ -158,7 +153,7 @@ export default function SessionOccurrences() {
   const [searchParams] = useSearchParams();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [view, setView] = useState<ViewMode>("grid");
-  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
+  const { sort, toggle: toggleSort, sortItems } = useSortable<SortKey>();
 
   const [dateFilter, setDateFilter] = useState<string>(() => {
     const param = searchParams.get("date");
@@ -238,21 +233,10 @@ export default function SessionOccurrences() {
     else setSearchPage(p);
   };
 
-  const toggleSort = (key: SortKey) => {
-    setSort((prev) =>
-      prev?.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }
-    );
-  };
-
-  const sortedItems = sort
-    ? [...items].sort((a, b) => {
-        const av = (a as unknown as Record<string, unknown>)[sort.key] ?? "";
-        const bv = (b as unknown as Record<string, unknown>)[sort.key] ?? "";
-        const cmp = typeof av === "number" && typeof bv === "number"
-          ? av - bv : String(av).localeCompare(String(bv));
-        return sort.dir === "asc" ? cmp : -cmp;
-      })
-    : items;
+  const sortedItems = sortItems(items, (o, key) => {
+    const v = (o as unknown as Record<string, unknown>)[key] ?? "";
+    return typeof v === "number" ? v : String(v);
+  });
 
   const rateColor = (rate: number | null) =>
     rate === null ? "bg-muted text-muted-foreground" :
@@ -391,12 +375,7 @@ export default function SessionOccurrences() {
                       { label: "Enrolled", key: "totalEnrolled" },
                     ] as { label: string; key: SortKey }[]
                   ).map(({ label, key }) => (
-                    <TableHead key={key} className="cursor-pointer select-none" onClick={() => toggleSort(key)}>
-                      <div className="flex items-center gap-1">
-                        {label}
-                        <SortIcon col={key} sort={sort} />
-                      </div>
-                    </TableHead>
+                    <SortableTableHead key={key} col={key} label={label} sort={sort} onSort={toggleSort} />
                   ))}
                   <TableHead>Rate</TableHead>
                   <TableHead />

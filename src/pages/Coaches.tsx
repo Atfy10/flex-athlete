@@ -9,6 +9,8 @@ import { FilterBar } from "@/components/FilterBar";
 import { EmptyState } from "@/components/EmptyState";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
+import { SortableTableHead } from "@/components/ui/SortableTableHead";
+import { useSortable } from "@/hooks/useSortable";
 import {
   Plus,
   MoreHorizontal,
@@ -22,9 +24,6 @@ import {
   Eye,
   Trash2,
   Pencil,
-  ChevronUp,
-  ChevronDown as ChevronDownIcon,
-  ChevronsUpDown,
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -67,7 +66,6 @@ interface CoachesStats {
 }
 
 type SortKey = "name" | "sport" | "branch" | "trainees" | "hired";
-type SortDir = "asc" | "desc";
 
 const STATS_META = [
   { title: "Total Coaches",  change: "+5",   icon: Users  },
@@ -100,20 +98,12 @@ function CoachCardSkeleton() {
   );
 }
 
-function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
-  if (col !== sortKey) return <ChevronsUpDown className="h-3.5 w-3.5 ml-1 text-muted-foreground/50" />;
-  return sortDir === "asc"
-    ? <ChevronUp className="h-3.5 w-3.5 ml-1 text-primary" />
-    : <ChevronDownIcon className="h-3.5 w-3.5 ml-1 text-primary" />;
-}
-
 export default function Coaches() {
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const { sort, toggle: handleSort, sortItems } = useSortable<SortKey>();
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -180,20 +170,14 @@ export default function Coaches() {
     return matchesSport && matchesBranch;
   });
 
-  const filteredCoaches = [...filtered].sort((a, b) => {
-    let av = "", bv = "";
-    if (sortKey === "name") { av = `${a.firstName} ${a.lastName}`; bv = `${b.firstName} ${b.lastName}`; }
-    else if (sortKey === "sport") { av = a.sportName; bv = b.sportName; }
-    else if (sortKey === "branch") { av = a.branchName; bv = b.branchName; }
-    else if (sortKey === "trainees") { return sortDir === "asc" ? a.totalTrainees - b.totalTrainees : b.totalTrainees - a.totalTrainees; }
-    else if (sortKey === "hired") { return sortDir === "asc" ? new Date(a.hireDate).getTime() - new Date(b.hireDate).getTime() : new Date(b.hireDate).getTime() - new Date(a.hireDate).getTime(); }
-    return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+  const filteredCoaches = sortItems(filtered, (c, key) => {
+    if (key === "name") return `${c.firstName} ${c.lastName}`;
+    if (key === "sport") return c.sportName;
+    if (key === "branch") return c.branchName;
+    if (key === "trainees") return c.totalTrainees;
+    if (key === "hired") return new Date(c.hireDate).getTime();
+    return "";
   });
-
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) setSortDir((d) => d === "asc" ? "desc" : "asc");
-    else { setSortKey(key); setSortDir("asc"); }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
@@ -248,15 +232,7 @@ export default function Coaches() {
   const hasFilters = term !== "" || sportFilter !== "all" || branchFilter !== "all";
 
   const SortTH = ({ col, label }: { col: SortKey; label: string }) => (
-    <TableHead
-      className="cursor-pointer select-none whitespace-nowrap group"
-      onClick={() => handleSort(col)}
-    >
-      <span className="inline-flex items-center gap-0.5 group-hover:text-foreground transition-colors">
-        {label}
-        <SortIcon col={col} sortKey={sortKey} sortDir={sortDir} />
-      </span>
-    </TableHead>
+    <SortableTableHead col={col} label={label} sort={sort} onSort={handleSort} />
   );
 
   return (

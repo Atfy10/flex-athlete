@@ -26,7 +26,6 @@ import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import {
   UserPlus, Users, Plus, Calendar, DollarSign, CheckCircle, Clock,
   Eye, MoreHorizontal, Pencil, Trash2, PlayCircle, PauseCircle, CreditCard,
-  ChevronUp, ChevronDown,
 } from "lucide-react";
 import { EnrollmentFormModal } from "@/components/modals/EnrollmentFormModal";
 import { EnrollmentEditModal, EnrollmentEditData } from "@/components/modals/EnrollmentEditModal";
@@ -40,17 +39,14 @@ import {
 } from "@/services/enrollment.services";
 import { EnrollmentCardDto } from "@/types/EnrollmentCardDto";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
+import { SortableTableHead } from "@/components/ui/SortableTableHead";
+import { useSortable } from "@/hooks/useSortable";
 
 const PAGE_SIZE = 10;
 
 interface EnrollmentStats { total: number; active: number; pendingPayment: number; }
 
 type SortKey = "traineeName" | "sport" | "branch" | "status" | "paymentStatus" | "enrollmentDate";
-
-function SortIcon({ col, sort }: { col: SortKey; sort: { key: SortKey; dir: "asc" | "desc" } | null }) {
-  if (sort?.key !== col) return <ChevronUp className="h-3 w-3 opacity-20" />;
-  return sort.dir === "asc" ? <ChevronUp className="h-3 w-3 text-primary" /> : <ChevronDown className="h-3 w-3 text-primary" />;
-}
 
 const getStatusColor = (status: string) => {
   switch (status) {
@@ -91,7 +87,7 @@ const Enrollments = () => {
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
   const [view, setView] = useState<ViewMode>("grid");
-  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
+  const { sort, toggle: toggleSort, sortItems } = useSortable<SortKey>();
 
   const {
     items: enrollments, loading, term, setTerm, page, setPage, totalPages, refresh,
@@ -121,20 +117,9 @@ const Enrollments = () => {
     return matchesStatus && matchesPayment;
   });
 
-  const toggleSort = (key: SortKey) => {
-    setSort((prev) =>
-      prev?.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }
-    );
-  };
-
-  const sortedEnrollments = sort
-    ? [...filteredEnrollments].sort((a, b) => {
-        const av = (a as unknown as Record<string, unknown>)[sort.key] ?? "";
-        const bv = (b as unknown as Record<string, unknown>)[sort.key] ?? "";
-        const cmp = String(av).localeCompare(String(bv));
-        return sort.dir === "asc" ? cmp : -cmp;
-      })
-    : filteredEnrollments;
+  const sortedEnrollments = sortItems(filteredEnrollments, (e, key) =>
+    (e as unknown as Record<string, unknown>)[key] as string ?? ""
+  );
 
   const openEdit = (enrollment: EnrollmentCardDto) => {
     setSelectedEnrollment({
@@ -439,12 +424,7 @@ const Enrollments = () => {
                         { label: "Payment", key: "paymentStatus" },
                       ] as { label: string; key: SortKey }[]
                     ).map(({ label, key }) => (
-                      <TableHead key={key} className="cursor-pointer select-none" onClick={() => toggleSort(key)}>
-                        <div className="flex items-center gap-1">
-                          {label}
-                          <SortIcon col={key} sort={sort} />
-                        </div>
-                      </TableHead>
+                      <SortableTableHead key={key} col={key} label={label} sort={sort} onSort={toggleSort} />
                     ))}
                     <TableHead>Fee</TableHead>
                     <TableHead />

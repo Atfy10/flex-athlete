@@ -9,6 +9,8 @@ import { FilterBar } from "@/components/FilterBar";
 import { EmptyState } from "@/components/EmptyState";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
+import { SortableTableHead } from "@/components/ui/SortableTableHead";
+import { useSortable } from "@/hooks/useSortable";
 import {
   Plus,
   MoreHorizontal,
@@ -21,9 +23,6 @@ import {
   TrendingUp,
   Eye,
   Star,
-  ChevronUp,
-  ChevronDown as ChevronDownIcon,
-  ChevronsUpDown,
   Trash2,
   Pencil,
 } from "lucide-react";
@@ -68,7 +67,6 @@ interface TraineesStats {
 }
 
 type SortKey = "name" | "branch" | "attendance" | "joined";
-type SortDir = "asc" | "desc";
 
 const PAGE_SIZE = 6;
 
@@ -97,12 +95,6 @@ function TraineeCardSkeleton() {
   );
 }
 
-function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
-  if (col !== sortKey) return <ChevronsUpDown className="h-3.5 w-3.5 ml-1 text-muted-foreground/50" />;
-  return sortDir === "asc"
-    ? <ChevronUp className="h-3.5 w-3.5 ml-1 text-primary" />
-    : <ChevronDownIcon className="h-3.5 w-3.5 ml-1 text-primary" />;
-}
 
 export default function Trainees() {
   const navigate = useNavigate();
@@ -110,8 +102,7 @@ export default function Trainees() {
 
   // ── View mode ────────────────────────────────────────────────────────────
   const [viewMode, setViewMode] = useState<ViewMode>("grid");
-  const [sortKey, setSortKey] = useState<SortKey>("name");
-  const [sortDir, setSortDir] = useState<SortDir>("asc");
+  const { sort, toggle: handleSort, sortItems } = useSortable<SortKey>();
 
   // ── Modals & dialogs ──────────────────────────────────────────────────────
   const [createOpen, setCreateOpen] = useState(false);
@@ -203,20 +194,14 @@ export default function Trainees() {
     return sportMatch && statusMatch;
   });
 
-  // ── Client-side sort (table mode) ─────────────────────────────────────────
-  const trainees = [...filtered].sort((a, b) => {
-    let av = "", bv = "";
-    if (sortKey === "name") { av = `${a.firstName} ${a.lastName}`; bv = `${b.firstName} ${b.lastName}`; }
-    else if (sortKey === "branch") { av = a.branchName; bv = b.branchName; }
-    else if (sortKey === "attendance") { return sortDir === "asc" ? a.attendanceRate - b.attendanceRate : b.attendanceRate - a.attendanceRate; }
-    else if (sortKey === "joined") { return sortDir === "asc" ? new Date(a.joinDate).getTime() - new Date(b.joinDate).getTime() : new Date(b.joinDate).getTime() - new Date(a.joinDate).getTime(); }
-    return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+  // ── Client-side sort ──────────────────────────────────────────────────────
+  const trainees = sortItems(filtered, (t, key) => {
+    if (key === "name") return `${t.firstName} ${t.lastName}`;
+    if (key === "branch") return t.branchName;
+    if (key === "attendance") return t.attendanceRate;
+    if (key === "joined") return new Date(t.joinDate).getTime();
+    return "";
   });
-
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) setSortDir((d) => d === "asc" ? "desc" : "asc");
-    else { setSortKey(key); setSortDir("asc"); }
-  };
 
   // ── Delete ────────────────────────────────────────────────────────────────
   const handleConfirmDelete = async () => {
@@ -263,15 +248,7 @@ export default function Trainees() {
   const hasFilters = term !== "" || sportFilter !== "all" || statusFilter !== "all";
 
   const SortTH = ({ col, label }: { col: SortKey; label: string }) => (
-    <TableHead
-      className="cursor-pointer select-none whitespace-nowrap group"
-      onClick={() => handleSort(col)}
-    >
-      <span className="inline-flex items-center gap-0.5 group-hover:text-foreground transition-colors">
-        {label}
-        <SortIcon col={col} sortKey={sortKey} sortDir={sortDir} />
-      </span>
-    </TableHead>
+    <SortableTableHead col={col} label={label} sort={sort} onSort={handleSort} />
   );
 
   return (
