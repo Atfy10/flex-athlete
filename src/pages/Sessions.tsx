@@ -307,8 +307,9 @@ export default function Sessions() {
       {/* ── Pagination ──────────────────────────────────────────────────── */}
       {!loading && currentTotal > 1 && (
         <BasePagination
-          currentPage={currentPage}
+          page={currentPage}
           totalPages={currentTotal}
+          pageSize={9}
           onPageChange={setCurrentPage}
         />
       )}
