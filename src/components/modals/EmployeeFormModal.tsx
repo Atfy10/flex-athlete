@@ -121,6 +121,7 @@ export function EmployeeFormModal({
   }, [open]);
 
   const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
     setFieldErrors((fe) => ({ ...fe, [key]: undefined }));
   };
