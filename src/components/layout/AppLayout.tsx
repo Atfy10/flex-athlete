@@ -52,12 +52,13 @@ function AppLayoutContent({ children }: AppLayoutProps) {
   const { logout, devUser, token } = useAuth();
   const { unreadCount } = useRealtime();
   const { state, isMobile } = useSidebar();
+  const [paletteOpen, setPaletteOpen] = useState(false);
   // Only show Dashboard shortcut on desktop when sidebar is collapsed.
   // On mobile the sidebar uses a sheet overlay — state stays "expanded".
   const showDashboardButton = !isMobile && state === "collapsed";
 
-  // Register global keyboard shortcuts (Alt+D / Ctrl+Shift+D → Dashboard)
-  useGlobalShortcuts();
+  // Register global keyboard shortcuts (Alt+D / Ctrl+Shift+D → Dashboard; Cmd/Ctrl+K → palette)
+  useGlobalShortcuts(() => setPaletteOpen((o) => !o));
 
   // ── Update browser tab title with unread count ──────────────────────────
   useEffect(() => {
