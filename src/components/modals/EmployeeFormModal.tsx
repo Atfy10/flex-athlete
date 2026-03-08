@@ -169,6 +169,7 @@ export function EmployeeFormModal({
       }
 
       toast({ title: "Employee created successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
