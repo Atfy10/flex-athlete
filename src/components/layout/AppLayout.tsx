@@ -35,10 +35,13 @@ function getInitials(nameOrEmail: string): string {
 }
 
 /** Inner layout that can access RealtimeContext */
-function AppLayoutInner({ children }: AppLayoutProps) {
+/** Inner content — must live inside SidebarProvider to call useSidebar */
+function AppLayoutContent({ children }: AppLayoutProps) {
   const navigate = useNavigate();
   const { logout, devUser, token } = useAuth();
   const { unreadCount } = useRealtime();
+  const { state } = useSidebar();
+  const sidebarCollapsed = state === "collapsed";
 
   const handleLogout = () => {
     logout();
@@ -80,7 +83,6 @@ function AppLayoutInner({ children }: AppLayoutProps) {
   const initials = getInitials(displayName);
 
   return (
-    <SidebarProvider>
       <div className="min-h-screen flex w-full bg-background overflow-hidden">
         <AppSidebar />
 
