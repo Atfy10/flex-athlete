@@ -35,6 +35,7 @@ export function TraineeEditModal({
   trainee,
 }: TraineeEditModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [branches, setBranches] = useState<SelectOption[]>([]);
@@ -49,6 +50,7 @@ export function TraineeEditModal({
 
   useEffect(() => {
     if (!open || !trainee) return;
+    resetDirty();
     setErrors([]);
     setForm({
       parentNumber: trainee.parentNumber ?? "",
