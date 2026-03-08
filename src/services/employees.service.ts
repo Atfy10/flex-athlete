@@ -45,3 +45,8 @@ export const deleteEmployee = async (id: number | string) => {
   if (isDevSession()) return devMock<boolean>(true);
   return apiFetch<ApiResult<boolean>>(`/api/employee/${id}`, { method: "DELETE" });
 };
+
+export const toggleEmployeeStatus = async (id: number | string) => {
+  if (isDevSession()) return devMock<boolean>(true);
+  return apiFetch<ApiResult<boolean>>(`/api/employee/${id}/toggle-status`, { method: "PATCH" });
+};
