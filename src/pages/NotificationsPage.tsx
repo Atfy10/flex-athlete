@@ -21,6 +21,7 @@ const PAGE_SIZE = 20;
 
 export default function NotificationsPage() {
   const { toast } = useToast();
+  const { decrementUnread, resetUnread, setUnreadCount: setGlobalUnreadCount } = useRealtime();
 
   const [notifications, setNotifications] = useState<NotificationDto[]>([]);
   const [unreadCount, setUnreadCount] = useState(0);
