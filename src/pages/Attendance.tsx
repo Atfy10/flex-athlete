@@ -568,12 +568,19 @@ type AttendanceSortKey = "sportName" | "coachName" | "branchName" | "startTime" 
             <Table>
               <TableHeader>
                 <TableRow>
-                  <TableHead>Sport</TableHead>
-                  <TableHead>Coach</TableHead>
-                  <TableHead>Branch</TableHead>
-                  <TableHead>Time</TableHead>
-                  <TableHead>Duration</TableHead>
-                  <TableHead>Present</TableHead>
+                  {(
+                    [
+                      { label: "Sport", key: "sportName" },
+                      { label: "Coach", key: "coachName" },
+                      { label: "Branch", key: "branchName" },
+                      { label: "Time", key: "startTime" },
+                      { label: "Duration", key: "durationInMinutes" },
+                      { label: "Present", key: "totalPresent" },
+                      { label: "Enrolled", key: "totalEnrolled" },
+                    ] as { label: string; key: AttendanceSortKey }[]
+                  ).map(({ label, key }) => (
+                    <SortableTableHead key={key} col={key} label={label} sort={sort} onSort={toggleSort} />
+                  ))}
                   <TableHead>Late</TableHead>
                   <TableHead>Absent</TableHead>
                   <TableHead>Rate</TableHead>
