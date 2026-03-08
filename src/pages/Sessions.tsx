@@ -267,7 +267,7 @@ export default function Sessions() {
           </div>
         ) : (
           items.map((session) => (
-            <SessionCard key={session.id} session={session} />
+            <SessionCard key={session.id} session={session} onMarkAttendance={openMarkAttendance} />
           ))
         )}
       </div>
