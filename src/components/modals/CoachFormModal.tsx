@@ -141,7 +141,7 @@ export function CoachFormModal({
         label="Employee"
         placeholder="Search employee by name or email..."
         value={selectedEmployee}
-        onChange={setSelectedEmployee}
+        onChange={(v) => { markDirty(); setSelectedEmployee(v); }}
         onSearch={fetchEmployees}
         required
       />
@@ -151,7 +151,7 @@ export function CoachFormModal({
         label="Sport"
         placeholder="Search sport by name..."
         value={selectedSport}
-        onChange={setSelectedSport}
+        onChange={(v) => { markDirty(); setSelectedSport(v); }}
         onSearch={fetchSports}
         required
       />
@@ -160,7 +160,7 @@ export function CoachFormModal({
         id="skillLevel"
         label="Skill Level"
         value={skillLevel}
-        onChange={setSkillLevel}
+        onChange={(v) => { markDirty(); setSkillLevel(v); }}
         required
         options={SKILL_LEVELS}
         placeholder="Select skill level"
