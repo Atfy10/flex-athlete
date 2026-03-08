@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FilterBar } from "@/components/FilterBar";
 import { EmptyState } from "@/components/EmptyState";
+import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -14,6 +15,14 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import {
   Users,
@@ -28,6 +37,11 @@ import {
   Trash2,
   ToggleLeft,
   ToggleRight,
+  Pencil,
+  ChevronUp,
+  ChevronDown as ChevronDownIcon,
+  ChevronsUpDown,
+  Briefcase,
 } from "lucide-react";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { EmployeeFormModal } from "@/components/modals/EmployeeFormModal";
@@ -52,6 +66,9 @@ interface EmployeesStats {
   departments: number;
 }
 
+type SortKey = "name" | "position" | "branch" | "status" | "hired";
+type SortDir = "asc" | "desc";
+
 function EmployeeCardSkeleton() {
   return (
     <Card className="card-athletic">
@@ -73,9 +90,20 @@ function EmployeeCardSkeleton() {
   );
 }
 
+function SortIcon({ col, sortKey, sortDir }: { col: SortKey; sortKey: SortKey; sortDir: SortDir }) {
+  if (col !== sortKey) return <ChevronsUpDown className="h-3.5 w-3.5 ml-1 text-muted-foreground/50" />;
+  return sortDir === "asc"
+    ? <ChevronUp className="h-3.5 w-3.5 ml-1 text-primary" />
+    : <ChevronDownIcon className="h-3.5 w-3.5 ml-1 text-primary" />;
+}
+
 const Employees = () => {
   const navigate = useNavigate();
   const { toast } = useToast();
+
+  const [viewMode, setViewMode] = useState<ViewMode>("grid");
+  const [sortKey, setSortKey] = useState<SortKey>("name");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
 
   const [modalOpen, setModalOpen] = useState(false);
   const [editModalOpen, setEditModalOpen] = useState(false);
@@ -135,8 +163,7 @@ const Employees = () => {
     return () => { active = false; };
   }, []);
 
-  // Client-side filtering
-  const filteredEmployees = employees.filter((emp) => {
+  const filtered = employees.filter((emp) => {
     const matchesStatus =
       statusFilter === "all" ||
       (statusFilter === "active" && emp.isWork) ||
@@ -144,6 +171,25 @@ const Employees = () => {
     const matchesBranch = branchFilter === "all" || emp.branchName === branchFilter;
     return matchesStatus && matchesBranch;
   });
+
+  const filteredEmployees = [...filtered].sort((a, b) => {
+    let av = "", bv = "";
+    if (sortKey === "name") { av = `${a.firstName} ${a.lastName}`; bv = `${b.firstName} ${b.lastName}`; }
+    else if (sortKey === "position") { av = a.position; bv = b.position; }
+    else if (sortKey === "branch") { av = a.branchName; bv = b.branchName; }
+    else if (sortKey === "status") { av = a.isWork ? "a" : "b"; bv = b.isWork ? "a" : "b"; }
+    else if (sortKey === "hired") {
+      return sortDir === "asc"
+        ? new Date(a.hireDate).getTime() - new Date(b.hireDate).getTime()
+        : new Date(b.hireDate).getTime() - new Date(a.hireDate).getTime();
+    }
+    return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+  });
+
+  const handleSort = (key: SortKey) => {
+    if (sortKey === key) setSortDir((d) => d === "asc" ? "desc" : "asc");
+    else { setSortKey(key); setSortDir("asc"); }
+  };
 
   const getStatusColor = (isWork: boolean) =>
     isWork ? "bg-success/10 text-success hover:bg-success/20" : "bg-muted text-muted-foreground";
@@ -198,10 +244,20 @@ const Employees = () => {
     }
   };
 
-  const handleRefresh = () => {
-    setPage(1);
-    refresh();
-  };
+  const handleRefresh = () => { setPage(1); refresh(); };
+  const hasFilters = term !== "" || statusFilter !== "all" || branchFilter !== "all";
+
+  const SortTH = ({ col, label }: { col: SortKey; label: string }) => (
+    <TableHead
+      className="cursor-pointer select-none whitespace-nowrap group"
+      onClick={() => handleSort(col)}
+    >
+      <span className="inline-flex items-center gap-0.5 group-hover:text-foreground transition-colors">
+        {label}
+        <SortIcon col={col} sortKey={sortKey} sortDir={sortDir} />
+      </span>
+    </TableHead>
+  );
 
   return (
     <div className="space-y-6">
@@ -217,7 +273,7 @@ const Employees = () => {
         </Button>
       </div>
 
-      {/* Stats Cards */}
+      {/* Stats */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
         <Card className="card-athletic">
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
@@ -251,9 +307,15 @@ const Employees = () => {
         </Card>
       </div>
 
-      {/* Search and Filters */}
+      {/* Search & Filters + View Toggle */}
       <Card className="card-athletic">
-        <CardContent className="p-6">
+        <CardHeader>
+          <div className="flex items-center justify-between gap-3">
+            <CardTitle>Search & Filter</CardTitle>
+            <ViewToggle view={viewMode} onViewChange={setViewMode} />
+          </div>
+        </CardHeader>
+        <CardContent className="pt-0">
           <FilterBar
             searchValue={term}
             onSearchChange={(v) => { setTerm(v); setPage(1); }}
@@ -284,139 +346,226 @@ const Employees = () => {
         </CardContent>
       </Card>
 
-      {/* Employees Grid */}
-      {loading ? (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {Array.from({ length: pageSize }).map((_, i) => <EmployeeCardSkeleton key={i} />)}
-        </div>
-      ) : filteredEmployees.length === 0 ? (
-        <EmptyState
-          icon={Users}
-          title="No employees found"
-          description={term || statusFilter !== "all" || branchFilter !== "all" ? "Try adjusting your search or filters." : "Add your first employee to get started."}
-          actionLabel={!term && statusFilter === "all" && branchFilter === "all" ? "Add Employee" : undefined}
-          onAction={!term && statusFilter === "all" && branchFilter === "all" ? () => setModalOpen(true) : undefined}
-        />
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-          {filteredEmployees.map((employee) => (
-            <Card key={employee.id} className="card-athletic">
-              <CardContent className="p-6">
-                <div className="flex items-center gap-4 mb-4">
-                  <Avatar className="h-12 w-12">
-                    <AvatarFallback className="bg-gradient-primary text-primary-foreground">
-                      {getInitials(employee.firstName + " " + employee.lastName)}
-                    </AvatarFallback>
-                  </Avatar>
-                  <div className="flex-1 min-w-0">
-                    <h3 className="font-semibold truncate">
-                      {employee.firstName} {employee.lastName}
-                    </h3>
-                    <p className="text-sm text-muted-foreground">{employee.position}</p>
-                  </div>
-                  <div className="flex items-center gap-1">
-                    <Badge className={getStatusColor(employee.isWork)}>
-                      {employee.isWork ? "Active" : "Inactive"}
-                    </Badge>
-                    <DropdownMenu>
-                      <DropdownMenuTrigger asChild>
-                        <Button variant="ghost" size="icon" className="h-8 w-8">
-                          <MoreHorizontal className="h-4 w-4" />
-                        </Button>
-                      </DropdownMenuTrigger>
-                      <DropdownMenuContent align="end">
-                        <DropdownMenuLabel>Actions</DropdownMenuLabel>
-                        <DropdownMenuItem onClick={() => navigate(`/employees/${employee.id}`)}>
-                          <Eye className="h-4 w-4 mr-2" /> View Profile
-                        </DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditClick(employee)}>
-                          Edit Details
-                        </DropdownMenuItem>
-                        <DropdownMenuItem
-                          onClick={() => handleToggleStatus(employee)}
-                          disabled={togglingId === employee.id}
-                        >
-                          {employee.isWork ? (
-                            <><ToggleLeft className="h-4 w-4 mr-2" /> Deactivate</>
-                          ) : (
-                            <><ToggleRight className="h-4 w-4 mr-2" /> Activate</>
-                          )}
-                        </DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem
-                          className="text-destructive focus:text-destructive"
-                          onClick={() => handleDeleteClick(employee)}
-                        >
-                          <Trash2 className="h-4 w-4 mr-2" /> Remove Employee
-                        </DropdownMenuItem>
-                      </DropdownMenuContent>
-                    </DropdownMenu>
-                  </div>
+      {/* ── TABLE VIEW ── */}
+      {viewMode === "table" ? (
+        loading ? (
+          <Card className="card-athletic">
+            <CardContent className="p-0">
+              {Array.from({ length: 6 }).map((_, i) => (
+                <div key={i} className="flex items-center gap-4 px-4 py-3 border-b border-border last:border-0">
+                  <Skeleton className="h-8 w-8 rounded-full shrink-0" />
+                  <Skeleton className="h-4 w-40" />
+                  <Skeleton className="h-4 w-24 ml-auto" />
+                  <Skeleton className="h-4 w-20" />
                 </div>
-
-                <div className="space-y-2 text-sm">
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Mail className="h-4 w-4 shrink-0" />
-                    <span className="truncate">{employee.email}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Phone className="h-4 w-4 shrink-0" />
-                    <span>{employee.phoneNumber}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <MapPin className="h-4 w-4 shrink-0" />
-                    <span>{employee.branchName}</span>
-                  </div>
-                  <div className="flex items-center gap-2 text-muted-foreground">
-                    <Calendar className="h-4 w-4 shrink-0" />
-                    <span>
-                      Joined{" "}
-                      {employee.hireDate instanceof Date
-                        ? employee.hireDate.toLocaleDateString()
-                        : new Date(employee.hireDate).toLocaleDateString()}
-                    </span>
-                  </div>
-                </div>
-
-                <div className="flex gap-2 mt-4">
-                  <Button
-                    variant="default"
-                    size="sm"
-                    className="flex-1"
+              ))}
+            </CardContent>
+          </Card>
+        ) : filteredEmployees.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="No employees found"
+            description={hasFilters ? "Try adjusting your search or filters." : "Add your first employee to get started."}
+            actionLabel={!hasFilters ? "Add Employee" : undefined}
+            onAction={!hasFilters ? () => setModalOpen(true) : undefined}
+          />
+        ) : (
+          <Card className="card-athletic overflow-hidden">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <SortTH col="name" label="Name" />
+                  <SortTH col="position" label="Position" />
+                  <SortTH col="branch" label="Branch" />
+                  <SortTH col="status" label="Status" />
+                  <TableHead>Phone</TableHead>
+                  <SortTH col="hired" label="Hired" />
+                  <TableHead className="w-[50px]" />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {filteredEmployees.map((employee) => (
+                  <TableRow
+                    key={employee.id}
+                    className="cursor-pointer hover:bg-muted/40 transition-colors"
                     onClick={() => navigate(`/employees/${employee.id}`)}
                   >
-                    <Eye className="h-3.5 w-3.5 mr-1.5" />
-                    View Profile
-                  </Button>
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="flex-1"
-                    onClick={() => handleEditClick(employee)}
-                  >
-                    Edit
-                  </Button>
-                </div>
-              </CardContent>
-            </Card>
-          ))}
-        </div>
+                    <TableCell>
+                      <div className="flex items-center gap-2.5">
+                        <Avatar className="h-8 w-8 shrink-0">
+                          <AvatarFallback className="bg-gradient-primary text-primary-foreground text-xs font-bold">
+                            {getInitials(`${employee.firstName} ${employee.lastName}`)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="min-w-0">
+                          <p className="font-medium text-sm">{employee.firstName} {employee.lastName}</p>
+                          <p className="text-xs text-muted-foreground truncate">{employee.email}</p>
+                        </div>
+                      </div>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1.5 text-sm">
+                        <Briefcase className="h-3 w-3 text-muted-foreground shrink-0" />
+                        {employee.position}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <span className="flex items-center gap-1.5 text-sm">
+                        <MapPin className="h-3 w-3 text-muted-foreground shrink-0" />
+                        {employee.branchName}
+                      </span>
+                    </TableCell>
+                    <TableCell>
+                      <Badge className={getStatusColor(employee.isWork)}>
+                        {employee.isWork ? "Active" : "Inactive"}
+                      </Badge>
+                    </TableCell>
+                    <TableCell className="text-sm text-muted-foreground">{employee.phoneNumber}</TableCell>
+                    <TableCell className="text-sm text-muted-foreground">
+                      {new Date(employee.hireDate).toLocaleDateString("en-US", { year: "numeric", month: "short", day: "numeric" })}
+                    </TableCell>
+                    <TableCell onClick={(e) => e.stopPropagation()}>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-7 w-7">
+                            <MoreHorizontal className="h-3.5 w-3.5" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => navigate(`/employees/${employee.id}`)}>
+                            <Eye className="h-4 w-4 mr-2" /> View Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditClick(employee)}>
+                            <Pencil className="h-4 w-4 mr-2" /> Edit Details
+                          </DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleToggleStatus(employee)}
+                            disabled={togglingId === employee.id}
+                          >
+                            {employee.isWork
+                              ? <><ToggleLeft className="h-4 w-4 mr-2" /> Deactivate</>
+                              : <><ToggleRight className="h-4 w-4 mr-2" /> Activate</>}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDeleteClick(employee)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" /> Remove Employee
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
+          </Card>
+        )
+      ) : (
+        /* ── GRID VIEW ── */
+        loading ? (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {Array.from({ length: pageSize }).map((_, i) => <EmployeeCardSkeleton key={i} />)}
+          </div>
+        ) : filteredEmployees.length === 0 ? (
+          <EmptyState
+            icon={Users}
+            title="No employees found"
+            description={hasFilters ? "Try adjusting your search or filters." : "Add your first employee to get started."}
+            actionLabel={!hasFilters ? "Add Employee" : undefined}
+            onAction={!hasFilters ? () => setModalOpen(true) : undefined}
+          />
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            {filteredEmployees.map((employee) => (
+              <Card key={employee.id} className="card-athletic">
+                <CardContent className="p-6">
+                  <div className="flex items-center gap-4 mb-4">
+                    <Avatar className="h-12 w-12">
+                      <AvatarFallback className="bg-gradient-primary text-primary-foreground">
+                        {getInitials(employee.firstName + " " + employee.lastName)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <div className="flex-1 min-w-0">
+                      <h3 className="font-semibold truncate">{employee.firstName} {employee.lastName}</h3>
+                      <p className="text-sm text-muted-foreground">{employee.position}</p>
+                    </div>
+                    <div className="flex items-center gap-1">
+                      <Badge className={getStatusColor(employee.isWork)}>
+                        {employee.isWork ? "Active" : "Inactive"}
+                      </Badge>
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon" className="h-8 w-8">
+                            <MoreHorizontal className="h-4 w-4" />
+                          </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuLabel>Actions</DropdownMenuLabel>
+                          <DropdownMenuItem onClick={() => navigate(`/employees/${employee.id}`)}>
+                            <Eye className="h-4 w-4 mr-2" /> View Profile
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => handleEditClick(employee)}>Edit Details</DropdownMenuItem>
+                          <DropdownMenuItem
+                            onClick={() => handleToggleStatus(employee)}
+                            disabled={togglingId === employee.id}
+                          >
+                            {employee.isWork
+                              ? <><ToggleLeft className="h-4 w-4 mr-2" /> Deactivate</>
+                              : <><ToggleRight className="h-4 w-4 mr-2" /> Activate</>}
+                          </DropdownMenuItem>
+                          <DropdownMenuSeparator />
+                          <DropdownMenuItem
+                            className="text-destructive focus:text-destructive"
+                            onClick={() => handleDeleteClick(employee)}
+                          >
+                            <Trash2 className="h-4 w-4 mr-2" /> Remove Employee
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                  <div className="space-y-2 text-sm">
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Mail className="h-4 w-4 shrink-0" /><span className="truncate">{employee.email}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Phone className="h-4 w-4 shrink-0" /><span>{employee.phoneNumber}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <MapPin className="h-4 w-4 shrink-0" /><span>{employee.branchName}</span>
+                    </div>
+                    <div className="flex items-center gap-2 text-muted-foreground">
+                      <Calendar className="h-4 w-4 shrink-0" />
+                      <span>
+                        Joined{" "}
+                        {employee.hireDate instanceof Date
+                          ? employee.hireDate.toLocaleDateString()
+                          : new Date(employee.hireDate).toLocaleDateString()}
+                      </span>
+                    </div>
+                  </div>
+                  <div className="flex gap-2 mt-4">
+                    <Button variant="default" size="sm" className="flex-1" onClick={() => navigate(`/employees/${employee.id}`)}>
+                      <Eye className="h-3.5 w-3.5 mr-1.5" /> View Profile
+                    </Button>
+                    <Button variant="outline" size="sm" className="flex-1" onClick={() => handleEditClick(employee)}>
+                      Edit
+                    </Button>
+                  </div>
+                </CardContent>
+              </Card>
+            ))}
+          </div>
+        )
       )}
 
-      <BasePagination
-        page={page}
-        totalPages={totalPages}
-        pageSize={pageSize}
-        onPageChange={setPage}
-      />
+      <BasePagination page={page} totalPages={totalPages} pageSize={pageSize} onPageChange={setPage} />
 
       {/* Modals */}
-      <EmployeeFormModal
-        open={modalOpen}
-        onOpenChange={setModalOpen}
-        onSuccess={handleRefresh}
-      />
-
+      <EmployeeFormModal open={modalOpen} onOpenChange={setModalOpen} onSuccess={handleRefresh} />
       <EmployeeEditModal
         open={editModalOpen}
         onOpenChange={setEditModalOpen}
@@ -431,7 +580,6 @@ const Employees = () => {
           branchName: selectedEmployee.branchName,
         } : null}
       />
-
       <ConfirmDialog
         open={confirmDeleteOpen}
         onOpenChange={setConfirmDeleteOpen}
