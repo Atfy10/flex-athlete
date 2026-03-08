@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { SessionCardSkeleton, StatCardSkeleton } from "@/components/ui/CardSkeleton";
 import { FilterBar } from "@/components/FilterBar";
+import { EmptyState } from "@/components/EmptyState";
 import {
   Plus,
   Clock,
@@ -55,22 +56,6 @@ function getCapacityColor(count: number) {
 }
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
-
-function SessionsEmptyState({ isSearch }: { isSearch: boolean }) {
-  return (
-    <div className="col-span-full flex flex-col items-center justify-center py-20 text-muted-foreground">
-      <Layers className="h-12 w-12 mb-4 opacity-30" />
-      <p className="text-base font-medium">
-        {isSearch ? "No sessions match your search" : "No sessions scheduled yet"}
-      </p>
-      <p className="text-sm mt-1">
-        {isSearch
-          ? "Try a different search term or clear the filter."
-          : 'Use "Operate Group" to generate sessions from a trainee group\'s weekly schedule.'}
-      </p>
-    </div>
-  );
-}
 
 // ─── Stats meta ───────────────────────────────────────────────────────────────
 const STATS_META = [
@@ -258,7 +243,15 @@ export default function Sessions() {
         {loading ? (
           Array.from({ length: 6 }).map((_, i) => <SessionCardSkeleton key={i} />)
         ) : items.length === 0 ? (
-          <SessionsEmptyState isSearch={term.length >= 2 || useDate} />
+          <div className="col-span-full">
+            <EmptyState
+              icon={Layers}
+              title={term.length >= 2 || useDate ? "No sessions match your search" : "No sessions scheduled yet"}
+              description={term.length >= 2 || useDate ? "Try a different search term or clear the filter." : "Use \"Operate Group\" to generate sessions from a trainee group's weekly schedule."}
+              actionLabel={!term && !useDate ? "Operate Group" : undefined}
+              onAction={!term && !useDate ? () => setModalOpen(true) : undefined}
+            />
+          </div>
         ) : (
           items.map((session) => (
             <SessionCard key={session.id} session={session} />

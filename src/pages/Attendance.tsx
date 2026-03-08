@@ -9,6 +9,8 @@ import { RosterRowSkeleton } from "@/components/ui/TableRowSkeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { EmptyState } from "@/components/EmptyState";
+import { useToast } from "@/hooks/use-toast";
 import {
   ClipboardCheck,
   Users,
@@ -96,25 +98,6 @@ const STATUS_CONFIG: Record<
 };
 
 // (SessionCardSkeleton and RosterSkeleton are now imported from CardSkeleton/TableRowSkeleton)
-
-// ─── Empty state ──────────────────────────────────────────────────────────────
-function AttendanceEmptyState({ date }: { date: string }) {
-  const formatted = new Date(date + "T00:00:00").toLocaleDateString("en-US", {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  });
-  return (
-    <div className="flex flex-col items-center justify-center py-20 text-muted-foreground col-span-full">
-      <ClipboardCheck className="h-12 w-12 mb-4 opacity-30" />
-      <p className="text-base font-medium">No sessions on {formatted}</p>
-      <p className="text-sm mt-1">
-        Generate sessions for this date using the Sessions page.
-      </p>
-    </div>
-  );
-}
 
 // ─── Attendance roster row ────────────────────────────────────────────────────
 function AttendeeRow({ record }: { record: AttendanceRecordDto }) {
@@ -305,6 +288,7 @@ function SessionAttendanceCard({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const Attendance = () => {
+  const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState(todayIso());
   const [calendarOpen, setCalendarOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -326,10 +310,13 @@ const Attendance = () => {
     try {
       const res = await getSessionOccurrencesByDate(date);
       if (res.isSuccess) setSessions(res.data.items);
+      else toast({ title: "Failed to load sessions.", variant: "destructive" });
+    } catch {
+      toast({ title: "Failed to load sessions.", variant: "destructive" });
     } finally {
       setSessionsLoading(false);
     }
-  }, []);
+  }, [toast]);
 
   useEffect(() => {
     loadSessions(selectedDate);
@@ -513,12 +500,17 @@ const Attendance = () => {
           Array.from({ length: 3 }).map((_, i) => <AttendanceSessionSkeleton key={i} />)
         ) : visibleSessions.length === 0 ? (
           searchTerm.trim().length >= 2 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <Search className="h-10 w-10 mb-3 opacity-30" />
-              <p className="text-sm font-medium">No sessions match &quot;{searchTerm}&quot;</p>
-            </div>
+            <EmptyState
+              icon={Search}
+              title={`No sessions match "${searchTerm}"`}
+              description="Try a different search term."
+            />
           ) : (
-            <AttendanceEmptyState date={selectedDate} />
+            <EmptyState
+              icon={ClipboardCheck}
+              title={`No sessions on ${new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
+              description="Generate sessions for this date using the Sessions page."
+            />
           )
         ) : (
           visibleSessions.map((session) => (

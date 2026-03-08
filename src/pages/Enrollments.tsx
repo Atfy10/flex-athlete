@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { EnrollmentRowSkeleton } from "@/components/ui/TableRowSkeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { FilterBar } from "@/components/FilterBar";
+import { EmptyState } from "@/components/EmptyState";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -71,35 +72,6 @@ interface EnrollmentStats {
 }
 
 // (EnrollmentRowSkeleton is now imported from TableRowSkeleton)
-
-// ── Empty state ───────────────────────────────────────────────────────────────
-function EnrollmentsEmptyState({ term, onAdd }: { term: string; onAdd: () => void }) {
-  return (
-    <Card className="card-athletic">
-      <CardContent className="py-16">
-        <div className="flex flex-col items-center text-center gap-4">
-          <div className="p-4 rounded-full bg-muted">
-            <UserPlus className="h-10 w-10 text-muted-foreground" />
-          </div>
-          <div>
-            <h3 className="text-lg font-semibold">
-              {term ? `No results for "${term}"` : "No enrollments yet"}
-            </h3>
-            <p className="text-muted-foreground text-sm mt-1">
-              {term ? "Try a different search term." : "Create the first enrollment to get started."}
-            </p>
-          </div>
-          {!term && (
-            <Button className="btn-hero" onClick={onAdd}>
-              <Plus className="h-4 w-4 mr-2" />
-              New Enrollment
-            </Button>
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-}
 
 // ── Helpers ───────────────────────────────────────────────────────────────────
 const getStatusColor = (status: string) => {
@@ -346,7 +318,13 @@ const Enrollments = () => {
         {loading && Array.from({ length: 5 }).map((_, i) => <EnrollmentRowSkeleton key={i} />)}
 
         {!loading && filteredEnrollments.length === 0 && (
-          <EnrollmentsEmptyState term={term} onAdd={() => setModalOpen(true)} />
+          <EmptyState
+            icon={UserPlus}
+            title={term ? `No results for "${term}"` : "No enrollments yet"}
+            description={term ? "Try a different search term or adjust your filters." : "Create the first enrollment to get started."}
+            actionLabel={!term ? "New Enrollment" : undefined}
+            onAction={!term ? () => setModalOpen(true) : undefined}
+          />
         )}
 
         {!loading &&

@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FilterBar } from "@/components/FilterBar";
+import { EmptyState } from "@/components/EmptyState";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -447,26 +448,15 @@ export default function Trainees() {
             })}
       </div>
 
-      {/* Empty state */}
+      {/* Empty state / error */}
       {!loading && trainees.length === 0 && (
-        <Card className="card-athletic">
-          <CardContent className="py-12 text-center">
-            <Users className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No trainees found</h3>
-            <p className="text-muted-foreground mb-4">
-              {term
-                ? `No results for "${term}"`
-                : sportFilter !== "all"
-                ? `No trainees in ${sportFilter}`
-                : "Get started by adding your first trainee"}
-            </p>
-            {!term && sportFilter === "all" && (
-              <Button variant="hero" onClick={() => setCreateOpen(true)}>
-                <Plus className="h-4 w-4 mr-2" />Add Trainee
-              </Button>
-            )}
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Users}
+          title={term ? `No results for "${term}"` : sportFilter !== "all" ? `No trainees in ${sportFilter}` : "No trainees yet"}
+          description={term || sportFilter !== "all" ? "Try adjusting your search or filters." : "Get started by adding your first trainee."}
+          actionLabel={!term && sportFilter === "all" ? "Add Trainee" : undefined}
+          onAction={!term && sportFilter === "all" ? () => setCreateOpen(true) : undefined}
+        />
       )}
 
       {/* Pagination */}

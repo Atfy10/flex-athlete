@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { FilterBar } from "@/components/FilterBar";
+import { EmptyState } from "@/components/EmptyState";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -295,17 +296,13 @@ export default function Coaches() {
           {Array.from({ length: pageSize }).map((_, i) => <CoachCardSkeleton key={i} />)}
         </div>
       ) : filteredCoaches.length === 0 ? (
-        <Card className="card-athletic">
-          <CardContent className="flex flex-col items-center justify-center py-16 text-center">
-            <Users className="h-12 w-12 text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-1">No coaches found</h3>
-            <p className="text-muted-foreground text-sm">
-              {term || sportFilter !== "all" || branchFilter !== "all"
-                ? "Try adjusting your search or filters."
-                : "Add your first coach to get started."}
-            </p>
-          </CardContent>
-        </Card>
+        <EmptyState
+          icon={Users}
+          title="No coaches found"
+          description={term || sportFilter !== "all" || branchFilter !== "all" ? "Try adjusting your search or filters." : "Add your first coach to get started."}
+          actionLabel={!term && sportFilter === "all" && branchFilter === "all" ? "Add Coach" : undefined}
+          onAction={!term && sportFilter === "all" && branchFilter === "all" ? () => setModalOpen(true) : undefined}
+        />
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
           {filteredCoaches.map((coach) => (
