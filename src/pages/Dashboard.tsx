@@ -316,20 +316,7 @@ export default function Dashboard() {
           </CardTitle>
         </CardHeader>
         <CardContent>
-          {loading ? (
-            <div className="space-y-3">
-              {Array.from({ length: 4 }).map((_, i) => (
-                <div key={i} className="flex items-center gap-4 p-4 rounded-lg border border-border">
-                  <Skeleton className="h-6 w-20 rounded-full" />
-                  <div className="flex-1 space-y-2">
-                    <Skeleton className="h-4 w-32" />
-                    <Skeleton className="h-3 w-48" />
-                  </div>
-                  <Skeleton className="h-8 w-8 rounded" />
-                </div>
-              ))}
-            </div>
-          ) : sessions.length === 0 ? (
+          {loading ? <SessionListItemSkeleton count={4} /> : sessions.length === 0 ? (
             <div className="flex flex-col items-center justify-center py-12 text-muted-foreground">
               <Calendar className="h-10 w-10 mb-3 opacity-30" />
               <p className="text-sm font-medium">No sessions scheduled for today</p>

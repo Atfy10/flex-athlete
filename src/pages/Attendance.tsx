@@ -510,7 +510,7 @@ const Attendance = () => {
       {/* ── Session Cards ───────────────────────────────────────────────── */}
       <div className="space-y-4">
         {sessionsLoading ? (
-          Array.from({ length: 3 }).map((_, i) => <SessionCardSkeleton key={i} />)
+          Array.from({ length: 3 }).map((_, i) => <AttendanceSessionSkeleton key={i} />)
         ) : visibleSessions.length === 0 ? (
           searchTerm.trim().length >= 2 ? (
             <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
