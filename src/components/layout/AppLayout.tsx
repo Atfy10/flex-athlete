@@ -25,8 +25,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { RealtimeProvider, useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
 import { FloatingDashboardButton } from "@/components/navigation/FloatingDashboardButton";
+import { CommandPalette } from "@/components/navigation/CommandPalette";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface AppLayoutProps {
   children: React.ReactNode;
