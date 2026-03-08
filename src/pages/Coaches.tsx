@@ -170,20 +170,14 @@ export default function Coaches() {
     return matchesSport && matchesBranch;
   });
 
-  const filteredCoaches = [...filtered].sort((a, b) => {
-    let av = "", bv = "";
-    if (sortKey === "name") { av = `${a.firstName} ${a.lastName}`; bv = `${b.firstName} ${b.lastName}`; }
-    else if (sortKey === "sport") { av = a.sportName; bv = b.sportName; }
-    else if (sortKey === "branch") { av = a.branchName; bv = b.branchName; }
-    else if (sortKey === "trainees") { return sortDir === "asc" ? a.totalTrainees - b.totalTrainees : b.totalTrainees - a.totalTrainees; }
-    else if (sortKey === "hired") { return sortDir === "asc" ? new Date(a.hireDate).getTime() - new Date(b.hireDate).getTime() : new Date(b.hireDate).getTime() - new Date(a.hireDate).getTime(); }
-    return sortDir === "asc" ? av.localeCompare(bv) : bv.localeCompare(av);
+  const filteredCoaches = sortItems(filtered, (c, key) => {
+    if (key === "name") return `${c.firstName} ${c.lastName}`;
+    if (key === "sport") return c.sportName;
+    if (key === "branch") return c.branchName;
+    if (key === "trainees") return c.totalTrainees;
+    if (key === "hired") return new Date(c.hireDate).getTime();
+    return "";
   });
-
-  const handleSort = (key: SortKey) => {
-    if (sortKey === key) setSortDir((d) => d === "asc" ? "desc" : "asc");
-    else { setSortKey(key); setSortDir("asc"); }
-  };
 
   const getStatusColor = (status: string) => {
     switch (status) {
