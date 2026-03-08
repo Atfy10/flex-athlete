@@ -496,12 +496,17 @@ const Attendance = () => {
           Array.from({ length: 3 }).map((_, i) => <AttendanceSessionSkeleton key={i} />)
         ) : visibleSessions.length === 0 ? (
           searchTerm.trim().length >= 2 ? (
-            <div className="flex flex-col items-center justify-center py-16 text-muted-foreground">
-              <Search className="h-10 w-10 mb-3 opacity-30" />
-              <p className="text-sm font-medium">No sessions match &quot;{searchTerm}&quot;</p>
-            </div>
+            <EmptyState
+              icon={Search}
+              title={`No sessions match "${searchTerm}"`}
+              description="Try a different search term."
+            />
           ) : (
-            <AttendanceEmptyState date={selectedDate} />
+            <EmptyState
+              icon={ClipboardCheck}
+              title={`No sessions on ${new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
+              description="Generate sessions for this date using the Sessions page."
+            />
           )
         ) : (
           visibleSessions.map((session) => (
