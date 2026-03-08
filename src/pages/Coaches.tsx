@@ -343,9 +343,9 @@ export default function Coaches() {
                   <TableHead>Status</TableHead>
                   <SortTH col="trainees" label="Trainees" />
                   <SortTH col="hired" label="Hired" />
-                  <TableHead className="w-[50px]" />
-                </TableRow>
-              </TableHeader>
+                   <TableHead className="w-[88px]" />
+                 </TableRow>
+               </TableHeader>
               <TableBody>
                 {filteredCoaches.map((coach) => (
                   <TableRow

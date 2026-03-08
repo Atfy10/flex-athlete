@@ -365,9 +365,9 @@ export default function Trainees() {
                   <TableHead>Status</TableHead>
                   <SortTH col="attendance" label="Attendance" />
                   <SortTH col="joined" label="Joined" />
-                  <TableHead className="w-[50px]" />
-                </TableRow>
-              </TableHeader>
+                      <TableHead className="w-[88px]" />
+                 </TableRow>
+               </TableHeader>
               <TableBody>
                 {trainees.map((trainee) => {
                   const fullName = `${trainee.firstName} ${trainee.lastName}`;
