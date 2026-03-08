@@ -296,6 +296,7 @@ function SessionAttendanceCard({
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const Attendance = () => {
+  const navigate = useNavigate();
   const { toast } = useToast();
   const [selectedDate, setSelectedDate] = useState(todayIso());
   const [calendarOpen, setCalendarOpen] = useState(false);
