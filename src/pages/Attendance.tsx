@@ -301,21 +301,7 @@ function SessionAttendanceCard({
   );
 }
 
-// ─── Stat card skeleton ───────────────────────────────────────────────────────
-function StatSkeleton() {
-  return (
-    <Card className="card-athletic">
-      <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-        <Skeleton className="h-4 w-28" />
-        <Skeleton className="h-4 w-4 rounded" />
-      </CardHeader>
-      <CardContent>
-        <Skeleton className="h-7 w-12 mb-1" />
-        <Skeleton className="h-3 w-24" />
-      </CardContent>
-    </Card>
-  );
-}
+// StatSkeleton → now imported as StatCardSkeleton from CardSkeleton
 
 // ─── Main Page ────────────────────────────────────────────────────────────────
 const Attendance = () => {

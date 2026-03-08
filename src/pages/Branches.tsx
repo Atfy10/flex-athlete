@@ -120,7 +120,7 @@ const Branches = () => {
         {/* Loading skeletons */}
         {loading &&
           Array.from({ length: PAGE_SIZE }).map((_, i) => (
-            <BranchCardSkeleton key={i} />
+            <EntityCardSkeleton key={i} />
           ))}
 
         {/* Empty state */}

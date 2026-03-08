@@ -187,40 +187,34 @@ export default function Dashboard() {
 
       {/* ── Stats Grid ───────────────────────────────────────────────────── */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-        {statsData.map((stat, index) => (
-          <Card key={index} className="card-athletic">
-            <CardContent className="p-6">
-              {loading ? (
-                <div className="space-y-3">
-                  <Skeleton className="h-4 w-24" />
-                  <Skeleton className="h-8 w-16" />
-                  <Skeleton className="h-5 w-14" />
-                </div>
-              ) : (
-                <div className="flex items-center justify-between">
-                  <div>
-                    <p className="text-muted-foreground text-sm font-medium">
-                      {stat.title}
-                    </p>
-                    <p className="text-3xl font-bold mt-2">{stat.value}</p>
-                    <div className="flex items-center mt-2">
-                      <Badge
-                        variant="secondary"
-                        className="bg-success/10 text-success hover:bg-success/20"
-                      >
-                        <TrendingUp className="h-3 w-3 mr-1" />
-                        {stat.change}
-                      </Badge>
+        {loading
+          ? Array.from({ length: 4 }).map((_, i) => <StatCardSkeleton key={i} />)
+          : statsData.map((stat, index) => (
+              <Card key={index} className="card-athletic">
+                <CardContent className="p-6">
+                  <div className="flex items-center justify-between">
+                    <div>
+                      <p className="text-muted-foreground text-sm font-medium">
+                        {stat.title}
+                      </p>
+                      <p className="text-3xl font-bold mt-2">{stat.value}</p>
+                      <div className="flex items-center mt-2">
+                        <Badge
+                          variant="secondary"
+                          className="bg-success/10 text-success hover:bg-success/20"
+                        >
+                          <TrendingUp className="h-3 w-3 mr-1" />
+                          {stat.change}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="p-3 rounded-xl bg-primary/10">
+                      <stat.icon className="h-6 w-6 text-primary" />
                     </div>
                   </div>
-                  <div className="p-3 rounded-xl bg-primary/10">
-                    <stat.icon className="h-6 w-6 text-primary" />
-                  </div>
-                </div>
-              )}
-            </CardContent>
-          </Card>
-        ))}
+                </CardContent>
+              </Card>
+            ))}
       </div>
 
       {/* ── Charts ───────────────────────────────────────────────────────── */}
