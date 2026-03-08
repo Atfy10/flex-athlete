@@ -98,6 +98,8 @@ const Enrollments = () => {
   const [editOpen, setEditOpen] = useState(false);
   const [selectedEnrollment, setSelectedEnrollment] = useState<EnrollmentEditData | null>(null);
   const [actionLoadingId, setActionLoadingId] = useState<number | null>(null);
+  const [deleteTarget, setDeleteTarget] = useState<{ id: number; traineeName: string } | null>(null);
+  const [deleteLoading, setDeleteLoading] = useState(false);
   const [stats, setStats] = useState<EnrollmentStats>({ total: 0, active: 0, pendingPayment: 0 });
   const [statusFilter, setStatusFilter] = useState("all");
   const [paymentFilter, setPaymentFilter] = useState("all");
