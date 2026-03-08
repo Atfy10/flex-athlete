@@ -146,6 +146,7 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
       title="New Enrollment"
       description="Enroll a trainee in a group. Fields marked with * are required."
       onSubmit={handleSubmit} loading={loading} errors={apiErrors}
+      isDirty={isDirty}
     >
       <FormSelect
         id="traineeId" label="Trainee"
