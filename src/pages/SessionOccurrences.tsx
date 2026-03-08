@@ -375,12 +375,7 @@ export default function SessionOccurrences() {
                       { label: "Enrolled", key: "totalEnrolled" },
                     ] as { label: string; key: SortKey }[]
                   ).map(({ label, key }) => (
-                    <TableHead key={key} className="cursor-pointer select-none" onClick={() => toggleSort(key)}>
-                      <div className="flex items-center gap-1">
-                        {label}
-                        <SortIcon col={key} sort={sort} />
-                      </div>
-                    </TableHead>
+                    <SortableTableHead key={key} col={key} label={label} sort={sort} onSort={toggleSort} />
                   ))}
                   <TableHead>Rate</TableHead>
                   <TableHead />

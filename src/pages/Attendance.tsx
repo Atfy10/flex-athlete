@@ -40,7 +40,7 @@ import {
   AttendanceStatus,
 } from "@/types/AttendanceDto";
 import { MarkAttendanceModal } from "@/components/modals/MarkAttendanceModal";
-import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
+import { ChevronUp, ChevronDown } from "lucide-react";
 import { SortableTableHead } from "@/components/ui/SortableTableHead";
 import { useSortable } from "@/hooks/useSortable";
 
