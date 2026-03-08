@@ -54,6 +54,7 @@ export function TraineeGroupFormModal({ open, onOpenChange, onSuccess }: Trainee
 
   useEffect(() => {
     if (!open) return;
+    resetDirty();
     setApiErrors([]);
     setFieldErrors({});
     setForm({ skillLevel: "", maximumCapacity: "", durationInMinutes: "", gender: "", branchId: "", coachId: "" });
