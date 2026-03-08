@@ -7,7 +7,6 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Skeleton } from "@/components/ui/skeleton";
 import { BranchEditModal, BranchEditData } from "@/components/modals/BranchEditModal";
 import { useEffect, useState, useCallback } from "react";
-import { ConfirmDialog } from "@/components/modals/ConfirmDialog";
 import { MapPin, Phone, Mail, Users, User, Layers, Dumbbell, CalendarDays } from "lucide-react";
 import {
   getBranchById,
