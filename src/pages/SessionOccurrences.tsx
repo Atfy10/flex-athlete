@@ -9,15 +9,19 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
+import {
   Calendar as CalendarIcon,
   Clock,
   MapPin,
   Users,
   ClipboardCheck,
   Search,
-  Trophy,
   X,
   AlertCircle,
+  ChevronUp,
+  ChevronDown,
 } from "lucide-react";
 import { BasePagination } from "@/components/BasePagination";
 import { useEntitySearch } from "@/hooks/useEntitySearch";
@@ -28,11 +32,10 @@ import {
 } from "@/services/attendance.services";
 import { SessionOccurrenceDto } from "@/types/AttendanceDto";
 import { MarkAttendanceModal } from "@/components/modals/MarkAttendanceModal";
+import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
-function formatTime(t: string) {
-  return t?.slice(0, 5) ?? "";
-}
+function formatTime(t: string) { return t?.slice(0, 5) ?? ""; }
 
 function formatDuration(minutes: number) {
   const h = Math.floor(minutes / 60);
@@ -45,6 +48,13 @@ function formatDuration(minutes: number) {
 function attendanceRate(present: number, late: number, total: number) {
   if (!total) return null;
   return Math.round(((present + late) / total) * 100);
+}
+
+type SortKey = "sportName" | "coachName" | "branchName" | "date" | "startTime" | "durationInMinutes" | "totalEnrolled";
+
+function SortIcon({ col, sort }: { col: SortKey; sort: { key: SortKey; dir: "asc" | "desc" } | null }) {
+  if (sort?.key !== col) return <ChevronUp className="h-3 w-3 opacity-20" />;
+  return sort.dir === "asc" ? <ChevronUp className="h-3 w-3 text-primary" /> : <ChevronDown className="h-3 w-3 text-primary" />;
 }
 
 // ─── Card Skeleton ─────────────────────────────────────────────────────────────
@@ -84,23 +94,18 @@ function OccurrenceCard({
   const hasAttendance = occ.totalPresent + occ.totalLate + occ.totalAbsent > 0;
 
   const rateColor =
-    rate === null
-      ? ""
-      : rate >= 80
-      ? "bg-success/10 text-success border-success/20"
-      : rate >= 60
-      ? "bg-warning/10 text-warning border-warning/20"
-      : "bg-destructive/10 text-destructive border-destructive/20";
+    rate === null ? "" :
+    rate >= 80 ? "bg-success/10 text-success border-success/20" :
+    rate >= 60 ? "bg-warning/10 text-warning border-warning/20" :
+    "bg-destructive/10 text-destructive border-destructive/20";
 
   return (
     <Card className="card-athletic">
       <CardContent className="p-6">
         <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
-          {/* Info */}
           <div className="space-y-2 flex-1 min-w-0">
             <div className="flex flex-wrap items-center gap-2">
               <h3 className="font-semibold text-base">{occ.sportName}</h3>
-              <Badge variant="outline" className="text-xs">{occ.sportName}</Badge>
               {hasAttendance && rate !== null && (
                 <Badge className={`${rateColor} text-xs`}>{rate}% attended</Badge>
               )}
@@ -109,9 +114,7 @@ function OccurrenceCard({
               <span className="flex items-center gap-1">
                 <CalendarIcon className="h-3.5 w-3.5" />
                 {new Date(occ.date + "T00:00:00").toLocaleDateString("en-US", {
-                  weekday: "short",
-                  month: "short",
-                  day: "numeric",
+                  weekday: "short", month: "short", day: "numeric",
                 })}
               </span>
               <span className="flex items-center gap-1">
@@ -127,7 +130,6 @@ function OccurrenceCard({
                 {occ.branchName}
               </span>
             </div>
-            {/* Attendance mini-summary */}
             {hasAttendance && (
               <div className="flex items-center gap-3 text-xs pt-1">
                 <span className="text-success font-medium">{occ.totalPresent} present</span>
@@ -137,16 +139,9 @@ function OccurrenceCard({
               </div>
             )}
           </div>
-
-          {/* Actions */}
           <div className="flex items-center gap-2 shrink-0">
             {occ.totalEnrolled > 0 && (
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={() => onMark(occ)}
-                className="flex items-center gap-1.5"
-              >
+              <Button variant="outline" size="sm" onClick={() => onMark(occ)} className="flex items-center gap-1.5">
                 <ClipboardCheck className="h-4 w-4" />
                 {hasAttendance ? "Update Attendance" : "Mark Attendance"}
               </Button>
@@ -162,8 +157,9 @@ function OccurrenceCard({
 export default function SessionOccurrences() {
   const [searchParams] = useSearchParams();
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const [view, setView] = useState<ViewMode>("grid");
+  const [sort, setSort] = useState<{ key: SortKey; dir: "asc" | "desc" } | null>(null);
 
-  // Initialise date filter from ?date= query param ("today" resolves to today's ISO date)
   const [dateFilter, setDateFilter] = useState<string>(() => {
     const param = searchParams.get("date");
     if (!param) return "";
@@ -174,7 +170,6 @@ export default function SessionOccurrences() {
   const [markOpen, setMarkOpen] = useState(false);
   const [markSession, setMarkSession] = useState<SessionOccurrenceDto | null>(null);
 
-  // ── Date-mode: fetch by specific date, bypassing search ──────────────────
   const [dateSessions, setDateSessions] = useState<SessionOccurrenceDto[]>([]);
   const [dateLoading, setDateLoading] = useState(false);
   const [datePage, setDatePage] = useState(1);
@@ -190,25 +185,16 @@ export default function SessionOccurrences() {
         setDateSessions(res.data.items);
         setDateTotalCount(res.data.totalCount);
         setDateTotalPages(Math.max(1, Math.ceil(res.data.totalCount / DATE_PAGE_SIZE)));
-      } else {
-        setDateSessions([]);
-      }
-    } catch {
-      setDateSessions([]);
-    } finally {
-      setDateLoading(false);
-    }
+      } else { setDateSessions([]); }
+    } catch { setDateSessions([]); }
+    finally { setDateLoading(false); }
   }, []);
 
-  // Auto-load when initial dateFilter is set from query param
   useEffect(() => {
-    if (dateFilter) {
-      loadByDate(dateFilter, 1);
-    }
+    if (dateFilter) loadByDate(dateFilter, 1);
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // When date filter changes, fetch by date
   const handleDateSelect = (date: Date | undefined) => {
     if (!date) return;
     const iso = format(date, "yyyy-MM-dd");
@@ -218,19 +204,14 @@ export default function SessionOccurrences() {
     loadByDate(iso, 1);
   };
 
-  const clearDateFilter = () => {
-    setDateFilter("");
-    setDateSessions([]);
-  };
+  const clearDateFilter = () => { setDateFilter(""); setDateSessions([]); };
 
-  // ── Search/list mode (no date filter) ────────────────────────────────────
   const listFn = useCallback(
     (page: number, pageSize: number) => listSessionOccurrences(page, pageSize),
     [],
   );
   const searchFn = useCallback(
-    (term: string, page: number, pageSize: number) =>
-      searchSessionOccurrences(term, page, pageSize),
+    (term: string, page: number, pageSize: number) => searchSessionOccurrences(term, page, pageSize),
     [],
   );
 
@@ -243,13 +224,8 @@ export default function SessionOccurrences() {
     setPage: setSearchPage,
     totalPages: searchTotalPages,
     refresh,
-  } = useEntitySearch<SessionOccurrenceDto>({
-    listFn,
-    searchFn,
-    pageSize: 10,
-  });
+  } = useEntitySearch<SessionOccurrenceDto>({ listFn, searchFn, pageSize: 10 });
 
-  // ── Determine active mode ─────────────────────────────────────────────────
   const isDateMode = Boolean(dateFilter);
   const items = isDateMode ? dateSessions : searchResults;
   const loading = isDateMode ? dateLoading : searchLoading;
@@ -258,37 +234,48 @@ export default function SessionOccurrences() {
   const totalCount = isDateMode ? dateTotalCount : items.length;
 
   const handlePageChange = (p: number) => {
-    if (isDateMode) {
-      setDatePage(p);
-      loadByDate(dateFilter, p);
-    } else {
-      setSearchPage(p);
-    }
+    if (isDateMode) { setDatePage(p); loadByDate(dateFilter, p); }
+    else setSearchPage(p);
   };
+
+  const toggleSort = (key: SortKey) => {
+    setSort((prev) =>
+      prev?.key === key ? { key, dir: prev.dir === "asc" ? "desc" : "asc" } : { key, dir: "asc" }
+    );
+  };
+
+  const sortedItems = sort
+    ? [...items].sort((a, b) => {
+        const av = (a as unknown as Record<string, unknown>)[sort.key] ?? "";
+        const bv = (b as unknown as Record<string, unknown>)[sort.key] ?? "";
+        const cmp = typeof av === "number" && typeof bv === "number"
+          ? av - bv : String(av).localeCompare(String(bv));
+        return sort.dir === "asc" ? cmp : -cmp;
+      })
+    : items;
+
+  const rateColor = (rate: number | null) =>
+    rate === null ? "bg-muted text-muted-foreground" :
+    rate >= 80 ? "bg-success/10 text-success border-success/20" :
+    rate >= 60 ? "bg-warning/10 text-warning border-warning/20" :
+    "bg-destructive/10 text-destructive border-destructive/20";
 
   return (
     <div className="space-y-8">
       {/* Header */}
       <div>
         <h1 className="text-3xl font-bold text-gradient">Session Occurrences</h1>
-        <p className="text-muted-foreground">
-          System-generated training sessions — read-only view
-        </p>
+        <p className="text-muted-foreground">System-generated training sessions — read-only view</p>
       </div>
 
       {/* Filters */}
       <Card className="card-athletic">
         <CardContent className="p-6">
           <div className="flex flex-col sm:flex-row gap-4">
-            {/* Search — disabled in date mode */}
             <div className="relative flex-1">
               <Search className="absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground h-4 w-4" />
               <Input
-                placeholder={
-                  isDateMode
-                    ? "Clear date filter to search…"
-                    : "Search by sport, coach, or branch…"
-                }
+                placeholder={isDateMode ? "Clear date filter to search…" : "Search by sport, coach, or branch…"}
                 value={isDateMode ? "" : term}
                 onChange={(e) => !isDateMode && setTerm(e.target.value)}
                 disabled={isDateMode}
@@ -296,48 +283,30 @@ export default function SessionOccurrences() {
               />
             </div>
 
-            {/* Popover Calendar date picker */}
             <div className="flex items-center gap-2">
               <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
                 <PopoverTrigger asChild>
-                  <Button
-                    variant="outline"
-                    className="flex items-center gap-2 min-w-[160px] justify-start font-normal"
-                  >
+                  <Button variant="outline" className="flex items-center gap-2 min-w-[160px] justify-start font-normal">
                     <CalendarIcon className="h-4 w-4 text-muted-foreground" />
-                    {dateFilter
-                      ? format(new Date(dateFilter + "T00:00:00"), "MMM d, yyyy")
-                      : "Filter by date"}
+                    {dateFilter ? format(new Date(dateFilter + "T00:00:00"), "MMM d, yyyy") : "Filter by date"}
                   </Button>
                 </PopoverTrigger>
                 <PopoverContent className="w-auto p-0" align="end">
                   <Calendar
                     mode="single"
-                    selected={
-                      dateFilter
-                        ? new Date(dateFilter + "T00:00:00")
-                        : undefined
-                    }
+                    selected={dateFilter ? new Date(dateFilter + "T00:00:00") : undefined}
                     onSelect={handleDateSelect}
                     initialFocus
                   />
                 </PopoverContent>
               </Popover>
-
               {isDateMode && (
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={clearDateFilter}
-                  className="text-muted-foreground hover:text-foreground"
-                  title="Clear date filter"
-                >
+                <Button variant="ghost" size="icon" onClick={clearDateFilter} className="text-muted-foreground hover:text-foreground">
                   <X className="h-4 w-4" />
                 </Button>
               )}
             </div>
 
-            {/* Active filter chip */}
             {isDateMode && (
               <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-primary/10 text-primary text-sm font-medium whitespace-nowrap">
                 <CalendarIcon className="h-4 w-4" />
@@ -347,46 +316,131 @@ export default function SessionOccurrences() {
                 )}
               </div>
             )}
+
+            <ViewToggle view={view} onViewChange={setView} />
           </div>
         </CardContent>
       </Card>
 
-      {/* Session list */}
-      <div className="space-y-4">
-        {loading ? (
-          Array.from({ length: 5 }).map((_, i) => (
-            <OccurrenceCardSkeleton key={i} />
-          ))
-        ) : items.length === 0 ? (
+      {/* Content */}
+      {loading ? (
+        view === "grid" ? (
+          <div className="space-y-4">
+            {Array.from({ length: 5 }).map((_, i) => <OccurrenceCardSkeleton key={i} />)}
+          </div>
+        ) : (
           <Card className="card-athletic">
-            <CardContent className="p-12 flex flex-col items-center gap-3 text-center text-muted-foreground">
-              <AlertCircle className="h-10 w-10 opacity-40" />
-              <p className="text-base font-medium">No session occurrences found</p>
-              <p className="text-sm">
-                {isDateMode
-                  ? `No sessions were scheduled for ${format(
-                      new Date(dateFilter + "T00:00:00"),
-                      "EEEE, MMMM d",
-                    )}.`
-                  : term
-                  ? `No results for "${term}".`
-                  : "No sessions have been generated yet. Use Operate Group to generate sessions."}
-              </p>
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {["Sport", "Date", "Time", "Duration", "Coach", "Branch", "Enrolled", "Rate", ""].map((h) => (
+                      <TableHead key={h}>{h}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <TableRow key={i}>
+                      {Array.from({ length: 9 }).map((__, j) => (
+                        <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </CardContent>
           </Card>
-        ) : (
-          items.map((occ) => (
+        )
+      ) : items.length === 0 ? (
+        <Card className="card-athletic">
+          <CardContent className="p-12 flex flex-col items-center gap-3 text-center text-muted-foreground">
+            <AlertCircle className="h-10 w-10 opacity-40" />
+            <p className="text-base font-medium">No session occurrences found</p>
+            <p className="text-sm">
+              {isDateMode
+                ? `No sessions were scheduled for ${format(new Date(dateFilter + "T00:00:00"), "EEEE, MMMM d")}.`
+                : term ? `No results for "${term}".` : "No sessions have been generated yet."}
+            </p>
+          </CardContent>
+        </Card>
+      ) : view === "grid" ? (
+        <div className="space-y-4">
+          {sortedItems.map((occ) => (
             <OccurrenceCard
               key={occ.id}
               occ={occ}
-              onMark={(s) => {
-                setMarkSession(s);
-                setMarkOpen(true);
-              }}
+              onMark={(s) => { setMarkSession(s); setMarkOpen(true); }}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <Card className="card-athletic">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  {(
+                    [
+                      { label: "Sport", key: "sportName" },
+                      { label: "Date", key: "date" },
+                      { label: "Time", key: "startTime" },
+                      { label: "Duration", key: "durationInMinutes" },
+                      { label: "Coach", key: "coachName" },
+                      { label: "Branch", key: "branchName" },
+                      { label: "Enrolled", key: "totalEnrolled" },
+                    ] as { label: string; key: SortKey }[]
+                  ).map(({ label, key }) => (
+                    <TableHead key={key} className="cursor-pointer select-none" onClick={() => toggleSort(key)}>
+                      <div className="flex items-center gap-1">
+                        {label}
+                        <SortIcon col={key} sort={sort} />
+                      </div>
+                    </TableHead>
+                  ))}
+                  <TableHead>Rate</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {sortedItems.map((occ) => {
+                  const rate = attendanceRate(occ.totalPresent, occ.totalLate, occ.totalEnrolled);
+                  return (
+                    <TableRow key={occ.id}>
+                      <TableCell className="font-medium">{occ.sportName}</TableCell>
+                      <TableCell>
+                        {new Date(occ.date + "T00:00:00").toLocaleDateString("en-US", {
+                          weekday: "short", month: "short", day: "numeric",
+                        })}
+                      </TableCell>
+                      <TableCell>{formatTime(occ.startTime)}</TableCell>
+                      <TableCell>{formatDuration(occ.durationInMinutes)}</TableCell>
+                      <TableCell>{occ.coachName}</TableCell>
+                      <TableCell>{occ.branchName}</TableCell>
+                      <TableCell>{occ.totalEnrolled}</TableCell>
+                      <TableCell>
+                        {rate !== null ? (
+                          <Badge className={`${rateColor(rate)} text-xs`}>{rate}%</Badge>
+                        ) : (
+                          <span className="text-muted-foreground text-xs">—</span>
+                        )}
+                      </TableCell>
+                      <TableCell>
+                        {occ.totalEnrolled > 0 && (
+                          <Button variant="outline" size="sm" onClick={() => { setMarkSession(occ); setMarkOpen(true); }}>
+                            <ClipboardCheck className="h-3.5 w-3.5 mr-1" />
+                            Mark
+                          </Button>
+                        )}
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       <BasePagination
         page={page}
@@ -397,21 +451,14 @@ export default function SessionOccurrences() {
         onPageSizeChange={() => {}}
       />
 
-      {/* Mark Attendance Modal */}
       <MarkAttendanceModal
         open={markOpen}
         onOpenChange={setMarkOpen}
-        onSuccess={() => {
-          if (isDateMode) loadByDate(dateFilter, datePage);
-          else refresh();
-        }}
+        onSuccess={() => { if (isDateMode) loadByDate(dateFilter, datePage); else refresh(); }}
         sessionOccurrenceId={markSession?.id}
         sessionLabel={
           markSession
-            ? `${markSession.sportName} — ${format(
-                new Date(markSession.date + "T00:00:00"),
-                "MMM d",
-              )} ${formatTime(markSession.startTime)}`
+            ? `${markSession.sportName} — ${format(new Date(markSession.date + "T00:00:00"), "MMM d")} ${formatTime(markSession.startTime)}`
             : undefined
         }
       />

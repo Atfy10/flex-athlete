@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Badge } from "@/components/ui/badge";
+import { Skeleton } from "@/components/ui/skeleton";
 import { AttendanceSessionSkeleton, StatCardSkeleton } from "@/components/ui/CardSkeleton";
 import { RosterRowSkeleton } from "@/components/ui/TableRowSkeleton";
 import { Avatar, AvatarFallback } from "@/components/ui/avatar";
@@ -11,6 +12,9 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { EmptyState } from "@/components/EmptyState";
 import { useToast } from "@/hooks/use-toast";
+import {
+  Table, TableBody, TableCell, TableHead, TableHeader, TableRow,
+} from "@/components/ui/table";
 import {
   ClipboardCheck,
   Users,
@@ -38,6 +42,7 @@ import {
   AttendanceStatus,
 } from "@/types/AttendanceDto";
 import { MarkAttendanceModal } from "@/components/modals/MarkAttendanceModal";
+import { ViewToggle, ViewMode } from "@/components/ui/ViewToggle";
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 function todayIso() {
@@ -294,6 +299,7 @@ const Attendance = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [markOpen, setMarkOpen] = useState(false);
   const [markSession, setMarkSession] = useState<SessionOccurrenceDto | null>(null);
+  const [view, setView] = useState<ViewMode>("grid");
 
   // Sessions for selected date
   const [sessions, setSessions] = useState<SessionOccurrenceDto[]>([]);
@@ -443,7 +449,7 @@ const Attendance = () => {
       {/* ── Date Picker & Search ────────────────────────────────────────── */}
       <Card className="card-athletic">
         <CardContent className="p-6">
-          <div className="flex flex-col md:flex-row gap-4">
+          <div className="flex flex-col md:flex-row gap-4 items-start md:items-center">
             {/* Shadcn Popover/Calendar date picker */}
             <Popover open={calendarOpen} onOpenChange={setCalendarOpen}>
               <PopoverTrigger asChild>
@@ -490,42 +496,118 @@ const Attendance = () => {
                 {sessions.length} session{sessions.length !== 1 ? "s" : ""}
               </div>
             )}
+
+            <ViewToggle view={view} onViewChange={setView} />
           </div>
         </CardContent>
       </Card>
 
-      {/* ── Session Cards ───────────────────────────────────────────────── */}
-      <div className="space-y-4">
-        {sessionsLoading ? (
-          Array.from({ length: 3 }).map((_, i) => <AttendanceSessionSkeleton key={i} />)
-        ) : visibleSessions.length === 0 ? (
-          searchTerm.trim().length >= 2 ? (
-            <EmptyState
-              icon={Search}
-              title={`No sessions match "${searchTerm}"`}
-              description="Try a different search term."
-            />
-          ) : (
-            <EmptyState
-              icon={ClipboardCheck}
-              title={`No sessions on ${new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
-              description="Generate sessions for this date using the Sessions page."
-            />
-          )
+      {/* ── Session Cards / Table ────────────────────────────────────────── */}
+      {sessionsLoading ? (
+        view === "grid" ? (
+          <div className="space-y-4">
+            {Array.from({ length: 3 }).map((_, i) => <AttendanceSessionSkeleton key={i} />)}
+          </div>
         ) : (
-          visibleSessions.map((session) => (
+          <Card className="card-athletic">
+            <CardContent className="p-0">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    {["Sport", "Coach", "Branch", "Time", "Duration", "Present", "Late", "Absent", "Rate", ""].map((h) => (
+                      <TableHead key={h}>{h}</TableHead>
+                    ))}
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {Array.from({ length: 4 }).map((_, i) => (
+                    <TableRow key={i}>
+                      {Array.from({ length: 10 }).map((__, j) => (
+                        <TableCell key={j}><Skeleton className="h-4 w-full" /></TableCell>
+                      ))}
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </CardContent>
+          </Card>
+        )
+      ) : visibleSessions.length === 0 ? (
+        searchTerm.trim().length >= 2 ? (
+          <EmptyState icon={Search} title={`No sessions match "${searchTerm}"`} description="Try a different search term." />
+        ) : (
+          <EmptyState
+            icon={ClipboardCheck}
+            title={`No sessions on ${new Date(selectedDate + "T00:00:00").toLocaleDateString("en-US", { weekday: "long", month: "long", day: "numeric" })}`}
+            description="Generate sessions for this date using the Sessions page."
+          />
+        )
+      ) : view === "grid" ? (
+        <div className="space-y-4">
+          {visibleSessions.map((session) => (
             <SessionAttendanceCard
               key={session.id}
               session={session}
               searchTerm={searchTerm}
-              onMarkAttendance={() => {
-                setMarkSession(session);
-                setMarkOpen(true);
-              }}
+              onMarkAttendance={() => { setMarkSession(session); setMarkOpen(true); }}
             />
-          ))
-        )}
-      </div>
+          ))}
+        </div>
+      ) : (
+        <Card className="card-athletic">
+          <CardContent className="p-0">
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Sport</TableHead>
+                  <TableHead>Coach</TableHead>
+                  <TableHead>Branch</TableHead>
+                  <TableHead>Time</TableHead>
+                  <TableHead>Duration</TableHead>
+                  <TableHead>Present</TableHead>
+                  <TableHead>Late</TableHead>
+                  <TableHead>Absent</TableHead>
+                  <TableHead>Rate</TableHead>
+                  <TableHead />
+                </TableRow>
+              </TableHeader>
+              <TableBody>
+                {visibleSessions.map((session) => {
+                  const rate = session.totalEnrolled > 0
+                    ? Math.round(((session.totalPresent + session.totalLate) / session.totalEnrolled) * 100)
+                    : null;
+                  const rateColor = rate === null ? "bg-muted text-muted-foreground"
+                    : rate >= 80 ? "bg-success/10 text-success border-success/20"
+                    : rate >= 60 ? "bg-warning/10 text-warning border-warning/20"
+                    : "bg-destructive/10 text-destructive border-destructive/20";
+                  return (
+                    <TableRow key={session.id}>
+                      <TableCell className="font-medium">{session.sportName}</TableCell>
+                      <TableCell>{session.coachName}</TableCell>
+                      <TableCell>{session.branchName}</TableCell>
+                      <TableCell>{formatTime(session.startTime)}</TableCell>
+                      <TableCell>{formatDuration(session.durationInMinutes)}</TableCell>
+                      <TableCell><span className="text-success font-medium">{session.totalPresent}</span></TableCell>
+                      <TableCell><span className="text-warning font-medium">{session.totalLate}</span></TableCell>
+                      <TableCell><span className="text-destructive font-medium">{session.totalAbsent}</span></TableCell>
+                      <TableCell>
+                        {rate !== null ? (
+                          <Badge className={`${rateColor} text-xs`}>{rate}%</Badge>
+                        ) : <span className="text-muted-foreground text-xs">—</span>}
+                      </TableCell>
+                      <TableCell>
+                        <Button variant="outline" size="sm" onClick={() => { setMarkSession(session); setMarkOpen(true); }}>
+                          <ClipboardList className="h-3.5 w-3.5 mr-1" />Mark
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  );
+                })}
+              </TableBody>
+            </Table>
+          </CardContent>
+        </Card>
+      )}
 
       {/* ── Mark Attendance Modal ───────────────────────────────────────── */}
       <MarkAttendanceModal
