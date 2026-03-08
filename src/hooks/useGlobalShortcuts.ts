@@ -15,14 +15,22 @@ function isInputTarget(e: KeyboardEvent): boolean {
  * Shortcuts:
  *   Alt + D          → navigate to /  (Dashboard)
  *   Ctrl + Shift + D → navigate to /  (alternate for keyboards where Alt+D conflicts)
+ *   Cmd/Ctrl + K     → open Command Palette (handled via onCommandPalette callback)
  *
  * Both shortcuts are silently ignored when the user is focused in a form field.
  */
-export function useGlobalShortcuts() {
+export function useGlobalShortcuts(onCommandPalette?: () => void) {
   const navigate = useNavigate();
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      // Cmd/Ctrl + K → Command Palette (works even from input fields)
+      if ((e.ctrlKey || e.metaKey) && !e.shiftKey && e.key.toLowerCase() === "k") {
+        e.preventDefault();
+        onCommandPalette?.();
+        return;
+      }
+
       if (isInputTarget(e)) return;
 
       // Alt + D
@@ -38,5 +46,6 @@ export function useGlobalShortcuts() {
 
     window.addEventListener("keydown", handleKeyDown);
     return () => window.removeEventListener("keydown", handleKeyDown);
-  }, [navigate]);
+  }, [navigate, onCommandPalette]);
 }
+

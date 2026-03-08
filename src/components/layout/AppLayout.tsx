@@ -25,8 +25,9 @@ import { useAuth } from "@/contexts/AuthContext";
 import { RealtimeProvider, useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
 import { FloatingDashboardButton } from "@/components/navigation/FloatingDashboardButton";
+import { CommandPalette } from "@/components/navigation/CommandPalette";
 import { useGlobalShortcuts } from "@/hooks/useGlobalShortcuts";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 
 interface AppLayoutProps {
   children: React.ReactNode;
@@ -51,12 +52,13 @@ function AppLayoutContent({ children }: AppLayoutProps) {
   const { logout, devUser, token } = useAuth();
   const { unreadCount } = useRealtime();
   const { state, isMobile } = useSidebar();
+  const [paletteOpen, setPaletteOpen] = useState(false);
   // Only show Dashboard shortcut on desktop when sidebar is collapsed.
   // On mobile the sidebar uses a sheet overlay — state stays "expanded".
   const showDashboardButton = !isMobile && state === "collapsed";
 
-  // Register global keyboard shortcuts (Alt+D / Ctrl+Shift+D → Dashboard)
-  useGlobalShortcuts();
+  // Register global keyboard shortcuts (Alt+D / Ctrl+Shift+D → Dashboard; Cmd/Ctrl+K → palette)
+  useGlobalShortcuts(() => setPaletteOpen((o) => !o));
 
   // ── Update browser tab title with unread count ──────────────────────────
   useEffect(() => {
@@ -135,7 +137,24 @@ function AppLayoutContent({ children }: AppLayoutProps) {
             </div>
 
             <div className="flex items-center gap-2 flex-shrink-0">
-              <Button variant="ghost" size="icon">
+              {/* Command Palette trigger */}
+              <Button
+                variant="ghost"
+                size="sm"
+                className="hidden sm:flex items-center gap-2 text-muted-foreground hover:text-foreground px-3 border border-border/60 rounded-md h-8"
+                onClick={() => setPaletteOpen(true)}
+              >
+                <Search className="h-3.5 w-3.5" />
+                <span className="text-xs">Search…</span>
+                <kbd className="ml-1 rounded bg-muted px-1 py-0.5 font-mono text-[10px]">⌘K</kbd>
+              </Button>
+              {/* Mobile search icon */}
+              <Button
+                variant="ghost"
+                size="icon"
+                className="sm:hidden"
+                onClick={() => setPaletteOpen(true)}
+              >
                 <Search className="h-5 w-5" />
               </Button>
 
@@ -221,6 +240,9 @@ function AppLayoutContent({ children }: AppLayoutProps) {
         {/* Main Content */}
         <main className="flex-1 p-6 overflow-auto">{children}</main>
       </div>
+
+      {/* Global Command Palette */}
+      <CommandPalette open={paletteOpen} onOpenChange={setPaletteOpen} />
     </div>
   );
 }
