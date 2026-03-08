@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useFormDirty } from "@/hooks/useFormDirty";
 import { BaseModal } from "./BaseModal";
 import { FormSelect } from "./FormSelect";
 import {
@@ -33,6 +34,7 @@ export function CoachFormModal({
   onSuccess,
 }: CoachFormModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
@@ -45,6 +47,7 @@ export function CoachFormModal({
 
   useEffect(() => {
     if (!open) return;
+    resetDirty();
     setErrors([]);
     setSelectedEmployee(null);
     setSelectedSport(null);
@@ -112,6 +115,7 @@ export function CoachFormModal({
       });
 
       toast({ title: res.message || "Coach created successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
@@ -131,13 +135,14 @@ export function CoachFormModal({
       onSubmit={handleSubmit}
       loading={loading}
       errors={errors}
+      isDirty={isDirty}
     >
       <SearchableSelect
         id="employeeId"
         label="Employee"
         placeholder="Search employee by name or email..."
         value={selectedEmployee}
-        onChange={setSelectedEmployee}
+        onChange={(v) => { markDirty(); setSelectedEmployee(v); }}
         onSearch={fetchEmployees}
         required
       />
@@ -147,7 +152,7 @@ export function CoachFormModal({
         label="Sport"
         placeholder="Search sport by name..."
         value={selectedSport}
-        onChange={setSelectedSport}
+        onChange={(v) => { markDirty(); setSelectedSport(v); }}
         onSearch={fetchSports}
         required
       />
@@ -156,7 +161,7 @@ export function CoachFormModal({
         id="skillLevel"
         label="Skill Level"
         value={skillLevel}
-        onChange={setSkillLevel}
+        onChange={(v) => { markDirty(); setSkillLevel(v); }}
         required
         options={SKILL_LEVELS}
         placeholder="Select skill level"

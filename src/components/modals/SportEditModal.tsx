@@ -5,6 +5,7 @@ import { FormSelect } from "./FormSelect";
 import { FormToggle } from "./FormToggle";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
+import { useFormDirty } from "@/hooks/useFormDirty";
 
 interface SportEditData {
   id: number;
@@ -23,6 +24,7 @@ interface SportEditModalProps {
 
 export function SportEditModal({ open, onOpenChange, onSuccess, sport }: SportEditModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
 
@@ -35,6 +37,7 @@ export function SportEditModal({ open, onOpenChange, onSuccess, sport }: SportEd
 
   useEffect(() => {
     if (!open || !sport) return;
+    resetDirty();
     setErrors([]);
     setForm({
       name: sport.name ?? "",
@@ -44,8 +47,10 @@ export function SportEditModal({ open, onOpenChange, onSuccess, sport }: SportEd
     });
   }, [open, sport]);
 
-  const set = (key: keyof typeof form) => (val: string) =>
+  const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -68,6 +73,7 @@ export function SportEditModal({ open, onOpenChange, onSuccess, sport }: SportEd
       }
 
       toast({ title: "Sport updated successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
@@ -88,6 +94,7 @@ export function SportEditModal({ open, onOpenChange, onSuccess, sport }: SportEd
       loading={loading}
       errors={errors}
       submitLabel="Save Changes"
+      isDirty={isDirty}
     >
       <FormInput id="name" label="Name" value={form.name} onChange={set("name")} required />
       <FormInput id="description" label="Description" value={form.description} onChange={set("description")} />
@@ -106,7 +113,7 @@ export function SportEditModal({ open, onOpenChange, onSuccess, sport }: SportEd
         id="isRequireHealthTest"
         label="Requires Health Test"
         checked={form.isRequireHealthTest}
-        onChange={(v) => setForm((f) => ({ ...f, isRequireHealthTest: v }))}
+        onChange={(v) => { markDirty(); setForm((f) => ({ ...f, isRequireHealthTest: v })); }}
         description="Enable if trainees need a health clearance"
       />
     </BaseModal>

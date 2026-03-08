@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { useFormDirty } from "@/hooks/useFormDirty";
 import { z } from "zod";
 import { BaseModal } from "./BaseModal";
 import { FormInput } from "./FormInput";
@@ -70,6 +71,7 @@ export function TraineeFormModal({
   onSuccess,
 }: TraineeFormModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [apiErrors, setApiErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -98,6 +100,7 @@ export function TraineeFormModal({
   // Clear state and load options on open
   useEffect(() => {
     if (!open) return;
+    resetDirty();
     setApiErrors([]);
     setFieldErrors({});
     setForm({
@@ -129,6 +132,7 @@ export function TraineeFormModal({
 
   // Helper: set a single form field and clear its error
   const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
     setFieldErrors((fe) => ({ ...fe, [key]: undefined }));
   };
@@ -191,6 +195,7 @@ export function TraineeFormModal({
       }
 
       toast({ title: "Trainee created successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
@@ -210,6 +215,7 @@ export function TraineeFormModal({
       onSubmit={handleSubmit}
       loading={loading}
       errors={apiErrors}
+      isDirty={isDirty}
     >
       <div className="grid grid-cols-2 gap-3">
         <FormInput

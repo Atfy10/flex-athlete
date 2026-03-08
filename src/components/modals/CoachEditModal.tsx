@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useFormDirty } from "@/hooks/useFormDirty";
 import { BaseModal } from "./BaseModal";
 import { FormSelect, SelectOption } from "./FormSelect";
 import { apiFetch, ApiError } from "@/lib/api";
@@ -21,6 +22,7 @@ interface CoachEditModalProps {
 
 export function CoachEditModal({ open, onOpenChange, onSuccess, coach }: CoachEditModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [sports, setSports] = useState<SelectOption[]>([]);
@@ -29,6 +31,7 @@ export function CoachEditModal({ open, onOpenChange, onSuccess, coach }: CoachEd
 
   useEffect(() => {
     if (!open || !coach) return;
+    resetDirty();
     setErrors([]);
     setForm({ sportId: "", skillLevel: coach.skillLevel ?? "" });
     apiFetch<{ data: { id: number; name: string }[]; isSuccess: boolean }>("/api/Sports/get-all")
@@ -38,8 +41,10 @@ export function CoachEditModal({ open, onOpenChange, onSuccess, coach }: CoachEd
       .catch(() => {});
   }, [open, coach]);
 
-  const set = (key: keyof typeof form) => (val: string) =>
+  const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +65,7 @@ export function CoachEditModal({ open, onOpenChange, onSuccess, coach }: CoachEd
       }
 
       toast({ title: "Coach updated successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
@@ -80,6 +86,7 @@ export function CoachEditModal({ open, onOpenChange, onSuccess, coach }: CoachEd
       loading={loading}
       errors={errors}
       submitLabel="Save Changes"
+      isDirty={isDirty}
     >
       {/* Read-only display */}
       <div className="rounded-lg bg-muted/40 border border-border px-4 py-3 space-y-1">

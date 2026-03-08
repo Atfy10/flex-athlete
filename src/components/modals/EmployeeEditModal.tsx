@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useFormDirty } from "@/hooks/useFormDirty";
 import { BaseModal } from "./BaseModal";
 import { FormInput } from "./FormInput";
 import { FormSelect, SelectOption } from "./FormSelect";
@@ -30,6 +31,7 @@ interface EmployeeEditModalProps {
 
 export function EmployeeEditModal({ open, onOpenChange, onSuccess, employee }: EmployeeEditModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [branches, setBranches] = useState<SelectOption[]>([]);
@@ -47,6 +49,7 @@ export function EmployeeEditModal({ open, onOpenChange, onSuccess, employee }: E
 
   useEffect(() => {
     if (!open || !employee) return;
+    resetDirty();
     setErrors([]);
     setForm({
       phoneNumber: employee.phoneNumber ?? "",
@@ -67,8 +70,10 @@ export function EmployeeEditModal({ open, onOpenChange, onSuccess, employee }: E
       .catch(() => {});
   }, [open, employee]);
 
-  const set = (key: keyof typeof form) => (val: string) =>
+  const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +100,7 @@ export function EmployeeEditModal({ open, onOpenChange, onSuccess, employee }: E
       }
 
       toast({ title: "Employee updated successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
@@ -115,6 +121,7 @@ export function EmployeeEditModal({ open, onOpenChange, onSuccess, employee }: E
       loading={loading}
       errors={errors}
       submitLabel="Save Changes"
+      isDirty={isDirty}
     >
       {/* Read-only display */}
       <div className="rounded-lg bg-muted/40 border border-border px-4 py-3 space-y-1">

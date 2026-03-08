@@ -9,6 +9,7 @@ import { getBranches } from "@/services/branch.services";
 import { getSports } from "@/services/sport.services";
 import { updateTrainee } from "@/services/trainee.service";
 import { UpdateTraineeCommand } from "@/types/commands/updateTraineeCommand";
+import { useFormDirty } from "@/hooks/useFormDirty";
 
 interface TraineeEditData {
   id: number;
@@ -34,6 +35,7 @@ export function TraineeEditModal({
   trainee,
 }: TraineeEditModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [branches, setBranches] = useState<SelectOption[]>([]);
@@ -48,6 +50,7 @@ export function TraineeEditModal({
 
   useEffect(() => {
     if (!open || !trainee) return;
+    resetDirty();
     setErrors([]);
     setForm({
       parentNumber: trainee.parentNumber ?? "",
@@ -90,8 +93,10 @@ export function TraineeEditModal({
       .catch(() => {});
   }, [open, trainee]);
 
-  const set = (key: keyof typeof form) => (val: string) =>
+  const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -119,6 +124,7 @@ export function TraineeEditModal({
       }
 
       toast({ title: "Trainee updated successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
@@ -139,6 +145,7 @@ export function TraineeEditModal({
       loading={loading}
       errors={errors}
       submitLabel="Save Changes"
+      isDirty={isDirty}
     >
       {/* Read-only display */}
       <div className="rounded-lg bg-muted/40 border border-border px-4 py-3 space-y-1">

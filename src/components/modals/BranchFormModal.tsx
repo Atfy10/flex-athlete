@@ -4,6 +4,7 @@ import { FormInput } from "./FormInput";
 import { apiFetch, ApiError } from "@/lib/api";
 import { useToast } from "@/hooks/use-toast";
 import { z } from "zod";
+import { useFormDirty } from "@/hooks/useFormDirty";
 
 const branchSchema = z.object({
   name: z.string().trim().min(1, "Branch name is required").max(100, "Name too long"),
@@ -23,6 +24,7 @@ interface BranchFormModalProps {
 
 export function BranchFormModal({ open, onOpenChange, onSuccess }: BranchFormModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<Record<string, string>>({});
@@ -33,12 +35,14 @@ export function BranchFormModal({ open, onOpenChange, onSuccess }: BranchFormMod
 
   useEffect(() => {
     if (!open) return;
+    resetDirty();
     setErrors([]);
     setFieldErrors({});
     setForm({ name: "", city: "", country: "", phoneNumber: "", email: "", coX: "", coY: "" });
   }, [open]);
 
   const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
     setFieldErrors((e) => ({ ...e, [key]: "" }));
   };
@@ -74,6 +78,7 @@ export function BranchFormModal({ open, onOpenChange, onSuccess }: BranchFormMod
         }),
       });
       toast({ title: "Branch created successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
@@ -85,7 +90,7 @@ export function BranchFormModal({ open, onOpenChange, onSuccess }: BranchFormMod
   };
 
   return (
-    <BaseModal open={open} onOpenChange={onOpenChange} title="Add Branch" description="Add a new academy branch" onSubmit={handleSubmit} loading={loading} errors={errors}>
+    <BaseModal open={open} onOpenChange={onOpenChange} title="Add Branch" description="Add a new academy branch" onSubmit={handleSubmit} loading={loading} errors={errors} isDirty={isDirty}>
       <FormInput id="name" label="Name" value={form.name} onChange={set("name")} required error={fieldErrors.name} />
       <div className="grid grid-cols-2 gap-3">
         <FormInput id="city" label="City" value={form.city} onChange={set("city")} required error={fieldErrors.city} />

@@ -8,6 +8,7 @@ import { useToast } from "@/hooks/use-toast";
 import { format, parseISO } from "date-fns";
 import { updateEnrollment } from "@/services/enrollment.services";
 import { apiFetch } from "@/lib/api";
+import { useFormDirty } from "@/hooks/useFormDirty";
 
 export interface EnrollmentEditData {
   id: number;
@@ -36,6 +37,7 @@ export function EnrollmentEditModal({
   enrollment,
 }: EnrollmentEditModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [errors, setErrors] = useState<string[]>([]);
   const [subscriptions, setSubscriptions] = useState<SelectOption[]>([]);
@@ -48,6 +50,7 @@ export function EnrollmentEditModal({
 
   useEffect(() => {
     if (!open || !enrollment) return;
+    resetDirty();
     setErrors([]);
     setForm({
       expiryDate: enrollment.expiryDate ? parseISO(enrollment.expiryDate) : undefined,
@@ -90,6 +93,7 @@ export function EnrollmentEditModal({
       }
 
       toast({ title: "Enrollment updated successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
@@ -110,6 +114,7 @@ export function EnrollmentEditModal({
       loading={loading}
       errors={errors}
       submitLabel="Save Changes"
+      isDirty={isDirty}
     >
       {/* Read-only summary */}
       <div className="rounded-lg bg-muted/40 border border-border px-4 py-3 space-y-1">
@@ -151,13 +156,13 @@ export function EnrollmentEditModal({
         id="expiryDate"
         label="Expiry Date"
         value={form.expiryDate}
-        onChange={(d) => setForm((f) => ({ ...f, expiryDate: d }))}
+        onChange={(d) => { markDirty(); setForm((f) => ({ ...f, expiryDate: d })); }}
       />
       <FormInput
         id="sessionAllowed"
         label="Sessions Allowed"
         value={form.sessionAllowed}
-        onChange={(v) => setForm((f) => ({ ...f, sessionAllowed: v }))}
+        onChange={(v) => { markDirty(); setForm((f) => ({ ...f, sessionAllowed: v })); }}
         type="number"
         min={1}
       />
@@ -165,7 +170,7 @@ export function EnrollmentEditModal({
         id="subscriptionDetailsId"
         label="Subscription"
         value={form.subscriptionDetailsId}
-        onChange={(v) => setForm((f) => ({ ...f, subscriptionDetailsId: v }))}
+        onChange={(v) => { markDirty(); setForm((f) => ({ ...f, subscriptionDetailsId: v })); }}
         options={subscriptions}
         placeholder="Keep current subscription"
       />

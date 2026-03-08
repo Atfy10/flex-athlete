@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useFormDirty } from "@/hooks/useFormDirty";
 import { z } from "zod";
 import { BaseModal } from "./BaseModal";
 import { FormInput } from "./FormInput";
@@ -38,6 +39,7 @@ interface EnrollmentFormModalProps {
 
 export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: EnrollmentFormModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [apiErrors, setApiErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -60,6 +62,7 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
 
   useEffect(() => {
     if (!open) return;
+    resetDirty();
     setApiErrors([]);
     setFieldErrors({});
     setForm({
@@ -91,6 +94,7 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
   }, [open]);
 
   const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
     setFieldErrors((fe) => ({ ...fe, [key]: undefined }));
   };
@@ -125,6 +129,7 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
         }),
       });
       toast({ title: "Enrollment created successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
@@ -141,6 +146,7 @@ export function EnrollmentFormModal({ open, onOpenChange, onSuccess }: Enrollmen
       title="New Enrollment"
       description="Enroll a trainee in a group. Fields marked with * are required."
       onSubmit={handleSubmit} loading={loading} errors={apiErrors}
+      isDirty={isDirty}
     >
       <FormSelect
         id="traineeId" label="Trainee"

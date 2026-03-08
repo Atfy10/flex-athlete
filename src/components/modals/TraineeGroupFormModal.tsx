@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { useFormDirty } from "@/hooks/useFormDirty";
 import { z } from "zod";
 import { BaseModal } from "./BaseModal";
 import { FormInput } from "./FormInput";
@@ -35,6 +36,7 @@ interface TraineeGroupFormModalProps {
 
 export function TraineeGroupFormModal({ open, onOpenChange, onSuccess }: TraineeGroupFormModalProps) {
   const { toast } = useToast();
+  const { isDirty, markDirty, resetDirty } = useFormDirty();
   const [loading, setLoading] = useState(false);
   const [apiErrors, setApiErrors] = useState<string[]>([]);
   const [fieldErrors, setFieldErrors] = useState<FieldErrors>({});
@@ -52,6 +54,7 @@ export function TraineeGroupFormModal({ open, onOpenChange, onSuccess }: Trainee
 
   useEffect(() => {
     if (!open) return;
+    resetDirty();
     setApiErrors([]);
     setFieldErrors({});
     setForm({ skillLevel: "", maximumCapacity: "", durationInMinutes: "", gender: "", branchId: "", coachId: "" });
@@ -92,6 +95,7 @@ export function TraineeGroupFormModal({ open, onOpenChange, onSuccess }: Trainee
   }, [form.branchId, allCoaches]);
 
   const set = (key: keyof typeof form) => (val: string) => {
+    markDirty();
     setForm((f) => ({ ...f, [key]: val }));
     setFieldErrors((fe) => ({ ...fe, [key]: undefined }));
   };
@@ -126,6 +130,7 @@ export function TraineeGroupFormModal({ open, onOpenChange, onSuccess }: Trainee
         }),
       });
       toast({ title: "Trainee group created successfully" });
+      resetDirty();
       onSuccess();
       onOpenChange(false);
     } catch (err) {
@@ -142,6 +147,7 @@ export function TraineeGroupFormModal({ open, onOpenChange, onSuccess }: Trainee
       title="Create Trainee Group"
       description="Set up a new training group. Fields marked with * are required."
       onSubmit={handleSubmit} loading={loading} errors={apiErrors}
+      isDirty={isDirty}
     >
       <div className="grid grid-cols-2 gap-3">
         <FormSelect
