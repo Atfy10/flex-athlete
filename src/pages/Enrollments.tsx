@@ -465,6 +465,14 @@ const Enrollments = () => {
               <Table>
                 <TableHeader>
                   <TableRow>
+                    {/* Select-all checkbox */}
+                    <TableHead className="w-10 pl-4">
+                      <Checkbox
+                        checked={allEnrollmentsSelected ? true : someEnrollmentsSelected ? "indeterminate" : false}
+                        onCheckedChange={toggleAllEnrollments}
+                        aria-label="Select all"
+                      />
+                    </TableHead>
                     {(
                       [
                         { label: "Trainee", key: "traineeName" },
@@ -481,8 +489,22 @@ const Enrollments = () => {
                   </TableRow>
                 </TableHeader>
                 <TableBody>
-                  {sortedEnrollments.map((enrollment) => (
-                    <TableRow key={enrollment.id} className="cursor-pointer" onClick={() => navigate(`/enrollments/${enrollment.id}`)}>
+                  {sortedEnrollments.map((enrollment) => {
+                    const checked = isEnrollmentSelected(enrollment.id);
+                    return (
+                    <TableRow
+                      key={enrollment.id}
+                      className={`cursor-pointer transition-colors ${checked ? "bg-primary/5" : ""}`}
+                      onClick={() => navigate(`/enrollments/${enrollment.id}`)}
+                    >
+                      {/* Row checkbox */}
+                      <TableCell className="pl-4" onClick={(e) => e.stopPropagation()}>
+                        <Checkbox
+                          checked={checked}
+                          onCheckedChange={() => toggleEnrollmentRow(enrollment.id)}
+                          aria-label={`Select ${enrollment.traineeName}`}
+                        />
+                      </TableCell>
                       <TableCell>
                         <div className="flex items-center gap-2">
                           <Avatar className="h-7 w-7 shrink-0">
@@ -537,7 +559,8 @@ const Enrollments = () => {
                         </RowActions>
                       </TableCell>
                     </TableRow>
-                  ))}
+                    );
+                  })}
                 </TableBody>
               </Table>
             )}
@@ -560,6 +583,26 @@ const Enrollments = () => {
         title="Remove Enrollment?"
         description={`This will permanently remove the enrollment for ${deleteTarget?.traineeName}. This action cannot be undone.`}
         confirmLabel="Remove" destructive loading={deleteLoading} onConfirm={handleDelete}
+      />
+
+      {/* ── Bulk Actions Bar ──────────────────────────────────────────────── */}
+      <BulkActionsBar
+        selectedCount={enrollmentSelectedCount}
+        onClear={clearEnrollmentSelection}
+        actions={[
+          {
+            label: "Export CSV",
+            icon: <Download className="h-3.5 w-3.5" />,
+            onClick: handleBulkExport,
+            variant: "outline",
+          },
+          {
+            label: `Suspend ${enrollmentSelectedCount > 1 ? `(${enrollmentSelectedCount})` : ""}`.trim(),
+            icon: <XCircle className="h-3.5 w-3.5" />,
+            onClick: handleBulkCancel,
+            variant: "destructive",
+          },
+        ]}
       />
     </div>
   );
