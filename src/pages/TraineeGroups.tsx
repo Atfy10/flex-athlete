@@ -112,6 +112,13 @@ export default function TraineeGroups() {
     return typeof v === "number" ? v : String(v);
   });
 
+  // Fetch total group count for the "Total Groups" stat card
+  useEffect(() => {
+    countTraineeGroups()
+      .then((res) => { if (res.isSuccess) setTotalGroupCount(res.data); })
+      .catch(() => {});
+  }, []);
+
   const statsData = [
     { title: "Groups (this page)", value: loading ? "—" : String(groups.length), icon: Users },
     {
