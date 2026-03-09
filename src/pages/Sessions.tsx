@@ -127,14 +127,17 @@ export default function Sessions() {
 
   // ── Stats fetch ──────────────────────────────────────────────────────────
   const loadStats = useCallback(async () => {
-    const [total, todayRes] = await Promise.allSettled([
+    const [total, todayRes, coachesRes] = await Promise.allSettled([
       countSessions(),
       getSessionsByDate(todayIso(), 1, 1),
+      getActiveCoachesCount(),
     ]);
     if (total.status === "fulfilled" && total.value.isSuccess)
       setTotalSessions(total.value.data);
     if (todayRes.status === "fulfilled" && todayRes.value.isSuccess)
       setTodayGroupCount(todayRes.value.data.totalCount);
+    if (coachesRes.status === "fulfilled" && coachesRes.value.isSuccess)
+      setActiveCoaches(coachesRes.value.data);
   }, []);
 
   useEffect(() => { loadStats(); }, [loadStats]);
