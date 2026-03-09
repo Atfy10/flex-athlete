@@ -166,8 +166,17 @@ export default function Sessions() {
     return () => { active = false; };
   }, [useDate, selectedDate, datePage]);
 
-  // Reset date page when date changes
-  useEffect(() => { setDatePage(1); }, [selectedDate]);
+  // ── Derive Avg. Duration from loaded items ────────────────────────────────
+  useEffect(() => {
+    const source = useDate ? dateItems : searchItems;
+    if (source.length === 0) return;
+    const avg = Math.round(
+      source.reduce((sum, s) => sum + s.durationInMinutes, 0) / source.length,
+    );
+    setAvgDuration(avg);
+  }, [searchItems, dateItems, useDate]);
+
+
 
   // ── onSuccess callback — refresh list + stats ────────────────────────────
   const handleGenerateSuccess = useCallback(() => {
