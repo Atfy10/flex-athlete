@@ -166,6 +166,9 @@ export default function Sessions() {
     return () => { active = false; };
   }, [useDate, selectedDate, datePage]);
 
+  // Reset date page when date changes
+  useEffect(() => { setDatePage(1); }, [selectedDate]);
+
   // ── Derive Avg. Duration from loaded items ────────────────────────────────
   useEffect(() => {
     const source = useDate ? dateItems : searchItems;
@@ -175,8 +178,6 @@ export default function Sessions() {
     );
     setAvgDuration(avg);
   }, [searchItems, dateItems, useDate]);
-
-
 
   // ── onSuccess callback — refresh list + stats ────────────────────────────
   const handleGenerateSuccess = useCallback(() => {
@@ -198,8 +199,8 @@ export default function Sessions() {
   const statsValues = [
     totalSessions   != null ? String(totalSessions)   : "—",
     todayGroupCount != null ? String(todayGroupCount) : "—",
-    "—",
-    "—",
+    activeCoaches   != null ? String(activeCoaches)   : "—",
+    avgDuration     != null ? `${avgDuration} min`    : "—",
   ];
 
   return (
