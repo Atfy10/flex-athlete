@@ -279,6 +279,7 @@ function AppLayoutInner({ children }: AppLayoutProps) {
     <SidebarProvider>
       <AppLayoutContent>{children}</AppLayoutContent>
       <Toaster />
+      <SessionExpiryBanner />
     </SidebarProvider>
   );
 }
