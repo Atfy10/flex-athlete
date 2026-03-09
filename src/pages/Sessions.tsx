@@ -87,8 +87,10 @@ export default function Sessions() {
   }, []);
 
   // Stats
-  const [totalSessions,  setTotalSessions]  = useState<number | null>(null);
+  const [totalSessions,   setTotalSessions]   = useState<number | null>(null);
   const [todayGroupCount, setTodayGroupCount] = useState<number | null>(null);
+  const [activeCoaches,   setActiveCoaches]   = useState<number | null>(null);
+  const [avgDuration,     setAvgDuration]     = useState<number | null>(null);
 
   // Date-filtered mode uses a separate local state
   const [dateItems,      setDateItems]      = useState<SessionCardDto[]>([]);

@@ -68,6 +68,7 @@ export default function TraineeGroups() {
   const [deleteTarget, setDeleteTarget] = useState<ListTraineeGroupDto | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [view, setView] = useState<ViewMode>("grid");
+  const [totalGroupCount, setTotalGroupCount] = useState<number | null>(null);
   const { sort, toggle: toggleSort, sortItems } = useSortable<SortKey>();
 
   const listFn = useCallback(
