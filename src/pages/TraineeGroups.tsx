@@ -120,7 +120,7 @@ export default function TraineeGroups() {
   }, []);
 
   const statsData = [
-    { title: "Groups (this page)", value: loading ? "—" : String(groups.length), icon: Users },
+    { title: "Total Groups", value: totalGroupCount != null ? String(totalGroupCount) : (loading ? "—" : String(groups.length)), icon: Users },
     {
       title: "Total Trainees",
       value: loading ? "—" : String(groups.reduce((s, g) => s + (g.traineesCount ?? 0), 0)),
@@ -133,7 +133,11 @@ export default function TraineeGroups() {
         : `${Math.round(groups.reduce((s, g) => s + g.durationInMinutes, 0) / groups.length)} min`,
       icon: Clock,
     },
-    { title: "Total Schedules", value: "—", icon: Calendar },
+    {
+      title: "Total Groups",
+      value: totalGroupCount != null ? String(totalGroupCount) : "—",
+      icon: Calendar,
+    },
   ];
 
   return (
