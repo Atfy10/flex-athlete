@@ -53,7 +53,8 @@ interface AuthContextValue extends AuthState {
 
 const AuthContext = createContext<AuthContextValue | null>(null);
 
-// Constants for localStorage keys
+// Constants for sessionStorage keys (sessionStorage clears on tab/window close,
+// reducing the window of exposure vs. localStorage while keeping the UX identical)
 const STORAGE_KEYS = {
   ACCESS_TOKEN: "accessToken",
   EXPIRES_AT: "expiresAt",
