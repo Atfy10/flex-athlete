@@ -218,8 +218,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     try {
       // Clear real session
-      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
+      sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      sessionStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
       clearApiAccessToken();
 
       // Clear dev session (safe no-op in production)
