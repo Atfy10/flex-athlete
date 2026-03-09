@@ -19,26 +19,6 @@ import {
 } from "@/services/enrollment.services";
 import { EnrollmentDetailDto } from "@/types/EnrollmentDetailDto";
 
-interface EnrollmentDetailDto {
-  id: number;
-  traineeName?: string;
-  traineeEmail?: string;
-  sport?: string;
-  program?: string;
-  branch?: string;
-  coach?: string;
-  enrollmentDate?: string;
-  startDate?: string;
-  endDate?: string;
-  expiryDate?: string;
-  monthlyFee?: number;
-  paymentStatus?: string;
-  status?: string;
-  sessionsCompleted?: number;
-  totalSessions?: number;
-  sessionAllowed?: number;
-  subscriptionDetailsId?: number;
-}
 
 export default function EnrollmentProfile() {
   const { id } = useParams<{ id: string }>();
