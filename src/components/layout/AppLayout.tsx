@@ -19,9 +19,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Bell, Search, User, KeyRound, LogOut, Shield } from "lucide-react";
+import { Bell, Search, User, KeyRound, LogOut, Shield, Sun, Moon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "next-themes";
 import { RealtimeProvider, useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
 import { FloatingDashboardButton } from "@/components/navigation/FloatingDashboardButton";
