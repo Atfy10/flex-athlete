@@ -4,6 +4,18 @@ import { EnrollmentCardDto } from "@/types/EnrollmentCardDto";
 import { EnrollmentDetailDto } from "@/types/EnrollmentDetailDto";
 import { isDevSession, devMock } from "@/auth/dev-login";
 
+/** Build a query-string from a params object, omitting "all" / empty values */
+function buildQuery(base: Record<string, string | number>, extra?: Record<string, string>): string {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(base)) p.set(k, String(v));
+  if (extra) {
+    for (const [k, v] of Object.entries(extra)) {
+      if (v && v !== "all") p.set(k, v);
+    }
+  }
+  return p.toString();
+}
+
 export const getEnrollments = async (
   sportId: number,
 ): Promise<ApiResult<number>> => {
@@ -13,10 +25,15 @@ export const getEnrollments = async (
   );
 };
 
-export const listEnrollments = async (page: number, pageSize: number) => {
+export const listEnrollments = async (
+  page: number,
+  pageSize: number,
+  extraParams?: Record<string, string>,
+) => {
   if (isDevSession()) return devMock<PagedData<EnrollmentCardDto>>({ items: [], totalCount: 0, page, pageSize });
+  const qs = buildQuery({ page, pageSize }, extraParams);
   return apiFetch<ApiResult<PagedData<EnrollmentCardDto>>>(
-    `/api/Enrollment?page=${page}&pageSize=${pageSize}`,
+    `/api/Enrollment?${qs}`,
   );
 };
 
@@ -24,10 +41,12 @@ export const searchEnrollments = async (
   term: string,
   page: number,
   pageSize: number,
+  extraParams?: Record<string, string>,
 ) => {
   if (isDevSession()) return devMock<PagedData<EnrollmentCardDto>>({ items: [], totalCount: 0, page, pageSize });
+  const qs = buildQuery({ term: encodeURIComponent(term), page, pageSize }, extraParams);
   return apiFetch<ApiResult<PagedData<EnrollmentCardDto>>>(
-    `/api/Enrollment/search?term=${encodeURIComponent(term)}&page=${page}&pageSize=${pageSize}`,
+    `/api/Enrollment/search?${qs}`,
   );
 };
 

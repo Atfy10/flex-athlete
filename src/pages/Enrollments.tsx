@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -94,10 +94,18 @@ const Enrollments = () => {
   const [view, setView] = useState<ViewMode>("grid");
   const { sort, toggle: toggleSort, sortItems } = useSortable<SortKey>();
 
+  const enrollmentFilterParams = useMemo<Record<string, string>>(() => {
+    const p: Record<string, string> = {};
+    if (statusFilter !== "all") p.status = statusFilter;
+    if (paymentFilter !== "all") p.paymentStatus = paymentFilter;
+    return p;
+  }, [statusFilter, paymentFilter]);
+
   const {
-    items: enrollments, loading, term, setTerm, page, setPage, totalPages, refresh,
+    items: enrollmentsRaw, loading, term, setTerm, page, setPage, totalPages, refresh,
   } = useEntitySearch<EnrollmentCardDto>({
     listFn: listEnrollments, searchFn: searchEnrollments, pageSize: PAGE_SIZE, minLength: 2,
+    extraParams: enrollmentFilterParams,
   });
 
   const fetchStats = useCallback(async () => {
@@ -116,13 +124,8 @@ const Enrollments = () => {
 
   const handleRefresh = useCallback(() => { refresh?.(); fetchStats(); }, [refresh, fetchStats]);
 
-  const filteredEnrollments = enrollments.filter((e) => {
-    const matchesStatus = statusFilter === "all" || e.status === statusFilter;
-    const matchesPayment = paymentFilter === "all" || e.paymentStatus === paymentFilter;
-    return matchesStatus && matchesPayment;
-  });
-
-  const sortedEnrollments = sortItems(filteredEnrollments, (e, key) =>
+  // Filtering is now server-side; only sort client-side
+  const sortedEnrollments = sortItems(enrollmentsRaw, (e, key) =>
     (e as unknown as Record<string, unknown>)[key] as string ?? ""
   );
 
@@ -568,7 +571,7 @@ const Enrollments = () => {
         </Card>
       )}
 
-      {!loading && enrollments.length > 0 && (
+      {!loading && enrollmentsRaw.length > 0 && (
         <BasePagination
           page={page} totalPages={totalPages} pageSize={PAGE_SIZE}
           onPageChange={setPage} onPageSizeChange={() => setPage(1)}

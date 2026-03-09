@@ -24,6 +24,8 @@ interface AuthState {
   // milliseconds since epoch
   expiresAt: number | null;
   isAuthenticated: boolean;
+  /** Roles decoded from the JWT (or from the dev user) */
+  roles: string[];
   /** Populated only during a dev-login session; null in production */
   devUser: DevUser | null;
 }
@@ -49,6 +51,8 @@ interface AuthContextValue extends AuthState {
   loginDev: (email: string) => void;
   register: (payload: RegisterPayload) => Promise<void>;
   logout: () => void;
+  /** Returns true if the logged-in user has ANY of the given roles */
+  hasRole: (...roles: string[]) => boolean;
 }
 
 const AuthContext = createContext<AuthContextValue | null>(null);
@@ -60,11 +64,29 @@ const STORAGE_KEYS = {
   EXPIRES_AT: "expiresAt",
 } as const;
 
+/** Extract roles from a raw JWT string. Returns [] on any error. */
+function decodeRoles(token: string): string[] {
+  try {
+    const parts = token.split(".");
+    if (parts.length < 2) return [];
+    const payload = JSON.parse(atob(parts[1])) as Record<string, unknown>;
+    // ASP.NET Core uses the full ClaimTypes URI as key
+    const roleKey =
+      "http://schemas.microsoft.com/ws/2008/06/identity/claims/role";
+    const raw = payload[roleKey] ?? payload["role"] ?? payload["roles"];
+    if (!raw) return [];
+    return Array.isArray(raw) ? (raw as string[]) : [raw as string];
+  } catch {
+    return [];
+  }
+}
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [auth, setAuth] = useState<AuthState>({
     token: null,
     expiresAt: null,
     isAuthenticated: false,
+    roles: [],
     devUser: null,
   });
 
@@ -86,6 +108,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         token: null,
         expiresAt: null,
         isAuthenticated: true,
+        roles: [devUser.role],
         devUser,
       });
       return;
@@ -119,11 +142,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           token,
           expiresAt: jwtExp,
           isAuthenticated: !isTokenExpired(jwtExp),
+          roles: decodeRoles(token),
           devUser: null,
         });
         setApiAccessToken(token);
       } else {
-        setAuth({ token, expiresAt, isAuthenticated: true, devUser: null });
+        setAuth({ token, expiresAt, isAuthenticated: true, roles: decodeRoles(token), devUser: null });
         setApiAccessToken(token);
       }
     } catch (error) {
@@ -145,6 +169,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       token: null,
       expiresAt: null,
       isAuthenticated: true,
+      roles: [user.role],
       devUser: user,
     });
   }, []);
@@ -184,7 +209,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
       sessionStorage.setItem(STORAGE_KEYS.EXPIRES_AT, expiresAt.toString());
 
-      setAuth({ token, expiresAt, isAuthenticated: true, devUser: null });
+      setAuth({ token, expiresAt, isAuthenticated: true, roles: decodeRoles(token), devUser: null });
       setApiAccessToken(token);
     } catch (err) {
       console.error("Login error:", err);
@@ -225,13 +250,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       // Clear dev session (safe no-op in production)
       clearDevSession();
 
-      setAuth({ token: null, expiresAt: null, isAuthenticated: false, devUser: null });
+      setAuth({ token: null, expiresAt: null, isAuthenticated: false, roles: [], devUser: null });
     } catch (error) {
       console.error("Logout error:", error);
     } finally {
       isLoggingOutRef.current = false;
     }
   }, []);
+
+  // ── hasRole ────────────────────────────────────────────────────────────────
+  const hasRole = useCallback((...rolesToCheck: string[]): boolean => {
+    return rolesToCheck.some((r) =>
+      auth.roles.some((ur) => ur.toLowerCase() === r.toLowerCase())
+    );
+  }, [auth.roles]);
 
   // ── Auto-logout timer (real sessions only) ─────────────────────────────────
   useEffect(() => {
@@ -288,7 +320,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, [logout]);
 
   return (
-    <AuthContext.Provider value={{ ...auth, login, loginDev, register, logout }}>
+    <AuthContext.Provider value={{ ...auth, login, loginDev, register, logout, hasRole }}>
       {children}
     </AuthContext.Provider>
   );
