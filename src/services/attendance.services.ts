@@ -52,11 +52,12 @@ export const getAverageAttendance = async () => {
   return await apiFetch<ApiResult<number>>(`/api/attendance/rate`);
 };
 
-/** Attendance rate for a specific month (1-based) */
-export const getAverageAttendanceForMonth = async (month: string) => {
+/** Attendance rate for a specific month (1-based) and year */
+export const getAverageAttendanceForMonth = async (month: string, year?: number) => {
   if (isDevSession()) return devMock<number>(0);
+  const yearParam = year ? `&year=${year}` : "";
   return await apiFetch<ApiResult<number>>(
-    `/api/attendance/rate?month=${month}`,
+    `/api/attendance/rate?month=${month}${yearParam}`,
   );
 };
 
