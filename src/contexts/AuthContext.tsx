@@ -77,7 +77,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return expiresAt <= Date.now();
   }, []);
 
-  // ── Bootstrap: restore auth state from localStorage on initial load ────────
+  // ── Bootstrap: restore auth state from sessionStorage on initial load ───────
   useEffect(() => {
     // ── 1. Dev session takes priority ──────────────────────────────────────
     const devUser = restoreDevSession();
@@ -93,16 +93,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
     // ── 2. Real JWT session ────────────────────────────────────────────────
     try {
-      const token = localStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
-      const expiresAtStr = localStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
+      const token = sessionStorage.getItem(STORAGE_KEYS.ACCESS_TOKEN);
+      const expiresAtStr = sessionStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
 
       if (!token || !expiresAtStr) return;
 
       const expiresAt = parseInt(expiresAtStr, 10);
 
       if (isNaN(expiresAt) || isTokenExpired(expiresAt)) {
-        localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-        localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
+        sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+        sessionStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
         return;
       }
 
@@ -114,7 +114,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (jwtExp !== expiresAt) {
         console.warn("JWT exp mismatch with stored expiresAt");
-        localStorage.setItem(STORAGE_KEYS.EXPIRES_AT, jwtExp.toString());
+        sessionStorage.setItem(STORAGE_KEYS.EXPIRES_AT, jwtExp.toString());
         setAuth({
           token,
           expiresAt: jwtExp,
@@ -128,8 +128,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       }
     } catch (error) {
       console.error("Failed to restore auth state:", error);
-      localStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
-      localStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
+      sessionStorage.removeItem(STORAGE_KEYS.ACCESS_TOKEN);
+      sessionStorage.removeItem(STORAGE_KEYS.EXPIRES_AT);
     }
   }, [isTokenExpired]);
 
