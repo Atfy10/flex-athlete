@@ -47,8 +47,8 @@ export const countPendingPayments = async () => {
 };
 
 export const getEnrollmentById = async (id: number | string) => {
-  if (isDevSession()) return devMock<null>(null);
-  return apiFetch<ApiResult<unknown>>(`/api/enrollment/${id}`);
+  if (isDevSession()) return devMock<EnrollmentDetailDto | null>(null);
+  return apiFetch<ApiResult<EnrollmentDetailDto>>(`/api/enrollment/${id}`);
 };
 
 export const deleteEnrollment = async (id: number | string) => {
