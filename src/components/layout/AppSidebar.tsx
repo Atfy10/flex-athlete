@@ -64,7 +64,6 @@ export function AppSidebar() {
   const navigate = useNavigate();
   const { logout, hasRole } = useAuth();
   const { unreadCount } = useRealtime();
-  const { theme, setTheme } = useTheme();
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
 
@@ -74,8 +73,6 @@ export function AppSidebar() {
     logout();
     navigate("/login", { replace: true });
   };
-
-  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
   const [managementOpen, setManagementOpen] = useState(true);
   const [operationsOpen, setOperationsOpen] = useState(true);
