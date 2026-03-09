@@ -19,9 +19,10 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-import { Bell, Search, User, KeyRound, LogOut, Shield } from "lucide-react";
+import { Bell, Search, User, KeyRound, LogOut, Shield, Sun, Moon } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
+import { useTheme } from "next-themes";
 import { RealtimeProvider, useRealtime } from "@/contexts/RealtimeContext";
 import { cn } from "@/lib/utils";
 import { FloatingDashboardButton } from "@/components/navigation/FloatingDashboardButton";
@@ -52,6 +53,7 @@ function AppLayoutContent({ children }: AppLayoutProps) {
   const { logout, devUser, token } = useAuth();
   const { unreadCount } = useRealtime();
   const { state, isMobile } = useSidebar();
+  const { theme, setTheme } = useTheme();
   const [paletteOpen, setPaletteOpen] = useState(false);
   // Only show Dashboard shortcut on desktop when sidebar is collapsed.
   // On mobile the sidebar uses a sheet overlay — state stays "expanded".
@@ -157,6 +159,29 @@ function AppLayoutContent({ children }: AppLayoutProps) {
               >
                 <Search className="h-5 w-5" />
               </Button>
+
+              {/* Theme toggle */}
+              <TooltipProvider delayDuration={500}>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => setTheme(theme === "dark" ? "light" : "dark")}
+                      aria-label={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+                    >
+                      {theme === "dark" ? (
+                        <Sun className="h-5 w-5" />
+                      ) : (
+                        <Moon className="h-5 w-5" />
+                      )}
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent side="bottom" className="text-xs">
+                    {theme === "dark" ? "Light mode" : "Dark mode"}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
 
               {/* Notification bell */}
               <Button
