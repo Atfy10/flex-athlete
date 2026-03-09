@@ -65,6 +65,7 @@ export function useEntitySearch<T>({
 
     const fetchData = async () => {
       setLoading(true);
+      setError(null);
 
       try {
         const isSearch = debouncedTerm.length >= minLength;
@@ -73,25 +74,26 @@ export function useEntitySearch<T>({
           ? await searchFn(debouncedTerm, page, pageSize, extraParams)
           : await listFn(page, pageSize, extraParams);
 
-        if (!active || !result?.isSuccess || !result.data) {
-          setItems([]);
+        if (!active) return;
+
+        if (!result?.isSuccess || !result.data) {
+          // Keep previous items — only signal the error non-destructively
           setError("Search failed");
           setTotalPages(1);
           return;
         }
 
         const paged = result.data;
-
-        setItems(paged.items ?? []);
-
+        const newItems = paged.items ?? [];
+        lastGoodItemsRef.current = newItems;
+        setItems(newItems);
         setTotalPages(
           Math.max(1, Math.ceil(paged.totalCount / paged.pageSize)),
         );
       } catch (err) {
         if (!active) return;
-        setItems([]);
+        // Retain stale items; show error banner without blanking the list
         setError("Network error");
-        setTotalPages(1);
       } finally {
         if (active) setLoading(false);
       }

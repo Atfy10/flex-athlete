@@ -5,6 +5,7 @@ import {
 } from "@/components/ui/sidebar";
 import { AppSidebar } from "./AppSidebar";
 import { Toaster } from "@/components/ui/toaster";
+import { SessionExpiryBanner } from "@/components/SessionExpiryBanner";
 import { Button } from "@/components/ui/button";
 import {
   DropdownMenu,
