@@ -2,7 +2,6 @@ import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRealtime } from "@/contexts/RealtimeContext";
-import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
   Users,
@@ -19,8 +18,6 @@ import {
   LogOut,
   Shield,
   Bell,
-  Sun,
-  Moon,
 } from "lucide-react";
 
 import {
