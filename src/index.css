@@ -87,26 +87,59 @@
   .dark {
     --background: 220 20% 8%;
     --foreground: 220 15% 95%;
-    --card: 220 20% 10%;
+
+    --card: 220 20% 11%;
     --card-foreground: 220 15% 95%;
+
+    --popover: 220 20% 11%;
+    --popover-foreground: 220 15% 95%;
+
     --primary: 185 85% 45%;
+    --primary-foreground: 220 20% 8%;
     --primary-hover: 185 85% 50%;
+
     --secondary: 15 85% 65%;
+    --secondary-foreground: 0 0% 100%;
     --secondary-hover: 15 85% 70%;
-    --muted: 220 20% 12%;
+
+    --success: 142 70% 40%;
+    --success-foreground: 0 0% 100%;
+
+    --warning: 35 90% 50%;
+    --warning-foreground: 0 0% 100%;
+
+    --destructive: 0 80% 55%;
+    --destructive-foreground: 0 0% 100%;
+
+    --muted: 220 20% 14%;
     --muted-foreground: 220 10% 60%;
-    --accent: 185 25% 15%;
-    --accent-foreground: 185 85% 45%;
-    --border: 220 20% 15%;
-    --input: 220 20% 12%;
+
+    --accent: 185 25% 16%;
+    --accent-foreground: 185 85% 60%;
+
+    --border: 220 20% 18%;
+    --input: 220 20% 14%;
     --ring: 185 85% 45%;
-    --sidebar-background: 220 20% 8%;
-    --sidebar-foreground: 220 15% 95%;
+
+    /* Dark-mode gradients */
+    --gradient-primary: linear-gradient(135deg, hsl(185 85% 40%), hsl(195 85% 50%));
+    --gradient-secondary: linear-gradient(135deg, hsl(15 85% 55%), hsl(25 85% 60%));
+    --gradient-hero: linear-gradient(135deg, hsl(185 85% 35%) 0%, hsl(195 85% 45%) 50%, hsl(15 85% 55%) 100%);
+    --gradient-card: linear-gradient(145deg, hsl(220 20% 11%) 0%, hsl(220 20% 13%) 100%);
+
+    /* Dark-mode shadows — reduced glow */
+    --shadow-sm: 0 2px 8px hsl(220 20% 4% / 0.4);
+    --shadow-md: 0 4px 20px hsl(220 20% 4% / 0.5);
+    --shadow-lg: 0 8px 40px hsl(220 20% 4% / 0.6);
+    --shadow-glow: 0 0 30px hsl(185 85% 45% / 0.25);
+
+    --sidebar-background: 220 20% 9%;
+    --sidebar-foreground: 220 15% 90%;
     --sidebar-primary: 185 85% 45%;
     --sidebar-primary-foreground: 220 20% 8%;
-    --sidebar-accent: 220 20% 12%;
+    --sidebar-accent: 220 20% 14%;
     --sidebar-accent-foreground: 220 15% 95%;
-    --sidebar-border: 220 20% 15%;
+    --sidebar-border: 220 20% 18%;
     --sidebar-ring: 185 85% 45%;
   }
 }
