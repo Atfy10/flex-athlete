@@ -23,7 +23,7 @@ export default function Login() {
 
   const [email, setEmail]         = useState(isDevLoginEnabled() ? DEV_EMAIL : "");
   const [password, setPassword]   = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
+  
   const [errors, setErrors]       = useState<string[]>([]);
   const [loading, setLoading]     = useState(false);
 
