@@ -128,7 +128,7 @@ export default function Dashboard() {
       const months = getMonthWindow(MONTH_COUNT, offset);
       const data = await Promise.all(
         months.map(async (m) => {
-          const res = await getAverageAttendanceForMonth(String(m.value));
+          const res = await getAverageAttendanceForMonth(String(m.value), m.year);
           return { month: m.label, attendance: res.data ?? 0 };
         }),
       );
