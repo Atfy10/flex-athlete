@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { ApiResult, PagedData } from "@/types/api";
 
 type ListFn<T> = (
