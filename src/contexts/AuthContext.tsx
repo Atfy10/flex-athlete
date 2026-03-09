@@ -250,7 +250,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         logout();
       } else {
         timerRef.current = window.setTimeout(() => {
-          const currentExpiresAt = localStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
+          const currentExpiresAt = sessionStorage.getItem(STORAGE_KEYS.EXPIRES_AT);
           const storedExpiresAt = currentExpiresAt
             ? parseInt(currentExpiresAt, 10)
             : null;
