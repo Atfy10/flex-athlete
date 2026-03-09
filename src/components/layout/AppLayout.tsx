@@ -53,6 +53,7 @@ function AppLayoutContent({ children }: AppLayoutProps) {
   const { logout, devUser, token } = useAuth();
   const { unreadCount } = useRealtime();
   const { state, isMobile } = useSidebar();
+  const { theme, setTheme } = useTheme();
   const [paletteOpen, setPaletteOpen] = useState(false);
   // Only show Dashboard shortcut on desktop when sidebar is collapsed.
   // On mobile the sidebar uses a sheet overlay — state stays "expanded".
