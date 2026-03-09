@@ -165,18 +165,26 @@ export default function Trainees() {
     return () => { active = false; };
   }, []);
 
+  // Build server-side filter params (only include non-"all" values)
+  const traineeFilterParams = useMemo<Record<string, string>>(() => {
+    const p: Record<string, string> = {};
+    if (sportFilter !== "all") p.sport = sportFilter;
+    if (statusFilter !== "all") p.status = statusFilter;
+    return p;
+  }, [sportFilter, statusFilter]);
+
   const handleSearchFn = useCallback(
-    async (searchTerm: string, page: number, pageSize: number) => {
+    async (searchTerm: string, page: number, pageSize: number, extraParams?: Record<string, string>) => {
       const isNumericSearch = /^\d+$/.test(searchTerm.trim());
       return isNumericSearch
         ? searchTraineesById(searchTerm, page, pageSize)
-        : searchTrainees(searchTerm, page, pageSize);
+        : searchTrainees(searchTerm, page, pageSize, extraParams);
     },
     [],
   );
 
   const {
-    items: rawTrainees,
+    items: traineesRaw,
     loading,
     term,
     setTerm,
@@ -189,23 +197,11 @@ export default function Trainees() {
     searchFn: handleSearchFn,
     pageSize: PAGE_SIZE,
     minLength: 1,
+    extraParams: traineeFilterParams,
   });
 
-  // ── Client-side filters ───────────────────────────────────────────────────
-  const filtered = rawTrainees.filter((t) => {
-    const sportMatch =
-      sportFilter === "all" ||
-      (t.sportSkills?.some((s) => s.sportName.toLowerCase() === sportFilter.toLowerCase())) ||
-      t.sportName?.toLowerCase() === sportFilter.toLowerCase();
-    const statusMatch =
-      statusFilter === "all" ||
-      (statusFilter === "active" && t.isSubscribed) ||
-      (statusFilter === "inactive" && !t.isSubscribed);
-    return sportMatch && statusMatch;
-  });
-
-  // ── Client-side sort ──────────────────────────────────────────────────────
-  const trainees = sortItems(filtered, (t, key) => {
+  // ── Client-side sort only (filtering is now server-side) ──────────────────
+  const trainees = sortItems(traineesRaw, (t, key) => {
     if (key === "name") return `${t.firstName} ${t.lastName}`;
     if (key === "branch") return t.branchName;
     if (key === "attendance") return t.attendanceRate;
