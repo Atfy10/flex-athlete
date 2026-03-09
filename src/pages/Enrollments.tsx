@@ -571,7 +571,7 @@ const Enrollments = () => {
         </Card>
       )}
 
-      {!loading && enrollments.length > 0 && (
+      {!loading && enrollmentsRaw.length > 0 && (
         <BasePagination
           page={page} totalPages={totalPages} pageSize={PAGE_SIZE}
           onPageChange={setPage} onPageSizeChange={() => setPage(1)}
