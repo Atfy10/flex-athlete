@@ -181,8 +181,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
       if (!token || !expiresAt) throw new Error("Invalid token from server");
 
-      localStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
-      localStorage.setItem(STORAGE_KEYS.EXPIRES_AT, expiresAt.toString());
+      sessionStorage.setItem(STORAGE_KEYS.ACCESS_TOKEN, token);
+      sessionStorage.setItem(STORAGE_KEYS.EXPIRES_AT, expiresAt.toString());
 
       setAuth({ token, expiresAt, isAuthenticated: true, devUser: null });
       setApiAccessToken(token);
