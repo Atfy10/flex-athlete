@@ -124,13 +124,8 @@ const Enrollments = () => {
 
   const handleRefresh = useCallback(() => { refresh?.(); fetchStats(); }, [refresh, fetchStats]);
 
-  const filteredEnrollments = enrollments.filter((e) => {
-    const matchesStatus = statusFilter === "all" || e.status === statusFilter;
-    const matchesPayment = paymentFilter === "all" || e.paymentStatus === paymentFilter;
-    return matchesStatus && matchesPayment;
-  });
-
-  const sortedEnrollments = sortItems(filteredEnrollments, (e, key) =>
+  // Filtering is now server-side; only sort client-side
+  const sortedEnrollments = sortItems(enrollmentsRaw, (e, key) =>
     (e as unknown as Record<string, unknown>)[key] as string ?? ""
   );
 
