@@ -248,22 +248,8 @@ export function AppSidebar() {
           </SidebarGroup>
         </Collapsible>
 
-        {/* Bottom actions: theme toggle + logout */}
-        <div className="mt-auto px-2 pb-4 space-y-1">
-          {/* Dark mode toggle */}
-          <button
-            onClick={toggleTheme}
-            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
-            className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
-          >
-            {theme === "dark" ? (
-              <Sun className="h-5 w-5" />
-            ) : (
-              <Moon className="h-5 w-5" />
-            )}
-            {!collapsed && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
-          </button>
-
+        {/* Bottom actions: logout */}
+        <div className="mt-auto px-2 pb-4">
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"
