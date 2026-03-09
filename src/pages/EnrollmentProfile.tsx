@@ -17,6 +17,7 @@ import {
   suspendEnrollment,
   updatePaymentStatus,
 } from "@/services/enrollment.services";
+import { EnrollmentDetailDto } from "@/types/EnrollmentDetailDto";
 
 interface EnrollmentDetailDto {
   id: number;
