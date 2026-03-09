@@ -138,19 +138,6 @@ export default function Login() {
               </Alert>
             )}
 
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="rememberMe"
-                checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked === true)}
-              />
-              <Label
-                htmlFor="rememberMe"
-                className="text-sm font-normal cursor-pointer"
-              >
-                Remember me
-              </Label>
-            </div>
 
             <Button
               type="submit"
