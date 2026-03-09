@@ -94,10 +94,18 @@ const Enrollments = () => {
   const [view, setView] = useState<ViewMode>("grid");
   const { sort, toggle: toggleSort, sortItems } = useSortable<SortKey>();
 
+  const enrollmentFilterParams = useMemo<Record<string, string>>(() => {
+    const p: Record<string, string> = {};
+    if (statusFilter !== "all") p.status = statusFilter;
+    if (paymentFilter !== "all") p.paymentStatus = paymentFilter;
+    return p;
+  }, [statusFilter, paymentFilter]);
+
   const {
-    items: enrollments, loading, term, setTerm, page, setPage, totalPages, refresh,
+    items: enrollmentsRaw, loading, term, setTerm, page, setPage, totalPages, refresh,
   } = useEntitySearch<EnrollmentCardDto>({
     listFn: listEnrollments, searchFn: searchEnrollments, pageSize: PAGE_SIZE, minLength: 2,
+    extraParams: enrollmentFilterParams,
   });
 
   const fetchStats = useCallback(async () => {
