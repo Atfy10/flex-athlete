@@ -1,4 +1,4 @@
-import { useCallback, useState } from "react";
+import { useCallback, useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -24,6 +24,7 @@ import {
   getTraineeGroups,
   searchTraineeGroups,
   deleteTraineeGroup,
+  countTraineeGroups,
 } from "@/services/traineeGroup.services";
 import { ListTraineeGroupDto } from "@/types/listTraineeGroup";
 import { useToast } from "@/hooks/use-toast";
@@ -67,6 +68,7 @@ export default function TraineeGroups() {
   const [deleteTarget, setDeleteTarget] = useState<ListTraineeGroupDto | null>(null);
   const [deleteLoading, setDeleteLoading] = useState(false);
   const [view, setView] = useState<ViewMode>("grid");
+  const [totalGroupCount, setTotalGroupCount] = useState<number | null>(null);
   const { sort, toggle: toggleSort, sortItems } = useSortable<SortKey>();
 
   const listFn = useCallback(
@@ -110,8 +112,15 @@ export default function TraineeGroups() {
     return typeof v === "number" ? v : String(v);
   });
 
+  // Fetch total group count for the "Total Groups" stat card
+  useEffect(() => {
+    countTraineeGroups()
+      .then((res) => { if (res.isSuccess) setTotalGroupCount(res.data); })
+      .catch(() => {});
+  }, []);
+
   const statsData = [
-    { title: "Groups (this page)", value: loading ? "—" : String(groups.length), icon: Users },
+    { title: "Total Groups", value: totalGroupCount != null ? String(totalGroupCount) : (loading ? "—" : String(groups.length)), icon: Users },
     {
       title: "Total Trainees",
       value: loading ? "—" : String(groups.reduce((s, g) => s + (g.traineesCount ?? 0), 0)),
@@ -124,7 +133,11 @@ export default function TraineeGroups() {
         : `${Math.round(groups.reduce((s, g) => s + g.durationInMinutes, 0) / groups.length)} min`,
       icon: Clock,
     },
-    { title: "Total Schedules", value: "—", icon: Calendar },
+    {
+      title: "Total Groups",
+      value: totalGroupCount != null ? String(totalGroupCount) : "—",
+      icon: Calendar,
+    },
   ];
 
   return (

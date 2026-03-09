@@ -82,3 +82,9 @@ export const deleteTraineeGroup = async (id: number | string) => {
   if (isDevSession()) return devMock<boolean>(true);
   return apiFetch<ApiResult<boolean>>(`/api/TraineeGroup/${id}`, { method: "DELETE" });
 };
+
+/** Total trainee group count (used for stat card) */
+export const countTraineeGroups = () => {
+  if (isDevSession()) return Promise.resolve(devMock<number>(0));
+  return apiFetch<ApiResult<number>>("/api/TraineeGroup/count");
+};

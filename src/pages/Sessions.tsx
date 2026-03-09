@@ -7,6 +7,7 @@ import { Badge } from "@/components/ui/badge";
 import { SessionCardSkeleton, StatCardSkeleton } from "@/components/ui/CardSkeleton";
 import { FilterBar } from "@/components/FilterBar";
 import { EmptyState } from "@/components/EmptyState";
+import { getActiveCoachesCount } from "@/services/coaches.service";
 import {
   Plus,
   Clock,
@@ -86,8 +87,10 @@ export default function Sessions() {
   }, []);
 
   // Stats
-  const [totalSessions,  setTotalSessions]  = useState<number | null>(null);
+  const [totalSessions,   setTotalSessions]   = useState<number | null>(null);
   const [todayGroupCount, setTodayGroupCount] = useState<number | null>(null);
+  const [activeCoaches,   setActiveCoaches]   = useState<number | null>(null);
+  const [avgDuration,     setAvgDuration]     = useState<number | null>(null);
 
   // Date-filtered mode uses a separate local state
   const [dateItems,      setDateItems]      = useState<SessionCardDto[]>([]);
@@ -124,14 +127,17 @@ export default function Sessions() {
 
   // ── Stats fetch ──────────────────────────────────────────────────────────
   const loadStats = useCallback(async () => {
-    const [total, todayRes] = await Promise.allSettled([
+    const [total, todayRes, coachesRes] = await Promise.allSettled([
       countSessions(),
       getSessionsByDate(todayIso(), 1, 1),
+      getActiveCoachesCount(),
     ]);
     if (total.status === "fulfilled" && total.value.isSuccess)
       setTotalSessions(total.value.data);
     if (todayRes.status === "fulfilled" && todayRes.value.isSuccess)
       setTodayGroupCount(todayRes.value.data.totalCount);
+    if (coachesRes.status === "fulfilled" && coachesRes.value.isSuccess)
+      setActiveCoaches(coachesRes.value.data);
   }, []);
 
   useEffect(() => { loadStats(); }, [loadStats]);
@@ -163,6 +169,16 @@ export default function Sessions() {
   // Reset date page when date changes
   useEffect(() => { setDatePage(1); }, [selectedDate]);
 
+  // ── Derive Avg. Duration from loaded items ────────────────────────────────
+  useEffect(() => {
+    const source = useDate ? dateItems : searchItems;
+    if (source.length === 0) return;
+    const avg = Math.round(
+      source.reduce((sum, s) => sum + s.durationInMinutes, 0) / source.length,
+    );
+    setAvgDuration(avg);
+  }, [searchItems, dateItems, useDate]);
+
   // ── onSuccess callback — refresh list + stats ────────────────────────────
   const handleGenerateSuccess = useCallback(() => {
     refresh();
@@ -183,8 +199,8 @@ export default function Sessions() {
   const statsValues = [
     totalSessions   != null ? String(totalSessions)   : "—",
     todayGroupCount != null ? String(todayGroupCount) : "—",
-    "—",
-    "—",
+    activeCoaches   != null ? String(activeCoaches)   : "—",
+    avgDuration     != null ? `${avgDuration} min`    : "—",
   ];
 
   return (
