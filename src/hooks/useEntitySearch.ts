@@ -41,7 +41,7 @@ export function useEntitySearch<T>({
   const [totalPages, setTotalPages] = useState(1);
   const [error, setError] = useState<string | null>(null);
   // Keeps the last successfully fetched items so UI isn't blanked on transient errors
-  const lastGoodItemsRef = React.useRef<T[]>([]);
+  const lastGoodItemsRef = useRef<T[]>([]);
 
   // Debounce
   useEffect(() => {
