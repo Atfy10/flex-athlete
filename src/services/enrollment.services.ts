@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api";
 import { ApiResult, PagedData } from "@/types/api";
 import { EnrollmentCardDto } from "@/types/EnrollmentCardDto";
+import { EnrollmentDetailDto } from "@/types/EnrollmentDetailDto";
 import { isDevSession, devMock } from "@/auth/dev-login";
 
 export const getEnrollments = async (
