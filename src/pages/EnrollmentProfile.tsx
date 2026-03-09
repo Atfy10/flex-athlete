@@ -36,13 +36,11 @@ export default function EnrollmentProfile() {
     setLoading(true);
     setError(null);
     try {
-      const res = await getEnrollmentById(id) as {
-        isSuccess: boolean;
-        data: EnrollmentDetailDto;
-        message: string;
-      };
+      const res = await getEnrollmentById(id);
       if (res.isSuccess && res.data) {
-        setEnrollment(res.data);
+        // Normalize: backend may return coachName instead of coach
+        const data = res.data;
+        setEnrollment({ ...data, coach: data.coach ?? data.coachName });
       } else {
         setError(res.message || "Enrollment not found.");
       }
