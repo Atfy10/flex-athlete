@@ -5,7 +5,6 @@ import { ApiError } from "@/lib/api";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Checkbox } from "@/components/ui/checkbox";
 import {
   Card,
   CardContent,
@@ -23,7 +22,7 @@ export default function Login() {
 
   const [email, setEmail]         = useState(isDevLoginEnabled() ? DEV_EMAIL : "");
   const [password, setPassword]   = useState("");
-  const [rememberMe, setRememberMe] = useState(false);
+  
   const [errors, setErrors]       = useState<string[]>([]);
   const [loading, setLoading]     = useState(false);
 
@@ -139,19 +138,6 @@ export default function Login() {
               </Alert>
             )}
 
-            <div className="flex items-center gap-2">
-              <Checkbox
-                id="rememberMe"
-                checked={rememberMe}
-                onCheckedChange={(checked) => setRememberMe(checked === true)}
-              />
-              <Label
-                htmlFor="rememberMe"
-                className="text-sm font-normal cursor-pointer"
-              >
-                Remember me
-              </Label>
-            </div>
 
             <Button
               type="submit"
