@@ -24,6 +24,7 @@ import {
   getTraineeGroups,
   searchTraineeGroups,
   deleteTraineeGroup,
+  countTraineeGroups,
 } from "@/services/traineeGroup.services";
 import { ListTraineeGroupDto } from "@/types/listTraineeGroup";
 import { useToast } from "@/hooks/use-toast";

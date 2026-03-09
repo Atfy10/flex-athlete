@@ -33,7 +33,25 @@ import Register from "./pages/Register";
 import Sessions from "./pages/Sessions";
 import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
-const queryClient = new QueryClient();
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      // Data is considered fresh for 60 s — prevents redundant refetches on tab focus
+      staleTime: 60_000,
+      // Keep unused cache for 5 minutes before garbage-collecting
+      gcTime: 5 * 60_000,
+      // Retry failed requests twice with exponential back-off
+      retry: 2,
+      retryDelay: (attempt) => Math.min(1_000 * 2 ** attempt, 30_000),
+      // Refetch on window focus so data stays fresh without manual refresh
+      refetchOnWindowFocus: true,
+    },
+    mutations: {
+      // No automatic retry for writes — side-effects must be idempotent to retry
+      retry: 0,
+    },
+  },
+});
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
