@@ -6,6 +6,18 @@ import { UpdateTraineeCommand } from "@/types/commands/updateTraineeCommand";
 import { CreateTraineeCommand } from "@/types/commands/createTraineeCommand";
 import { isDevSession, devMock } from "@/auth/dev-login";
 
+/** Build a query-string from a params object, omitting "all" / empty values */
+function buildQuery(base: Record<string, string | number>, extra?: Record<string, string>): string {
+  const p = new URLSearchParams();
+  for (const [k, v] of Object.entries(base)) p.set(k, String(v));
+  if (extra) {
+    for (const [k, v] of Object.entries(extra)) {
+      if (v && v !== "all") p.set(k, v);
+    }
+  }
+  return p.toString();
+}
+
 export const countTrainees = async () => {
   if (isDevSession()) return devMock<number>(0);
   return await apiFetch<ApiResult<number>>(`/api/trainee/count`);
@@ -19,10 +31,12 @@ export const countActiveTrainees = async () => {
 export const listTrainees = async (
   page: number,
   pageSize: number,
+  extraParams?: Record<string, string>,
 ): Promise<ApiResult<PagedData<TraineeCardDto>>> => {
   if (isDevSession()) return devMock<PagedData<TraineeCardDto>>({ items: [], totalCount: 0, page, pageSize });
+  const qs = buildQuery({ page, pageSize }, extraParams);
   return await apiFetch<ApiResult<PagedData<TraineeCardDto>>>(
-    `/api/trainee?page=${page}&pageSize=${pageSize}`,
+    `/api/trainee?${qs}`,
   );
 };
 
@@ -30,10 +44,12 @@ export const searchTrainees = async (
   term: string,
   page: number,
   pageSize: number,
+  extraParams?: Record<string, string>,
 ): Promise<ApiResult<PagedData<TraineeCardDto>>> => {
   if (isDevSession()) return devMock<PagedData<TraineeCardDto>>({ items: [], totalCount: 0, page, pageSize });
+  const qs = buildQuery({ searchTerm: encodeURIComponent(term), page, pageSize }, extraParams);
   return await apiFetch<ApiResult<PagedData<TraineeCardDto>>>(
-    `/api/trainee/search?searchTerm=${encodeURIComponent(term)}&page=${page}&pageSize=${pageSize}`,
+    `/api/trainee/search?${qs}`,
   );
 };
 

@@ -4,12 +4,14 @@ import { ApiResult, PagedData } from "@/types/api";
 type ListFn<T> = (
   page: number,
   pageSize: number,
+  extraParams?: Record<string, string>,
 ) => Promise<ApiResult<PagedData<T>>>;
 
 type SearchFn<T> = (
   term: string,
   page: number,
   pageSize: number,
+  extraParams?: Record<string, string>,
 ) => Promise<ApiResult<PagedData<T>>>;
 
 interface UseEntitySearchProps<T> {
@@ -18,6 +20,8 @@ interface UseEntitySearchProps<T> {
   pageSize?: number;
   minLength?: number;
   debounceMs?: number;
+  /** Extra query-string params forwarded to both listFn and searchFn (e.g. filters) */
+  extraParams?: Record<string, string>;
 }
 
 export function useEntitySearch<T>({
@@ -26,6 +30,7 @@ export function useEntitySearch<T>({
   pageSize = 9,
   minLength = 2,
   debounceMs = 400,
+  extraParams,
 }: UseEntitySearchProps<T>) {
   const [term, setTerm] = useState("");
   const [debouncedTerm, setDebouncedTerm] = useState("");
@@ -45,10 +50,11 @@ export function useEntitySearch<T>({
     return () => clearTimeout(id);
   }, [term, debounceMs]);
 
-  // Reset page when term changes
+  // Reset page when term or extra params change
+  const extraParamsKey = JSON.stringify(extraParams ?? {});
   useEffect(() => {
     setPage(1);
-  }, [debouncedTerm]);
+  }, [debouncedTerm, extraParamsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useEffect(() => {
     if (debouncedTerm.length === 1) return;
@@ -62,8 +68,8 @@ export function useEntitySearch<T>({
         const isSearch = debouncedTerm.length >= minLength;
 
         const result = isSearch
-          ? await searchFn(debouncedTerm, page, pageSize)
-          : await listFn(page, pageSize);
+          ? await searchFn(debouncedTerm, page, pageSize, extraParams)
+          : await listFn(page, pageSize, extraParams);
 
         if (!active || !result?.isSuccess || !result.data) {
           setItems([]);
@@ -94,7 +100,7 @@ export function useEntitySearch<T>({
     return () => {
       active = false;
     };
-  }, [debouncedTerm, page, minLength, pageSize, listFn, searchFn, refreshKey]);
+  }, [debouncedTerm, page, minLength, pageSize, listFn, searchFn, refreshKey, extraParamsKey]); // eslint-disable-line react-hooks/exhaustive-deps
 
   const refresh = () => setRefreshKey((k) => k + 1);
 
