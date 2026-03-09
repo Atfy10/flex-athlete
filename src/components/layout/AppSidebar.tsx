@@ -2,6 +2,7 @@ import { useState } from "react";
 import { NavLink, useLocation, useNavigate } from "react-router-dom";
 import { useAuth } from "@/contexts/AuthContext";
 import { useRealtime } from "@/contexts/RealtimeContext";
+import { useTheme } from "next-themes";
 import {
   LayoutDashboard,
   Users,
@@ -18,6 +19,8 @@ import {
   LogOut,
   Shield,
   Bell,
+  Sun,
+  Moon,
 } from "lucide-react";
 
 import {
@@ -56,22 +59,26 @@ const operationsItems = [
   { title: "Enrollments", url: "/enrollments", icon: UserPlus },
   { title: "Attendance", url: "/attendance", icon: ClipboardCheck },
   { title: "Profiles", url: "/profiles", icon: User },
-  { title: "Users & Roles", url: "/users-roles", icon: Shield },
 ];
 
 export function AppSidebar() {
   const { state } = useSidebar();
   const location = useLocation();
   const navigate = useNavigate();
-  const { logout } = useAuth();
+  const { logout, hasRole } = useAuth();
   const { unreadCount } = useRealtime();
+  const { theme, setTheme } = useTheme();
   const currentPath = location.pathname;
   const collapsed = state === "collapsed";
+
+  const isAdmin = hasRole("Admin");
 
   const handleLogout = () => {
     logout();
     navigate("/login", { replace: true });
   };
+
+  const toggleTheme = () => setTheme(theme === "dark" ? "light" : "dark");
 
   const [managementOpen, setManagementOpen] = useState(true);
   const [operationsOpen, setOperationsOpen] = useState(true);
@@ -225,14 +232,44 @@ export function AppSidebar() {
                       </SidebarMenuButton>
                     </SidebarMenuItem>
                   ))}
+
+                  {/* Users & Roles — Admin only */}
+                  {isAdmin && (
+                    <SidebarMenuItem>
+                      <SidebarMenuButton
+                        asChild
+                        isActive={isActive("/users-roles")}
+                        className={navItemCls}
+                      >
+                        <NavLink to="/users-roles">
+                          <Shield className="h-5 w-5" />
+                          {!collapsed && <span>Users &amp; Roles</span>}
+                        </NavLink>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  )}
                 </SidebarMenu>
               </SidebarGroupContent>
             </CollapsibleContent>
           </SidebarGroup>
         </Collapsible>
 
-        {/* Logout */}
-        <div className="mt-auto px-2 pb-4">
+        {/* Bottom actions: theme toggle + logout */}
+        <div className="mt-auto px-2 pb-4 space-y-1">
+          {/* Dark mode toggle */}
+          <button
+            onClick={toggleTheme}
+            title={theme === "dark" ? "Switch to light mode" : "Switch to dark mode"}
+            className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-foreground hover:bg-muted/50 transition-colors"
+          >
+            {theme === "dark" ? (
+              <Sun className="h-5 w-5" />
+            ) : (
+              <Moon className="h-5 w-5" />
+            )}
+            {!collapsed && <span>{theme === "dark" ? "Light Mode" : "Dark Mode"}</span>}
+          </button>
+
           <button
             onClick={handleLogout}
             className="flex items-center gap-2 w-full px-3 py-2 rounded-md text-sm text-muted-foreground hover:text-destructive hover:bg-destructive/10 transition-colors"

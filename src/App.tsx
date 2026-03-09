@@ -3,6 +3,7 @@ import { Toaster as Sonner } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { ThemeProvider } from "next-themes";
 import { AuthProvider } from "./contexts/AuthContext";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { AppLayout } from "./components/layout/AppLayout";
@@ -33,6 +34,7 @@ import Register from "./pages/Register";
 import Sessions from "./pages/Sessions";
 import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
@@ -54,66 +56,75 @@ const queryClient = new QueryClient({
 });
 
 const App = () => (
-  <QueryClientProvider client={queryClient}>
-    <TooltipProvider>
-      <Toaster />
-      <Sonner />
-      <BrowserRouter>
-        <AuthProvider>
-          <ScrollToTop />
-          <Routes>
-            {/* Public routes */}
-            <Route path="/login" element={<Login />} />
-            <Route path="/register" element={<Register />} />
+  <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+    <QueryClientProvider client={queryClient}>
+      <TooltipProvider>
+        <Toaster />
+        <Sonner />
+        <BrowserRouter>
+          <AuthProvider>
+            <ScrollToTop />
+            <Routes>
+              {/* Public routes */}
+              <Route path="/login" element={<Login />} />
+              <Route path="/register" element={<Register />} />
 
-            {/* Protected routes */}
-            <Route
-              path="/*"
-              element={
-              <ProtectedRoute>
-                  <AppLayout>
-                    <ErrorBoundary>
-                      <Routes>
-                      <Route path="/" element={<Dashboard />} />
-                      <Route path="/my-profile" element={<MyProfile />} />
-                      <Route path="/employees" element={<Employees />} />
-                      <Route path="/employees/:id" element={<EmployeeProfile />} />
-                      <Route path="/coaches" element={<Coaches />} />
-                      <Route path="/coaches/:id" element={<CoachProfile />} />
-                      <Route path="/trainees" element={<Trainees />} />
-                      <Route path="/trainees/:id" element={<TraineeProfile />} />
-                      <Route path="/branches/:id" element={<BranchProfile />} />
-                      <Route path="/sports/:id" element={<SportProfile />} />
-                      <Route path="/trainee-groups/:id" element={<TraineeGroupProfile />} />
-                      <Route path="/enrollments/:id" element={<EnrollmentProfile />} />
-                      <Route
-                        path="/trainee-groups"
-                        element={<TraineeGroups />}
-                      />
-                      <Route
-                        path="/session-occurrences"
-                        element={<SessionOccurrences />}
-                      />
-                      <Route path="/branches" element={<Branches />} />
-                      <Route path="/sports" element={<Sports />} />
-                      <Route path="/sessions" element={<Sessions />} />
-                      <Route path="/enrollments" element={<Enrollments />} />
-                      <Route path="/attendance" element={<Attendance />} />
-                      <Route path="/profiles" element={<Profiles />} />
-                      <Route path="/users-roles" element={<UsersRoles />} />
-                      <Route path="/notifications" element={<NotificationsPage />} />
-                      <Route path="*" element={<NotFound />} />
-                    </Routes>
-                    </ErrorBoundary>
-                  </AppLayout>
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </AuthProvider>
-      </BrowserRouter>
-    </TooltipProvider>
-  </QueryClientProvider>
+              {/* Protected routes */}
+              <Route
+                path="/*"
+                element={
+                <ProtectedRoute>
+                    <AppLayout>
+                      <ErrorBoundary>
+                        <Routes>
+                        <Route path="/" element={<Dashboard />} />
+                        <Route path="/my-profile" element={<MyProfile />} />
+                        <Route path="/employees" element={<Employees />} />
+                        <Route path="/employees/:id" element={<EmployeeProfile />} />
+                        <Route path="/coaches" element={<Coaches />} />
+                        <Route path="/coaches/:id" element={<CoachProfile />} />
+                        <Route path="/trainees" element={<Trainees />} />
+                        <Route path="/trainees/:id" element={<TraineeProfile />} />
+                        <Route path="/branches/:id" element={<BranchProfile />} />
+                        <Route path="/sports/:id" element={<SportProfile />} />
+                        <Route path="/trainee-groups/:id" element={<TraineeGroupProfile />} />
+                        <Route path="/enrollments/:id" element={<EnrollmentProfile />} />
+                        <Route
+                          path="/trainee-groups"
+                          element={<TraineeGroups />}
+                        />
+                        <Route
+                          path="/session-occurrences"
+                          element={<SessionOccurrences />}
+                        />
+                        <Route path="/branches" element={<Branches />} />
+                        <Route path="/sports" element={<Sports />} />
+                        <Route path="/sessions" element={<Sessions />} />
+                        <Route path="/enrollments" element={<Enrollments />} />
+                        <Route path="/attendance" element={<Attendance />} />
+                        <Route path="/profiles" element={<Profiles />} />
+                        <Route
+                          path="/users-roles"
+                          element={
+                            <ProtectedRoute requiredRole="Admin">
+                              <UsersRoles />
+                            </ProtectedRoute>
+                          }
+                        />
+                        <Route path="/notifications" element={<NotificationsPage />} />
+                        <Route path="*" element={<NotFound />} />
+                      </Routes>
+                      </ErrorBoundary>
+                    </AppLayout>
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </AuthProvider>
+        </BrowserRouter>
+      </TooltipProvider>
+    </QueryClientProvider>
+  </ThemeProvider>
 );
 
 export default App;
