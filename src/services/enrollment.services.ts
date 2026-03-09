@@ -1,6 +1,7 @@
 import { apiFetch } from "@/lib/api";
 import { ApiResult, PagedData } from "@/types/api";
 import { EnrollmentCardDto } from "@/types/EnrollmentCardDto";
+import { EnrollmentDetailDto } from "@/types/EnrollmentDetailDto";
 import { isDevSession, devMock } from "@/auth/dev-login";
 
 export const getEnrollments = async (
@@ -46,8 +47,8 @@ export const countPendingPayments = async () => {
 };
 
 export const getEnrollmentById = async (id: number | string) => {
-  if (isDevSession()) return devMock<null>(null);
-  return apiFetch<ApiResult<unknown>>(`/api/enrollment/${id}`);
+  if (isDevSession()) return devMock<EnrollmentDetailDto | null>(null);
+  return apiFetch<ApiResult<EnrollmentDetailDto>>(`/api/enrollment/${id}`);
 };
 
 export const deleteEnrollment = async (id: number | string) => {
