@@ -150,9 +150,10 @@ export default function TraineeGroupProfile() {
           },
         ]}
         editModal={
-          <TraineeGroupFormModal
+          <TraineeGroupEditModal
             open={editOpen}
             onOpenChange={setEditOpen}
+            group={group}
             onSuccess={() => {
               setEditOpen(false);
               fetchGroup();
