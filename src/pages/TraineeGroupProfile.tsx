@@ -10,7 +10,7 @@ import {
   TraineeGroupDetailDto,
 } from "@/services/traineeGroup.services";
 import { OperateGroupModal } from "@/components/modals/OperateGroupModal";
-import { TraineeGroupFormModal } from "@/components/modals/TraineeGroupFormModal";
+import { TraineeGroupEditModal } from "@/components/modals/TraineeGroupEditModal";
 
 export default function TraineeGroupProfile() {
   const { id } = useParams<{ id: string }>();
