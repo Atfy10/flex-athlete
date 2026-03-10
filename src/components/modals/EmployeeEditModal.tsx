@@ -64,7 +64,11 @@ export function EmployeeEditModal({ open, onOpenChange, onSuccess, employee }: E
     apiFetch<{ data: { id: number; name: string }[]; isSuccess: boolean }>("/api/Branch")
       .then((res) => {
         if (res.isSuccess) {
-          setBranches(res.data.map((b) => ({ value: String(b.id), label: b.name })));
+          const opts = res.data.map((b) => ({ value: String(b.id), label: b.name }));
+          setBranches(opts);
+          // Resolve current branch by name → ID
+          const match = opts.find((o) => o.label === employee.branchName);
+          if (match) setForm((f) => ({ ...f, branchId: match.value }));
         }
       })
       .catch(() => {});
