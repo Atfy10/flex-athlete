@@ -52,18 +52,25 @@ export function EnrollmentEditModal({
     if (!open || !enrollment) return;
     resetDirty();
     setErrors([]);
+    // Initialise all fields from prop immediately
     setForm({
       expiryDate: enrollment.expiryDate ? parseISO(enrollment.expiryDate) : undefined,
       sessionAllowed: enrollment.sessionAllowed != null ? String(enrollment.sessionAllowed) : "",
-      subscriptionDetailsId: enrollment.subscriptionDetailsId != null ? String(enrollment.subscriptionDetailsId) : "",
+      // subscriptionDetailsId resolved after options load to avoid blank select
+      subscriptionDetailsId: "",
     });
 
     apiFetch<{ data: { id: number; name: string }[]; isSuccess: boolean }>(
       "/api/SubscriptionDetails/get-all",
     )
       .then((res) => {
-        if (res.isSuccess)
+        if (res.isSuccess) {
           setSubscriptions(res.data.map((s) => ({ value: String(s.id), label: s.name })));
+          // Set value only after options are available so the select renders correctly
+          if (enrollment.subscriptionDetailsId != null) {
+            setForm((f) => ({ ...f, subscriptionDetailsId: String(enrollment.subscriptionDetailsId) }));
+          }
+        }
       })
       .catch(() => {});
   }, [open, enrollment]);

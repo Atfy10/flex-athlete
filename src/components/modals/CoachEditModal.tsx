@@ -36,7 +36,13 @@ export function CoachEditModal({ open, onOpenChange, onSuccess, coach }: CoachEd
     setForm({ sportId: "", skillLevel: coach.skillLevel ?? "" });
     apiFetch<{ data: { id: number; name: string }[]; isSuccess: boolean }>("/api/Sports/get-all")
       .then((res) => {
-        if (res.isSuccess) setSports(res.data.map((s) => ({ value: String(s.id), label: s.name })));
+        if (res.isSuccess) {
+          const opts = res.data.map((s) => ({ value: String(s.id), label: s.name }));
+          setSports(opts);
+          // Resolve current sport by name → ID
+          const match = opts.find((o) => o.label === coach.sportName);
+          if (match) setForm((f) => ({ ...f, sportId: match.value }));
+        }
       })
       .catch(() => {});
   }, [open, coach]);

@@ -73,9 +73,6 @@ export function TraineeEditModal({
           if (currentBranch) {
             setForm((f) => ({ ...f, branchId: currentBranch.value }));
           }
-
-          console.log("branchId", form.branchId);
-          console.log("branches", branches);
         }
         if (spRes.isSuccess) {
           const sportsData = spRes.data.map((s) => ({
