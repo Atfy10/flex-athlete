@@ -37,7 +37,7 @@ export const getTraineeGroupsForSpecificDay = async (
 ) => {
   if (isDevSession()) return devMock<PagedData<ListTraineeGroupDto>>({ items: [], totalCount: 0, page, pageSize });
   return apiFetch<ApiResult<PagedData<ListTraineeGroupDto>>>(
-    `/api/TraineeGroup/get-all-for-specific-day?date=${date}&page=${page}&pageSize=${pageSize}`,
+    `/api/TraineeGroup/for-specific-day?date=${date}&page=${page}&pageSize=${pageSize}`,
   );
 };
 

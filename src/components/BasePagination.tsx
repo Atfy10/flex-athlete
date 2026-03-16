@@ -26,16 +26,21 @@ interface BasePaginationProps {
 }
 
 export function BasePagination({
-  page,
-  totalPages,
+  page: rawPage,
+  totalPages: rawTotalPages,
   pageSize,
   totalCount,
   onPageChange,
   onPageSizeChange,
   pageSizeOptions = [10, 20, 50],
 }: BasePaginationProps) {
-  const from = totalCount === 0 ? 0 : (page - 1) * pageSize + 1;
-  const to = totalCount != null ? Math.min(page * pageSize, totalCount) : page * pageSize;
+  // Guard against NaN / invalid values
+  const totalPages = Number.isFinite(rawTotalPages) && rawTotalPages >= 1 ? rawTotalPages : 1;
+  const page = Number.isFinite(rawPage) && rawPage >= 1 ? rawPage : 1;
+  const safeTotal = Number.isFinite(totalCount) ? totalCount : undefined;
+
+  const from = safeTotal === 0 ? 0 : (page - 1) * pageSize + 1;
+  const to = safeTotal != null ? Math.min(page * pageSize, safeTotal) : page * pageSize;
 
   const getVisiblePages = (): (number | "ellipsis")[] => {
     if (totalPages <= 7) return Array.from({ length: totalPages }, (_, i) => i + 1);
@@ -56,8 +61,8 @@ export function BasePagination({
     <div className="flex flex-col sm:flex-row items-center justify-between gap-4 pt-4">
       {/* Record count */}
       <div className="text-sm text-muted-foreground">
-        {totalCount != null
-          ? `Showing ${from}–${to} of ${totalCount} records`
+        {safeTotal != null
+          ? `Showing ${from}–${to} of ${safeTotal} records`
           : `Page ${page} of ${totalPages}`}
       </div>
 

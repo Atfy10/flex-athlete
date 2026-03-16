@@ -18,6 +18,7 @@ import {
   LogOut,
   Shield,
   Bell,
+  Video,
 } from "lucide-react";
 
 import {
@@ -39,7 +40,10 @@ import {
 } from "@/components/ui/collapsible";
 import { cn } from "@/lib/utils";
 
-const mainItems = [{ title: "Dashboard", url: "/", icon: LayoutDashboard }];
+const mainItems = [
+  { title: "Dashboard", url: "/", icon: LayoutDashboard },
+  { title: "Video Analysis", url: "/video-analysis", icon: Video },
+];
 
 const managementItems = [
   { title: "Employees", url: "/employees", icon: Users },

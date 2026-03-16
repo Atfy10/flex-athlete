@@ -330,7 +330,11 @@ const Attendance = () => {
     setSessions([]);
     try {
       const res = await getSessionOccurrencesByDate(date);
-      if (res.isSuccess) setSessions(res.data.items);
+      if (res.isSuccess) {
+        // Backend may return a flat list or a paged object
+        const raw = res.data as any;
+        setSessions(Array.isArray(raw) ? raw : (raw?.items ?? []));
+      }
       else toast({ title: "Failed to load sessions.", variant: "destructive" });
     } catch {
       toast({ title: "Failed to load sessions.", variant: "destructive" });
@@ -358,23 +362,24 @@ const Attendance = () => {
   }, []);
 
   // Derive stat values from loaded sessions
-  const todayTotal    = sessions.length;
-  const todayPresent  = sessions.reduce((s, r) => s + r.totalPresent + r.totalLate, 0);
-  const todayAbsent   = sessions.reduce((s, r) => s + r.totalAbsent, 0);
-  const todayEnrolled = sessions.reduce((s, r) => s + r.totalEnrolled, 0);
+  const safeSessions = sessions ?? [];
+  const todayTotal    = safeSessions.length;
+  const todayPresent  = safeSessions.reduce((s, r) => s + r.totalPresent + r.totalLate, 0);
+  const todayAbsent   = safeSessions.reduce((s, r) => s + r.totalAbsent, 0);
+  const todayEnrolled = safeSessions.reduce((s, r) => s + r.totalEnrolled, 0);
 
 type AttendanceSortKey = "sportName" | "coachName" | "branchName" | "startTime" | "durationInMinutes" | "totalPresent" | "totalEnrolled";
 
   // Filter sessions by search term (session-level: sport, coach, branch)
   const filteredSessions =
     searchTerm.trim().length >= 2
-      ? sessions.filter(
+      ? safeSessions.filter(
           (s) =>
             s.sportName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             s.coachName.toLowerCase().includes(searchTerm.toLowerCase()) ||
             s.branchName.toLowerCase().includes(searchTerm.toLowerCase()),
         )
-      : sessions;
+      : safeSessions;
 
   const visibleSessions = sortItems(filteredSessions, (s, key) => {
     const v = (s as unknown as Record<string, unknown>)[key] ?? "";

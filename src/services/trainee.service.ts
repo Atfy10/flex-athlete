@@ -84,7 +84,7 @@ export const updateTrainee = async (command: UpdateTraineeCommand) => {
 export const getTRaineesCountForSpecificDay = async (date: string) => {
   if (isDevSession()) return devMock<number>(0);
   return await apiFetch<ApiResult<number>>(
-    `/api/Trainee/get-count-for-specific-day?date=${date}`,
+    `/api/Trainee/count/for-specific-day?date=${date}`,
   );
 };
 

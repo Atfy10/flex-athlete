@@ -34,6 +34,7 @@ import Register from "./pages/Register";
 import Sessions from "./pages/Sessions";
 import NotificationsPage from "./pages/NotificationsPage";
 import NotFound from "./pages/NotFound";
+import VideoAnalysis from "./pages/VideoAnalysis";
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -112,6 +113,7 @@ const App = () => (
                           }
                         />
                         <Route path="/notifications" element={<NotificationsPage />} />
+                        <Route path="/video-analysis" element={<VideoAnalysis />} />
                         <Route path="*" element={<NotFound />} />
                       </Routes>
                       </ErrorBoundary>

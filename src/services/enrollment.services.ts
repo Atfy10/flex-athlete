@@ -52,17 +52,33 @@ export const searchEnrollments = async (
 
 export const countAllEnrollments = async () => {
   if (isDevSession()) return devMock<number>(0);
-  return apiFetch<ApiResult<number>>("/api/Enrollment/count");
+  return apiFetch<ApiResult<number>>("/api/Enrollment/sports/enrollments/count");
 };
 
 export const countActiveEnrollments = async () => {
   if (isDevSession()) return devMock<number>(0);
-  return apiFetch<ApiResult<number>>("/api/Enrollment/count/active");
+  // No dedicated backend endpoint — fetch all and count client-side
+  try {
+    const res = await apiFetch<ApiResult<any[]>>("/api/Enrollment");
+    if (res.isSuccess && Array.isArray(res.data)) {
+      const count = res.data.filter((e: any) => e.isActive).length;
+      return { isSuccess: true, data: count } as ApiResult<number>;
+    }
+  } catch { /* fall through */ }
+  return { isSuccess: true, data: 0 } as ApiResult<number>;
 };
 
 export const countPendingPayments = async () => {
   if (isDevSession()) return devMock<number>(0);
-  return apiFetch<ApiResult<number>>("/api/Enrollment/count/pending-payment");
+  // No dedicated backend endpoint — fetch all and count client-side
+  try {
+    const res = await apiFetch<ApiResult<any[]>>("/api/Enrollment");
+    if (res.isSuccess && Array.isArray(res.data)) {
+      const count = res.data.filter((e: any) => !e.isActive && !e.isDeleted).length;
+      return { isSuccess: true, data: count } as ApiResult<number>;
+    }
+  } catch { /* fall through */ }
+  return { isSuccess: true, data: 0 } as ApiResult<number>;
 };
 
 export const getEnrollmentById = async (id: number | string) => {

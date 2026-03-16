@@ -28,7 +28,7 @@ export const getSessionsByDate = (
 ) => {
   if (isDevSession()) return Promise.resolve(devMock<PagedData<SessionCardDto>>({ items: [], totalCount: 0, page, pageSize }));
   return apiFetch<ApiResult<PagedData<SessionCardDto>>>(
-    `/api/TraineeGroup/get-all-for-specific-day?date=${date}&page=${page}&pageSize=${pageSize}`,
+    `/api/TraineeGroup/for-specific-day?date=${date}&page=${page}&pageSize=${pageSize}`,
   );
 };
 

@@ -6,7 +6,7 @@ import {
 } from "@microsoft/signalr";
 
 const API_BASE_URL = import.meta.env.VITE_API_BASE_URL || "";
-const HUB_PATH = "/hubs/notifications";
+const HUB_PATH = "/hubs/notification";
 const IS_DEV = import.meta.env.DEV;
 
 /** Factory function — callers must supply a token getter so that each

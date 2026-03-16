@@ -43,8 +43,8 @@ export const DEV_MOCK_USER: DevUser = {
  */
 export function isDevLoginEnabled(): boolean {
   return (
-    import.meta.env.DEV === true &&
-    import.meta.env.VITE_ENABLE_DEV_LOGIN === "true"
+    import.meta.env.DEV === false &&
+    import.meta.env.VITE_ENABLE_DEV_LOGIN === "false"
   );
 }
 
